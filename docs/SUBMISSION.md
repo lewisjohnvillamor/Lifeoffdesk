@@ -43,8 +43,8 @@ Life Off Desk is used *outside*, on foot, where the cloud is least reliable and 
 ## Evidence and honesty notes (avoid "fake benchmarks")
 
 - Core logic: 114 automated tests (Swift) + 11 Python tests, run in CI on every push.
-- Model accuracy numbers in `docs/BUILD-STATUS.md` are **development-machine (Linux CPU) runs**, labelled as such: planner v5 held-out 60/60 valid, 46/60 intent; history 14/14 valid, 10/14; recap 12/12; adaptive 14/14 valid, 10/14. They are not phone measurements.
-- Phone: the founder reported all six iPhone 12 Pro Max checks working (offline AI, outdoor walk, camera/sticker, accessibility, edge cases). **No phone latency/memory numbers have been recorded yet.** If you quote speed in the pitch, read it live from Settings → AI diagnostics and say it was measured then.
+- Development-machine (Linux CPU) scores, labelled as such: planner v5 held-out 60/60 valid, 46/60 intent; history 14/14 valid, 10/14; recap 12/12; adaptive 14/14 valid, 10/14. The planner figure is not the phone result.
+- Phone, iPhone 12 Pro Max (`iPhone13,4`, iOS 26.6.2), Qwen3-1.7B Q4_K_M, the same 60 Taglish held-out cases, Airplane Mode on 2026-10-10: **60/60 schema-valid, 47/60 intent**. Case latency p50 **7.38 s**, p95 **8.84 s** (n=60). **7.42** generated tokens/s. Highest sampled physical footprint **532 MB**. Thermal state serious, then critical. Battery stayed **65% charging** because the phone was on the USB cable. The network path was offline at the start and the end. An earlier same-day run scored the same 47/60 in 340.0 s (p50 6.09 s) and did not record tokens, memory, heat, or battery. Reports are in `eval/results/`. Map-frame pacing was not measured.
 - Sample/demo adventures are synthetic and labelled "SAMPLE DATA" in the app.
 
 ## Judges: recreate it

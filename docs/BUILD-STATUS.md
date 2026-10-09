@@ -1,5 +1,27 @@
 # Life Off Desk — build status
 
+## Taglish held-out on iPhone 12 Pro Max, Airplane Mode (2026-10-10)
+
+Second run of `eval/taglish-heldout.json` (60 cases) on the same iPhone 12 Pro Max (`iPhone13,4`, iOS 26.6.2), Qwen3-1.7B Q4_K_M, after the founder turned Airplane Mode on. The app was launched with `--run-heldout`. Report: `eval/results/taglish-heldout-iphone12promax-airplane-2026-10-10.json`.
+
+- Schema-valid **60/60**. Intent pass **47/60**. Same miss list as the earlier phone run. No repair attempts.
+- Wall time for the 60 cases **412.8 s**. Warm-up request **14.54 s**. Engine load timer **1.59 s**.
+- Case latency (one attempt each): min **3.53 s**, p50 **7.38 s**, p95 **8.84 s**, max **9.19 s**, mean **6.84 s**.
+- Generated **3044** tokens in **410.4 s** of generation time: **7.42 tokens/s**. Prompt tokens were **90664**, of which **89640** were reused from the previous context.
+- Highest sampled physical footprint (`task_vm_info.phys_footprint`): **532 MB** (557,815,808 bytes). Sampled at the start and after each case, so a spike between samples would not be included.
+- Thermal state (`ProcessInfo.thermalState`), 61 samples: **serious** for the first samples (15 total), then **critical** (46). No temperature in degrees was read.
+- Battery: **65% charging** at the start and **65% charging** at the end. The phone stayed on the USB cable, so this is not a drain measurement.
+- Network path (`NWPathMonitor`) at start and end: **offline (no network path)**.
+- Not measured on this run: map-frame pacing, background GPS.
+
+## Taglish held-out on iPhone 12 Pro Max (2026-10-10)
+
+Ran `eval/taglish-heldout.json` (60 cases) on the connected iPhone 12 Pro Max (`iPhone13,4`, iOS 26.6.2) through the installed app and Qwen3-1.7B Q4_K_M. Report: `eval/results/taglish-heldout-iphone12promax-2026-10-10.json`.
+
+- Schema-valid **60/60**. Intent pass **47/60**. Total generation time **340.0 s** after a **13.59 s** warm-up request. Engine load timer **1.56 s**.
+- Misses: #105 art, #106 fresh air, #115 Starbucks, #123 free park, #128 greenery, #129 outdoor exercise, #130 something new, #141 deep Tagalog greenery, #142 nearby café clarification, #144 walk with no destination, #147 "anything", #151 mountain climbing, #152 ice skating.
+- Case latency from the saved attempt times: min 3.47 s, p50 6.09 s, p95 7.50 s, max 8.39 s, mean 5.63 s. That report did not store tokens/sec, memory, thermal state, battery, or network path. Map-frame pacing was not measured.
+
 ## AI security review: prompt injection and hallucination (2026-10-10, founder question)
 
 - **Audit result:** no AI task shows model-written text. All are grammar-constrained JSON choices, validated with one repair attempt, rendered by templates or sourced cards. Inputs are sanitised and quoted as data. Details are in `docs/SAFETY-GUIDE.md`.

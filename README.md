@@ -44,6 +44,20 @@ AGENTS.md and skills/ contain portable implementation guidance. The TXT brief an
 
 ## Current status
 
-App, core library (114 tests), 1.7B on-device inference, street matching and the local-AI features (history search, grounded recap, preferences, adaptive suggestions, accessibility evidence) are implemented and merged. CI builds the unsigned iPhone app and the Simulator app on every push. The founder reported the iPhone 12 Pro Max checks working (offline AI, outdoor walk, camera/sticker, accessibility, edge cases). Phone latency/memory numbers are not yet recorded; model accuracy figures in the build status are development-machine runs, labelled as such. See [build status](docs/BUILD-STATUS.md).
+App, core library (114 tests), 1.7B on-device inference, street matching and the local-AI features (history search, grounded recap, preferences, adaptive suggestions, accessibility evidence) are implemented and merged. CI builds the unsigned iPhone app and the Simulator app on every push. The founder reported the iPhone 12 Pro Max checks working (offline AI, outdoor walk, camera/sticker, accessibility, edge cases).
+
+**Phone measurements** (iPhone 12 Pro Max, `iPhone13,4`, iOS 26.6.2, Qwen3-1.7B Q4_K_M, `eval/taglish-heldout.json`, 60 cases, 2026-10-10). The Airplane Mode run had no network path at the start or the end:
+
+| | Airplane Mode run | Earlier run the same day |
+|---|---|---|
+| Schema-valid / intent | 60/60, 47/60 | 60/60, 47/60 |
+| Case latency | p50 7.38 s, p95 8.84 s (n=60) | p50 6.09 s, p95 7.50 s (n=60) |
+| Generated tokens/s | 7.42 | not recorded |
+| Highest sampled memory | 532 MB physical footprint | not recorded |
+| Thermal state | serious, then critical | not recorded |
+| Battery | 65% charging at start and end (USB cable; not a drain test) | not recorded |
+| 60-case time | 412.8 s (warm-up 14.54 s) | 340.0 s (warm-up 13.59 s) |
+
+Reports: [Airplane Mode](eval/results/taglish-heldout-iphone12promax-airplane-2026-10-10.json), [earlier run](eval/results/taglish-heldout-iphone12promax-2026-10-10.json). The Linux CPU development-machine score for this set is 46/60 intent and is not a phone result. Map-frame pacing was not measured. See [build status](docs/BUILD-STATUS.md).
 
 Deferred by design: full Luzon map packs, turn-by-turn routing, accounts, live hazard information, reviewed accessibility facts (the evidence files ship empty, so access requests honestly return no verified places).

@@ -1,7 +1,27 @@
 import Foundation
 import LifeOffDeskCore
+import Network
 import SwiftUI
 import UIKit
+
+private struct HeldOutGeneration: Encodable {
+    var promptTokens: Int
+    var reusedTokens: Int
+    var generatedTokens: Int
+    var seconds: Double
+}
+
+private final class HeldOutStatsCapture: IntentEngine, @unchecked Sendable {
+    let inner: LlamaEngine
+    var samples: [LlamaGenerationStats] = []
+    init(inner: LlamaEngine) { self.inner = inner }
+
+    func complete(prompt: String, grammar: String?, maxTokens: Int) async throws -> String {
+        let text = try await inner.complete(prompt: prompt, grammar: grammar, maxTokens: maxTokens)
+        if let stats = await inner.lastStats { samples.append(stats) }
+        return text
+    }
+}
 
 enum WalkPhase: Equatable {
     case idle
@@ -149,6 +169,191 @@ final class AppModel: ObservableObject {
         buildStreetNetwork()
         refreshIdleLocation()
         updateChunks()
+        startHeldOutRunIfRequested()
+    }
+
+    /// Launch with `--run-heldout` to score eval/taglish-heldout.json on this iPhone and
+    /// write Documents/heldout-report.json. Progress is Documents/heldout-progress.txt.
+    private func startHeldOutRunIfRequested() {
+        guard ProcessInfo.processInfo.arguments.contains("--run-heldout") else { return }
+        Task { await runHeldOutBenchmark() }
+    }
+
+    private func runHeldOutBenchmark() async {
+        UIApplication.shared.isIdleTimerDisabled = true
+        defer { UIApplication.shared.isIdleTimerDisabled = false }
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let progressURL = documents.appendingPathComponent("heldout-progress.txt")
+        let reportURL = documents.appendingPathComponent("heldout-report.json")
+        func note(_ line: String) {
+            try? line.write(to: progressURL, atomically: true, encoding: .utf8)
+            print("HELD_OUT \(line)")
+        }
+        guard let content else { note("no catalog"); return }
+        guard let url = Bundle.main.url(forResource: "taglish-heldout", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let cases = try? JSONDecoder().decode(PlannerEvaluation.CaseFile.self, from: data).cases else {
+            note("held-out file missing")
+            return
+        }
+        note("loading model")
+        let warm = Date()
+        do {
+            _ = try await ai.run { engine in
+                await Planner(engine: engine).extract("Warm-up: gusto ko ng park.")
+            }
+        } catch {
+            note("warmup failed: \(error)")
+            return
+        }
+        let firstRequest = Date().timeIntervalSince(warm)
+        let networkAtStart = await Self.networkPathDescription()
+        let batteryAtStart = Self.batterySample()
+        var peakFootprint = Self.physicalFootprintBytes()
+        var thermalSamples = [Self.thermalStateName()]
+        note(String(format: "warmup %.2fs %@ %@", firstRequest, networkAtStart, thermalSamples[0]))
+        let started = Date()
+        var results: [PlannerEvaluation.CaseResult] = []
+        var generations: [HeldOutGeneration] = []
+        let catalog = content.catalog
+        let origin = DistanceOrigin.areaCenter(content.region.center)
+        for (index, testCase) in cases.enumerated() {
+            do {
+                let (batch, stats) = try await ai.run { engine -> ([PlannerEvaluation.CaseResult], [LlamaGenerationStats]) in
+                    guard let llama = engine as? LlamaEngine else {
+                        let scored = await PlannerEvaluation.run(cases: [testCase], planner: Planner(engine: engine),
+                                                                catalog: catalog, origin: origin)
+                        return (scored, [])
+                    }
+                    let capture = HeldOutStatsCapture(inner: llama)
+                    let scored = await PlannerEvaluation.run(cases: [testCase], planner: Planner(engine: capture),
+                                                            catalog: catalog, origin: origin)
+                    return (scored, capture.samples)
+                }
+                results.append(contentsOf: batch)
+                generations.append(contentsOf: stats.map {
+                    HeldOutGeneration(promptTokens: $0.promptTokens, reusedTokens: $0.reusedTokens,
+                                      generatedTokens: $0.generatedTokens, seconds: $0.seconds)
+                })
+                peakFootprint = max(peakFootprint, Self.physicalFootprintBytes())
+                thermalSamples.append(Self.thermalStateName())
+                note("\(index + 1)/\(cases.count)")
+            } catch {
+                note("stopped at \(index + 1)/\(cases.count): \(error)")
+                return
+            }
+        }
+        let total = Date().timeIntervalSince(started)
+        peakFootprint = max(peakFootprint, Self.physicalFootprintBytes())
+        let generatedTokens = generations.reduce(0) { $0 + $1.generatedTokens }
+        let generationSeconds = generations.reduce(0.0) { $0 + $1.seconds }
+        struct Report: Encodable {
+            var device: String
+            var iOS: String
+            var modelFile: String
+            var modelBytes: Int64?
+            var loadSeconds: Double?
+            var firstRequestSeconds: Double
+            var totalSeconds: Double
+            var schemaValid: Int
+            var intentPass: Int
+            var caseCount: Int
+            var networkAtStart: String
+            var networkAtEnd: String
+            var batteryAtStart: String
+            var batteryAtEnd: String
+            var thermalSamples: [String]
+            var peakFootprintBytes: UInt64
+            var generatedTokens: Int
+            var generationSeconds: Double
+            var tokensPerSecond: Double?
+            var results: [PlannerEvaluation.CaseResult]
+            var generations: [HeldOutGeneration]
+        }
+        let info = ai.loadInfo
+        let tokensPerSecond = generationSeconds > 0 ? Double(generatedTokens) / generationSeconds : nil
+        let report = Report(device: DeviceInfo.modelIdentifier, iOS: UIDevice.current.systemVersion,
+                            modelFile: AIService.modelFileName, modelBytes: info?.modelBytes,
+                            loadSeconds: info?.loadSeconds, firstRequestSeconds: firstRequest,
+                            totalSeconds: total, schemaValid: results.filter(\.schemaValid).count,
+                            intentPass: results.filter(\.intentPass).count, caseCount: results.count,
+                            networkAtStart: networkAtStart, networkAtEnd: await Self.networkPathDescription(),
+                            batteryAtStart: batteryAtStart, batteryAtEnd: Self.batterySample(),
+                            thermalSamples: thermalSamples, peakFootprintBytes: peakFootprint,
+                            generatedTokens: generatedTokens, generationSeconds: generationSeconds,
+                            tokensPerSecond: tokensPerSecond, results: results, generations: generations)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let encoded = try? encoder.encode(report) {
+            try? encoded.write(to: reportURL, options: .atomic)
+        }
+        note(String(format: "finished schema %d/%d intent %d/%d total %.1fs tok/s %.2f peakMB %llu %@",
+                    results.filter(\.schemaValid).count, results.count,
+                    results.filter(\.intentPass).count, results.count, total,
+                    tokensPerSecond ?? 0, peakFootprint / 1_048_576, thermalSamples.last ?? ""))
+    }
+
+    private static func physicalFootprintBytes() -> UInt64 {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.stride / MemoryLayout<integer_t>.stride)
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        return result == KERN_SUCCESS ? info.phys_footprint : 0
+    }
+
+    private static func thermalStateName() -> String {
+        switch ProcessInfo.processInfo.thermalState {
+        case .nominal: return "nominal"
+        case .fair: return "fair"
+        case .serious: return "serious"
+        case .critical: return "critical"
+        @unknown default: return "unknown"
+        }
+    }
+
+    private static func batterySample() -> String {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        let level = UIDevice.current.batteryLevel
+        let state: String
+        switch UIDevice.current.batteryState {
+        case .unknown: state = "unknown"
+        case .unplugged: state = "unplugged"
+        case .charging: state = "charging"
+        case .full: state = "full"
+        @unknown default: state = "unknown"
+        }
+        if level < 0 { return state }
+        return String(format: "%.0f%% %@", level * 100, state)
+    }
+
+    private static func networkPathDescription() async -> String {
+        await withCheckedContinuation { continuation in
+            let monitor = NWPathMonitor()
+            let gate = NSLock()
+            var resumed = false
+            monitor.pathUpdateHandler = { path in
+                gate.lock()
+                let first = !resumed
+                resumed = true
+                gate.unlock()
+                guard first else { return }
+                monitor.cancel()
+                let text: String
+                switch path.status {
+                case .satisfied:
+                    let kinds = path.availableInterfaces.map { "\($0.type)" }.joined(separator: ", ")
+                    text = "online (\(kinds))"
+                case .unsatisfied: text = "offline (no network path)"
+                case .requiresConnection: text = "requires connection"
+                @unknown default: text = "unknown"
+                }
+                continuation.resume(returning: text)
+            }
+            monitor.start(queue: DispatchQueue(label: "heldout-network"))
+        }
     }
 
     // MARK: Region streaming (game-style chunks)
