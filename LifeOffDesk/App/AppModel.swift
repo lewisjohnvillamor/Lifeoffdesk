@@ -52,6 +52,15 @@ final class AppModel: ObservableObject {
     @Published var searchRadiusMeters: Double = SearchOptions.defaultRadiusMeters
     private var plannerTask: Task<Void, Never>?
 
+    // Demo mode: bundled synthetic walks for presentations, never mixed with personal data.
+    @Published private(set) var demoMode = false
+    @Published private(set) var replay: WalkReplay?
+    @Published private(set) var demoProblem: String?
+    private(set) var demo: DemoDataset?
+    private var demoExploration = Exploration()
+    private var replayTask: Task<Void, Never>?
+    private var replayIndex = 0
+
     let ai = AIService()
     private let location = LocationService()
     private var lastPersist = Date.distantPast
@@ -117,13 +126,34 @@ final class AppModel: ObservableObject {
 
     var activeSession: WalkSession? { recorder?.session }
 
-    /// Saved exploration plus the walk in progress, for rendering.
+    /// Saved exploration plus the walk in progress, for rendering. In Demo mode: the sample
+    /// walks plus any replay in progress, and nothing personal.
     var displayExploration: Exploration {
+        if demoMode {
+            guard let replay else { return demoExploration }
+            var shown = demoExploration.excluding(sessionID: replay.source.id)
+            shown.merge(replay.partialSession)
+            return shown
+        }
         guard let session = recorder?.session else { return exploration }
         var merged = exploration
         merged.merge(session)
         return merged
     }
+
+    /// Trail drawn on top of the fog: the live walk, or the replay in Demo mode.
+    var displayedTrail: [[TrackSample]] {
+        demoMode ? (replay?.partialSession.segments ?? []) : (recorder?.session.segments ?? [])
+    }
+
+    /// Marker position: live GPS, or the replay's current sample (labelled) in Demo mode.
+    var mapPosition: Coordinate? {
+        demoMode ? replay?.currentSample?.coordinate : currentPosition
+    }
+
+    var historyWalks: [WalkSession] { demoMode ? (demo?.walks ?? []) : finishedWalks }
+
+    func isDemo(_ session: WalkSession) -> Bool { demo?.contains(session) ?? false }
 
     /// A fix only counts as "you are here" while it is recent.
     var currentPosition: Coordinate? {
@@ -147,6 +177,7 @@ final class AppModel: ObservableObject {
 
     func startWalking() {
         guard recorder == nil else { return }
+        if demoMode { setDemoMode(false) } // real walks always start from personal data
         locationError = nil
         switch location.authorization {
         case .authorized:
@@ -235,7 +266,59 @@ final class AppModel: ObservableObject {
     }
 
     func recap(for session: WalkSession) -> WalkRecap {
-        WalkRecap.compute(session: session, exploration: exploration, grid: grid, now: session.endedAt ?? Date())
+        let base = isDemo(session) ? demoExploration : exploration
+        return WalkRecap.compute(session: session, exploration: base, grid: grid, now: session.endedAt ?? Date())
+    }
+
+    // MARK: Demo mode
+
+    func setDemoMode(_ on: Bool) {
+        if !on {
+            stopReplay()
+            demoMode = false
+            return
+        }
+        guard recorder == nil else { return }
+        if demo == nil {
+            do {
+                guard let url = Bundle.main.url(forResource: "sample-walks", withExtension: "json",
+                                                subdirectory: "StarterData/demo") else {
+                    demoProblem = "Demo data is not bundled in this build."
+                    return
+                }
+                let loaded = try DemoDataset.decode(Data(contentsOf: url))
+                demo = loaded
+                demoExploration = loaded.exploration
+            } catch {
+                demoProblem = "Demo data could not be read: \(error.localizedDescription)"
+                return
+            }
+        }
+        demoProblem = nil
+        demoMode = true
+    }
+
+    /// Animates one sample walk revealing the fog (~20 s), cycling through the sample walks.
+    func startReplay() {
+        guard demoMode, let walks = demo?.walks, !walks.isEmpty else { return }
+        stopReplay()
+        let source = walks[replayIndex % walks.count]
+        replayIndex += 1
+        replay = WalkReplay(source: source)
+        let step = max(1, source.acceptedSampleCount / 400)
+        replayTask = Task { [weak self] in
+            while let self, var current = self.replay, !current.isFinished, !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                current.advance(by: step)
+                self.replay = current
+            }
+        }
+    }
+
+    func stopReplay() {
+        replayTask?.cancel()
+        replayTask = nil
+        replay = nil
     }
 
     // MARK: Samples

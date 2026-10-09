@@ -16,6 +16,7 @@ def load(name):
 downloads = load('download_materials')
 makati = load('prepare_makati')
 catalog = load('build_starter_catalog')
+demo = load('build_demo_walks')
 
 class DownloadTests(unittest.TestCase):
     def artifact(self, content):
@@ -118,6 +119,22 @@ class RegionTests(unittest.TestCase):
         self.assertEqual(sum(p['category']=='park' for p in chosen), catalog.MAX_NON_CAFE)
         self.assertEqual(sum(p['category']=='cafe' for p in chosen), 2, 'one per chain name')
         self.assertNotIn('osm:node:100', [p['id'] for p in chosen])
+
+class DemoWalkTests(unittest.TestCase):
+    def test_generator_is_deterministic_and_labelled(self):
+        import json, subprocess, sys
+        with tempfile.TemporaryDirectory() as directory:
+            outputs = []
+            for name in ('a.json', 'b.json'):
+                target = Path(directory)/name
+                subprocess.run([sys.executable, str(ROOT/'scripts/build_demo_walks.py'), '--output', str(target)],
+                               check=True, capture_output=True)
+                outputs.append(target.read_bytes())
+            self.assertEqual(outputs[0], outputs[1])
+            data = json.loads(outputs[0])
+            self.assertIn('SYNTHETIC', data['label'])
+            self.assertEqual(outputs[0], (ROOT/'LifeOffDesk/Resources/StarterData/demo/sample-walks.json').read_bytes(),
+                             'Bundled demo file must match the generator output')
 
 if __name__ == '__main__':
     unittest.main()

@@ -37,6 +37,13 @@ struct SettingsView: View {
                     Link("openstreetmap.org/copyright", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
                         .font(.footnote)
                 }
+                Section("Presentation") {
+                    Toggle("Demo map (sample walks)", isOn: Binding(get: { model.demoMode },
+                                                                    set: { model.setDemoMode($0) }))
+                        .disabled(model.activeSession != nil)
+                    Text("Shows bundled synthetic walks generated along real Makati and Muntinlupa streets so people can see a well-explored map. Clearly labelled, never saved to your walks. Turn off for your real map.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                }
                 Section("Build evidence") {
                     NavigationLink("On-device AI diagnostics") { AIDiagnosticsView(ai: model.ai).environmentObject(model) }
                 }
