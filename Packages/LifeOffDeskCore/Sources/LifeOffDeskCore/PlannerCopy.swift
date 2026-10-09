@@ -42,7 +42,7 @@ public enum PlannerCopy {
         let from: String
         switch origin {
         case .currentLocation: from = "mula sa location mo"
-        case .areaCenter: from = "mula sa gitna ng Makati starter area (wala pang GPS fix)"
+        case .areaCenter: from = "mula sa gitna ng starter area (wala pang GPS fix)"
         }
         var line = "Heto ang \(count) na \(what) within \(Format.distance(radiusMeters)) \(from)."
         if let minutes = prefs.durationMinutes { line += " May \(minutes) minutes ka." }

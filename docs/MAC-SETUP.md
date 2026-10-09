@@ -41,7 +41,7 @@ Mac inference is development diagnostics only; it does not satisfy the required 
 python3 scripts/prepare_makati.py
 ```
 
-The proposed starter bounding box is in config/starter-region.json. This makes one provisioning request to Overpass and saves source places, road GeoJSON and provenance under local-data/makati/. It does not download all Luzon. Public services can fail or rate-limit; do not loop requests aggressively.
+Starter regions are listed in config/regions.json: Makati CBD and Muntinlupa (streets, footpaths, places) and Metro Manila (main roads only, for context while recording anywhere in NCR). Run `python3 scripts/prepare_makati.py --region <id>` once per region; each makes one Overpass request and saves source places, road GeoJSON and provenance under local-data/<region>/. Then `python3 scripts/build_starter_catalog.py` writes the app packs. It does not download all Luzon. Public services can fail or rate-limit; do not loop requests aggressively.
 
 Review 15–30 relevant source places before copying a curated catalog into app resources. Source records are not independent proof of current access, prices, quietness or hours. Review restricted/private paths. Road geometry is visual context, not a routing graph. Keep OpenStreetMap attribution/license notices. If the endpoint is unavailable, export the printed query through an available Overpass instance and run `python3 scripts/prepare_makati.py --input /path/to/export.json`.
 

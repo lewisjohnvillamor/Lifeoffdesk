@@ -180,7 +180,7 @@ Privacy intent: no account, analytics upload or cloud inference in this slice. N
 
 ## Makati and Taglish implementation update
 
-Use config/starter-region.json for the proposed Makati CBD subset. scripts/prepare_makati.py retrieves source records and starter road geometry once during provisioning; review places before bundling. Raw OSM records are source-backed, not independently verified open/accessible venues. Treat Taglish requests as required AI inputs; see eval/taglish-cases.json. Display Taglish guidance through localized templates built from validated matches, with model intent extraction actually running on the phone. Localized templates do not replace the model inference requirement.
+Use config/regions.json for the proposed Makati CBD subset. scripts/prepare_makati.py retrieves source records and starter road geometry once during provisioning; review places before bundling. Raw OSM records are source-backed, not independently verified open/accessible venues. Treat Taglish requests as required AI inputs; see eval/taglish-cases.json. Display Taglish guidance through localized templates built from validated matches, with model intent extraction actually running on the phone. Localized templates do not replace the model inference requirement.
 
 
 # Life Off Desk — acceptance and demo

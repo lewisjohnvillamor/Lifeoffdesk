@@ -21,15 +21,21 @@ struct SettingsView: View {
                         Text("Finish the current walk before erasing.").font(.footnote).foregroundStyle(Theme.secondaryInk)
                     }
                 }
-                Section("Starter area") {
-                    if let region = model.content?.region {
-                        Text(region.name)
-                        Text("Coverage: \(region.coverageStatus). Places are OpenStreetMap source records, not reviewed for hours, prices or access.")
-                            .font(.footnote).foregroundStyle(Theme.secondaryInk)
-                        Text("Map data © OpenStreetMap contributors, ODbL.").font(.footnote)
-                        Link("openstreetmap.org/copyright", destination: URL(string: region.licenseURL)!)
-                            .font(.footnote)
+                Section("Starter maps") {
+                    ForEach(model.content?.packs ?? [], id: \.region.id) { pack in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(pack.region.name)
+                            Text(pack.region.hasFullDetail
+                                 ? "Streets, footpaths and \(pack.catalog?.places.count ?? 0) places. \(pack.region.coverageStatus)."
+                                 : "Main roads only; walks are recorded anywhere. \(pack.region.coverageStatus).")
+                                .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                        }
                     }
+                    Text("Places are OpenStreetMap source records, not reviewed for hours, prices or access. Walks outside these areas are still recorded.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                    Text("Map data © OpenStreetMap contributors, ODbL.").font(.footnote)
+                    Link("openstreetmap.org/copyright", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+                        .font(.footnote)
                 }
                 Section("Build evidence") {
                     NavigationLink("On-device AI diagnostics") { AIDiagnosticsView(ai: model.ai).environmentObject(model) }

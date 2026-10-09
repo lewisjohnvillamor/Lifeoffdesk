@@ -12,9 +12,10 @@ let root = URL(fileURLWithPath: args[2])
 let useGrammar = !args.contains("--no-grammar")
 let outPath = args.firstIndex(of: "--out").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
 
-let catalog = try PlaceCatalog.decode(Data(contentsOf: root.appendingPathComponent("LifeOffDesk/Resources/StarterData/places.json")))
-let region = try JSONDecoder().decode(RegionManifest.self,
-                                      from: Data(contentsOf: root.appendingPathComponent("LifeOffDesk/Resources/StarterData/region.json")))
+// Evaluate against the primary (Makati) pack so results stay comparable across runs.
+let pack = root.appendingPathComponent("LifeOffDesk/Resources/StarterData/makati-cbd-starter")
+let catalog = try PlaceCatalog.decode(Data(contentsOf: pack.appendingPathComponent("places.json")))
+let region = try JSONDecoder().decode(RegionManifest.self, from: Data(contentsOf: pack.appendingPathComponent("region.json")))
 let cases = try JSONDecoder().decode(PlannerEvaluation.CaseFile.self,
                                      from: Data(contentsOf: root.appendingPathComponent("eval/taglish-cases.json"))).cases
 
