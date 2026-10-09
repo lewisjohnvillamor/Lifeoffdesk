@@ -12,7 +12,7 @@ struct MapScreen: View {
     @State private var showCamera = false
     @State private var showHelp = false
     @State private var followUser = true
-    @State private var tilted = true
+    @AppStorage("map.tilted") private var tilted = true
     @State private var launchScale: CGFloat?
     /// Destination whose route should be framed once it arrives (set when a place is chosen).
     @State private var routeToFrame: String?
@@ -295,7 +295,8 @@ struct MapScreen: View {
 
     private func destinationPill(_ place: Place) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: "flag.fill").font(.caption).accessibilityHidden(true)
+            Image(systemName: PlaceIcon.symbol(place)).font(.caption).foregroundStyle(PlaceIcon.tint(place))
+                .accessibilityHidden(true)
             Text(place.name).font(.footnote.weight(.semibold)).lineLimit(1)
             if let position = model.currentPosition {
                 Text("· " + PlannerCopy.distanceText(model.destinationStreet, straightLine: Geo.distanceMeters(position, place.coordinate)))
@@ -352,7 +353,7 @@ struct MapScreen: View {
             if model.phase == .walking || model.phase == .acquiringFix || model.phase == .paused {
                 labeledIcon("camera", "Spot", label: "Take a photo") { showCamera = true }
             }
-            labeledIcon("shield.lefthalf.filled", "Help",
+            labeledIcon("sos", "Help", tint: Theme.danger,
                         label: "Get help: emergency call, your location and the nearest police, hospitals and fire stations") {
                 showHelp = true
             }
@@ -362,18 +363,6 @@ struct MapScreen: View {
                 else if let destination = model.destination, let geometry { camera.center = geometry.point(destination.coordinate) }
                 else { camera.center = .zero }
             }
-            Menu {
-                Button(tilted ? "Flat map" : "Tilted map") { tilted.toggle() }
-                if model.activeSession == nil {
-                    Button(model.demoMode ? "My map" : "Preview demo map") { model.setDemoMode(!model.demoMode) }
-                }
-            } label: {
-                VStack(spacing: 4) {
-                    circle("square.3.layers.3d", size: 56)
-                    Text("Layers").font(.caption).foregroundStyle(Theme.ink)
-                }
-            }
-            .accessibilityLabel("Layers")
         }
     }
 
@@ -408,20 +397,20 @@ struct MapScreen: View {
 
     // MARK: Building blocks
 
-    private func circle(_ symbol: String, size: CGFloat, primary: Bool = false) -> some View {
+    private func circle(_ symbol: String, size: CGFloat, primary: Bool = false, tint: Color? = nil) -> some View {
         Image(systemName: symbol)
             .font(.system(size: size * 0.36, weight: .semibold))
-            .foregroundStyle(primary ? Theme.canvas : PaperStyle.ink)
+            .foregroundStyle(primary || tint != nil ? Theme.canvas : PaperStyle.ink)
             .frame(width: size, height: size)
-            .background(primary ? Theme.primary : Theme.surface, in: Circle())
+            .background(tint ?? (primary ? Theme.primary : Theme.surface), in: Circle())
             .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
     }
 
-    private func labeledIcon(_ symbol: String, _ caption: String, label: String, primary: Bool = false,
+    private func labeledIcon(_ symbol: String, _ caption: String, tint: Color? = nil, label: String, primary: Bool = false,
                              size: CGFloat = 56, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 4) {
-                circle(symbol, size: size, primary: primary)
+                circle(symbol, size: size, primary: primary, tint: tint)
                 Text(caption).font(.caption).foregroundStyle(Theme.ink)
             }
         }

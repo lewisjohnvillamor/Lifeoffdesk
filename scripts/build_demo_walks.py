@@ -23,7 +23,7 @@ WALK_SPEED = 1.3        # m/s
 SAMPLE_SPACING = 10.0   # metres between generated fixes
 ACCURACY = 5.0          # reported accuracy for every synthetic fix
 # Region id -> (number of walks, min metres, max metres)
-PLAN = {'makati-cbd-starter': (24, 1200, 3200), 'muntinlupa': (10, 1200, 3000)}
+PLAN = {'makati-cbd-starter': (60, 1500, 3800), 'muntinlupa': (24, 1500, 3500)}
 
 def metres(a, b):
     lat1, lon1, lat2, lon2 = map(math.radians, (a[0], a[1], b[0], b[1]))
@@ -109,7 +109,7 @@ def main():
         graph = build_graph(roads)
         center = (region['center']['latitude'], region['center']['longitude'])
         # Start near the region's reference point so the explored area forms a believable neighbourhood.
-        starts = sorted((n for n in graph if len(graph[n]) >= 3), key=lambda n: metres(n, center))[:400]
+        starts = sorted((n for n in graph if len(graph[n]) >= 3), key=lambda n: metres(n, center))[:900]
         total = 0.0
         for _ in range(count):
             path, length = random_walk(graph, rng.choice(starts), rng.uniform(low, high), rng)

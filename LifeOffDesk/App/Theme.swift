@@ -103,3 +103,34 @@ struct Wordmark: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// A choice the user should act on now (clarifications, retries): a full-width button, never plain text.
+struct ChoiceButton: View {
+    let title: String
+    var systemImage: String?
+    var prominent = true
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if let systemImage { Image(systemName: systemImage).accessibilityHidden(true) }
+                Text(title).multilineTextAlignment(.leading)
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: 48)
+        }
+        .modifier(ChoiceStyle(prominent: prominent))
+    }
+}
+
+private struct ChoiceStyle: ViewModifier {
+    let prominent: Bool
+    func body(content: Content) -> some View {
+        if prominent {
+            content.buttonStyle(.borderedProminent).tint(Theme.primary)
+        } else {
+            content.buttonStyle(.bordered).tint(Theme.ink)
+        }
+    }
+}

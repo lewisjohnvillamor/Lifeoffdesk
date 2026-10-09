@@ -72,3 +72,27 @@ final class WorldCoachTests: XCTestCase {
         XCTAssertNil(CoachRenderer.computed(none), "no quest, no coach")
     }
 }
+
+/// Founder report: "Library, lakad lang" was read as a route-accessibility need and asked a step-free question.
+final class AccessGroundingTests: XCTestCase {
+    func testAccessNeedsCountOnlyWhenTheRequestMentionsAccess() {
+        let misread = OutingPreferences(categories: [.library], accessNeeds: [.stepFreeEntrance], routeAccess: true)
+        let plain = AccessWords.grounded(misread, in: "Library, lakad lang")
+        XCTAssertFalse(plain.routeAccess)
+        XCTAssertTrue(plain.accessNeeds.isEmpty)
+        XCTAssertEqual(plain.categories, [.library])
+        let asked = AccessWords.grounded(misread, in: "library na wheelchair accessible ang daan")
+        XCTAssertTrue(asked.routeAccess)
+        XCTAssertEqual(asked.accessNeeds, [.stepFreeEntrance])
+    }
+
+    func testAnswerDoesNotAskTheAccessQuestionForPlainWalking() {
+        let place = Fixture.place("lib", .library, east: 100, north: 0)
+        let misread = OutingPreferences(categories: [.library], routeAccess: true)
+        let (response, _) = Planner.answer(.valid(misread), trace: PlannerTrace(), request: "Library, lakad lang",
+                                           catalog: Fixture.catalog([place]),
+                                           origin: .currentLocation(Fixture.projection.unproject(MeterPoint(x: 0, y: 0))))
+        guard case let .suggestions(_, _, results) = response else { return XCTFail("expected suggestions, got \(response)") }
+        XCTAssertEqual(results.map(\.place.id), ["lib"])
+    }
+}

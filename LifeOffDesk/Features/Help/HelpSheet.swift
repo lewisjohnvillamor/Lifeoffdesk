@@ -80,7 +80,7 @@ struct HelpSheet: View {
 
     private func section(_ kind: HelpKind, _ places: [HelpPlace]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(kind.title, systemImage: icon(kind)).font(.headline).foregroundStyle(Theme.ink)
+            Label(kind.title, systemImage: PlaceIcon.symbol(kind)).font(.headline).foregroundStyle(Theme.ink)
             if places.isEmpty {
                 Text("None mapped within 10 km in the offline map loaded now.")
                     .font(.footnote).foregroundStyle(Theme.secondaryInk)
@@ -111,13 +111,5 @@ struct HelpSheet: View {
 
     private func note(_ text: String) -> some View {
         Text(text).font(.footnote).foregroundStyle(Theme.secondaryInk).fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func icon(_ kind: HelpKind) -> String {
-        switch kind {
-        case .police: return "shield.lefthalf.filled"
-        case .hospital: return "cross.case.fill"
-        case .fireStation: return "flame.fill"
-        }
     }
 }

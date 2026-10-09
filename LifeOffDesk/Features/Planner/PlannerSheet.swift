@@ -50,6 +50,7 @@ struct PlannerSheet: View {
                     .background(Theme.canvas)
             }
             .onAppear {
+                model.warmPlanner()
                 model.refreshAdventureIdeas()
                 model.refreshIdleLocation(promptIfNeeded: true)
                 if model.plannerText.isEmpty { inputFocused = true }
@@ -161,7 +162,7 @@ struct PlannerSheet: View {
             manualFilters
         case let .interrupted(message):
             note(message)
-            Button("Subukan ulit") { send() }.font(.subheadline.weight(.semibold))
+            ChoiceButton(title: "Subukan ulit", systemImage: "arrow.clockwise") { send() }
         case let .answered(response, usedAI):
             answer(response, usedAI: usedAI)
         }
@@ -189,8 +190,9 @@ struct PlannerSheet: View {
             if !prefs.accessNeeds.isEmpty {
                 requirementChips(prefs)
                 note(PlannerCopy.noEligibleAccess)
-                Button("Alisin ang access requirement (unverified results)") { model.searchWithoutAccessNeeds(prefs) }
-                    .font(.subheadline.weight(.semibold))
+                ChoiceButton(title: "Alisin ang access requirement (unverified results)", systemImage: "xmark.circle") {
+                    model.searchWithoutAccessNeeds(prefs)
+                }
             } else {
                 note(PlannerCopy.noMatch)
                 manualFilters
@@ -198,8 +200,15 @@ struct PlannerSheet: View {
         case let .clarify(prefs, question):
             note(question)
             if let prefs, prefs.routeAccess {
-                Button("Oo, step-free entrance lang ang i-filter") { model.searchVenueEntranceOnly(prefs) }
-                    .font(.subheadline.weight(.semibold))
+                VStack(spacing: 8) {
+                    ChoiceButton(title: "Oo, step-free entrance lang ang i-filter", systemImage: "figure.roll") {
+                        model.searchVenueEntranceOnly(prefs)
+                    }
+                    ChoiceButton(title: "Hindi, ipakita lahat (unverified access)", systemImage: "list.bullet",
+                                 prominent: false) {
+                        model.searchWithoutAccessNeeds(prefs)
+                    }
+                }
             }
         case .failed:
             note(PlannerCopy.modelFailure)
@@ -273,11 +282,11 @@ struct SuggestionCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                Image(systemName: icon)
+                Image(systemName: PlaceIcon.symbol(suggestion.place))
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Theme.primary)
+                    .foregroundStyle(Theme.canvas)
                     .frame(width: 40, height: 40)
-                    .background(Theme.revealedGround, in: Circle())
+                    .background(PlaceIcon.tint(suggestion.place), in: Circle())
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(suggestion.place.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
@@ -321,21 +330,6 @@ struct SuggestionCard: View {
     }
 
     private var isChosen: Bool { model.destination?.id == suggestion.id }
-
-    private var icon: String {
-        switch suggestion.place.category {
-        case .park: return "leaf.fill"
-        case .cafe: return "cup.and.saucer.fill"
-        case .food: return "fork.knife"
-        case .museum: return "building.columns.fill"
-        case .library: return "books.vertical.fill"
-        case .scenic: return "binoculars.fill"
-        case .sports: return "figure.tennis"
-        case .shopping: return "bag.fill"
-        case .landmark: return "building.fill"
-        case .other: return "mappin"
-        }
-    }
 }
 
 /// A suggested adventure: an undiscovered real place, or unexplored streets nearby (computed).
@@ -373,8 +367,10 @@ struct AdventureIdeaCard: View {
     }
 
     private var icon: String {
-        if case .frontier = idea.kind { return "map" }
-        return "sparkles"
+        switch idea.kind {
+        case .frontier: return "map.fill"
+        case let .undiscoveredPlace(place): return PlaceIcon.symbol(place)
+        }
     }
 
     private var title: String {

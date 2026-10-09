@@ -264,10 +264,22 @@ struct FogMapView: View {
             }
 
             if let destination {
+                // Category icon in a tinted badge on a short stem (red for police, hospitals, fire stations).
                 let p = geometry.point(destination.coordinate).applying(transform)
-                let pin = Path(ellipseIn: CGRect(x: p.x - 9, y: p.y - 9, width: 18, height: 18))
-                context.fill(pin, with: .color(Theme.surface))
-                context.stroke(pin, with: .color(PaperStyle.ink), lineWidth: 3)
+                let badge = CGRect(x: p.x - 17, y: p.y - 44, width: 34, height: 34)
+                var stem = Path()
+                stem.move(to: CGPoint(x: p.x - 6, y: p.y - 12)); stem.addLine(to: CGPoint(x: p.x, y: p.y))
+                stem.addLine(to: CGPoint(x: p.x + 6, y: p.y - 12)); stem.closeSubpath()
+                let tint = PlaceIcon.tint(destination)
+                context.drawLayer { layer in
+                    layer.addFilter(.shadow(color: .black.opacity(0.25), radius: 4, y: 2))
+                    layer.fill(stem, with: .color(tint))
+                    layer.fill(Path(ellipseIn: badge), with: .color(tint))
+                }
+                context.stroke(Path(ellipseIn: badge), with: .color(Theme.surface), lineWidth: 2.5)
+                var symbol = context.resolve(Image(systemName: PlaceIcon.symbol(destination)))
+                symbol.shading = .color(Theme.surface)
+                context.draw(symbol, at: CGPoint(x: badge.midX, y: badge.midY), anchor: .center)
                 context.fill(Path(ellipseIn: CGRect(x: p.x - 3, y: p.y - 3, width: 6, height: 6)), with: .color(PaperStyle.ink))
             }
 

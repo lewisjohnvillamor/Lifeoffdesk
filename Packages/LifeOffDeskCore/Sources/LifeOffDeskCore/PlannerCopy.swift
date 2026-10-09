@@ -42,7 +42,7 @@ public enum PlannerCopy {
     }
 
     public static let routeAccessUnsupported =
-        "Hindi pa namin ma-check kung accessible ang daan mismo (walang routing at walang verified na sidewalk data). Puwede kong hanapin ang mga lugar na may recorded step-free entrance lang — gusto mo ba?"
+        "Hindi pa namin ma-check kung accessible ang daan mismo (ang route ay sumusunod lang sa mapped streets, walang verified na sidewalk data). Puwede kong hanapin ang mga lugar na may recorded step-free entrance lang — gusto mo ba?"
     public static let noEligibleAccess =
         "Walang lugar sa malapit na may reviewed na record para sa hiningi mong access. Hindi namin ito hinulaan. Puwede mong alisin ang requirement para makita ang lahat (unverified)."
 
