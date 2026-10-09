@@ -34,7 +34,7 @@ def download(artifact, destination):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--group', choices=['required', 'model', 'runtime', 'mac-tools', 'all'], default='required')
+    parser.add_argument('--group', choices=['required', 'model', 'model-large', 'runtime', 'mac-tools', 'all'], default='required')
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--destination', type=Path, default=ROOT / 'downloads')
     args = parser.parse_args()

@@ -26,6 +26,15 @@
       "sha256": "e26a6a0a813f5760fe45834ce239d5b525e4e2442d4fd017221d9f0438383174",
       "group": "runtime",
       "relativePath": "runtime/llama-b11429-xcframework.zip"
+    },
+    {
+      "name": "Qwen3-1.7B-Q4_K_M.gguf",
+      "group": "model-large",
+      "relativePath": "model/Qwen3-1.7B-Q4_K_M.gguf",
+      "url": "https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/resolve/daeb8e2d528a760970442092f6bf1e55c3b659eb/Qwen3-1.7B-Q4_K_M.gguf",
+      "sha256": "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5",
+      "approxBytes": 1282439264,
+      "note": "Larger candidate (Apache-2.0); better intent extraction on dev CPU; iPhone memory/latency untested"
     }
   ]
 }

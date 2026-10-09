@@ -21,7 +21,10 @@ struct PlannerSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     inputBar
-                    if showQuickPicks { quickPickRow }
+                    if showQuickPicks {
+                        quickPickRow
+                        nextAdventures
+                    }
                     stateView
                 }
                 .padding(Theme.inset)
@@ -41,6 +44,7 @@ struct PlannerSheet: View {
                     .background(Theme.canvas)
             }
             .onAppear {
+                model.refreshAdventureIdeas()
                 model.refreshIdleLocation(promptIfNeeded: true)
                 if model.plannerText.isEmpty { inputFocused = true }
             }
@@ -109,6 +113,15 @@ struct PlannerSheet: View {
                             .overlay(Capsule().stroke(Theme.border))
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder private var nextAdventures: some View {
+        if !model.adventureIdeas.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Next adventure").font(.headline).foregroundStyle(Theme.ink).padding(.top, 6)
+                ForEach(model.adventureIdeas) { idea in AdventureIdeaCard(idea: idea) }
             }
         }
     }
@@ -250,6 +263,62 @@ struct SuggestionCard: View {
         case .library: return "books.vertical.fill"
         case .scenic: return "binoculars.fill"
         case .other: return "mappin"
+        }
+    }
+}
+
+/// A suggested adventure: an undiscovered real place, or unexplored streets nearby (computed).
+struct AdventureIdeaCard: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    let idea: AdventureIdea
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.canvas)
+                .frame(width: 40, height: 40)
+                .background(Theme.primary, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
+                Text(subtitle).font(.subheadline).foregroundStyle(Theme.secondaryInk)
+            }
+            Spacer(minLength: 8)
+            Button("Go") {
+                model.choose(idea)
+                dismiss()
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Theme.canvas)
+            .padding(.horizontal, 18)
+            .frame(minHeight: Theme.minTarget)
+            .background(PaperStyle.ink, in: Capsule())
+            .accessibilityLabel("Set \(title) as destination")
+        }
+        .padding(14)
+        .background(Theme.revealedGround, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var icon: String {
+        if case .frontier = idea.kind { return "map" }
+        return "sparkles"
+    }
+
+    private var title: String {
+        switch idea.kind {
+        case let .frontier(meters, _): return "\(Format.distance(meters)) of streets you haven't explored"
+        case let .undiscoveredPlace(place): return place.name
+        }
+    }
+
+    private var subtitle: String {
+        switch idea.kind {
+        case let .frontier(_, bearing):
+            return "Pa-\(AdventureSuggester.compassWord(bearing)) · \(Format.distance(idea.straightLineMeters)) straight-line"
+        case let .undiscoveredPlace(place):
+            return "Hindi mo pa napupuntahan · \(PlannerCopy.categoryWord(place.category).capitalized) · \(Format.distance(idea.straightLineMeters))"
         }
     }
 }

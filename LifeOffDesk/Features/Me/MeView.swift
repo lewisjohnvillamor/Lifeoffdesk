@@ -41,7 +41,7 @@ struct MeView: View {
                     .frame(width: 52, height: 52).background(Theme.primary, in: Circle())
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Life Off Desk").font(.headline)
-                    Text(stats.firstWalkAt.map { "Since \($0.formatted(.dateTime.month(.abbreviated).year()))" } ?? "Your first walk is waiting")
+                    Text(stats.firstWalkAt.map { "Since \($0.formatted(.dateTime.month(.abbreviated).year()))" } ?? "Your first adventure is waiting")
                         .font(.footnote).foregroundStyle(Theme.secondaryInk)
                 }
             }
@@ -51,9 +51,9 @@ struct MeView: View {
                 Text("Total new streets").font(.subheadline).foregroundStyle(Theme.secondaryInk)
             }
             HStack(spacing: 0) {
-                total(String(format: "%.2f km", stats.totalDistanceMeters / 1000), "Total distance")
+                total("\(stats.walkCount)", "Adventures")
                 Divider().frame(height: 40)
-                total("\(stats.walkCount)", "Walks")
+                total("\(model.discoveredPlaceIDs.count)", "Places found")
                 Divider().frame(height: 40)
                 total(Format.area(stats.exploredSquareMeters), "Area explored")
             }
@@ -76,7 +76,7 @@ struct MeView: View {
     @ViewBuilder private var spots: some View {
         let shown = model.mapMoments.sorted { $0.takenAt > $1.takenAt }
         if shown.isEmpty {
-            Label("Photos you take on a walk are pinned to the map and kept here.", systemImage: "camera")
+            Label("Photos you take on an adventure are pinned to the map and kept here.", systemImage: "camera")
                 .font(.subheadline).foregroundStyle(Theme.secondaryInk)
                 .padding(18)
                 .frame(maxWidth: .infinity, alignment: .leading)

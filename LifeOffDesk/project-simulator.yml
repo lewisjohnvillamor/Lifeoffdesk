@@ -13,6 +13,8 @@ targets:
         buildPhase: resources
       - path: ../eval/taglish-cases.json
         buildPhase: resources
+      - path: ../eval/taglish-heldout.json
+        buildPhase: resources
     dependencies:REPLACE:
       - package: LifeOffDeskCore
     info:

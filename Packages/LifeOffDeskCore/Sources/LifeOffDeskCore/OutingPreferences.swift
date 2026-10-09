@@ -123,8 +123,9 @@ public enum PreferenceValidator {
             prefs.durationMinutes = nil
             return .needsClarification(prefs, .durationOutOfRange)
         }
-        if asked { return .needsClarification(prefs, .modelAsked) }
-        if prefs.isEmptyRequest { return .needsClarification(prefs, .nothingToSearch) }
+        // Ask only when nothing usable was extracted (the prompt's own rule). A model that fills in
+        // categories/keywords/moods/duration and also says "ask" is resolved in favour of its data.
+        if prefs.isEmptyRequest { return .needsClarification(prefs, asked ? .modelAsked : .nothingToSearch) }
         return .valid(prefs)
     }
 

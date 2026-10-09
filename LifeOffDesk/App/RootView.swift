@@ -11,7 +11,7 @@ struct RootView: View {
                 .tabItem { Label("Map", systemImage: "map") }
                 .tag(AppTab.map)
             WalksView()
-                .tabItem { Label("Walks", systemImage: "chart.bar.fill") }
+                .tabItem { Label("Adventures", systemImage: "flag.fill") }
                 .tag(AppTab.walks)
             MeView()
                 .tabItem { Label("Me", systemImage: "person") }
@@ -22,6 +22,7 @@ struct RootView: View {
         .onAppear {
             // Screenshot helper: --tab walks|me (simulator only).
             let args = ProcessInfo.processInfo.arguments
+            if args.contains("--demo-map") { model.setDemoMode(true) }
             if let i = args.firstIndex(of: "--tab"), i + 1 < args.count {
                 model.selectedTab = args[i + 1] == "me" ? .me : args[i + 1] == "walks" ? .walks : .map
             }

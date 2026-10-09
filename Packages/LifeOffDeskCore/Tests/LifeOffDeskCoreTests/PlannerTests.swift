@@ -39,8 +39,11 @@ final class PreferenceValidatorTests: XCTestCase {
         XCTAssertNil(prefs.budgetPHP)
         let longWalk = valid.replacingOccurrences(of: "30", with: "500")
         guard case .needsClarification(_, .durationOutOfRange) = PreferenceValidator.validate(longWalk) else { return XCTFail() }
-        let asked = valid.replacingOccurrences(of: "false", with: "true")
-        guard case .needsClarification(_, .modelAsked) = PreferenceValidator.validate(asked) else { return XCTFail() }
+        // Model says "ask" but extracted usable preferences: search with them instead.
+        let askedWithData = valid.replacingOccurrences(of: "false", with: "true")
+        guard case .valid = PreferenceValidator.validate(askedWithData) else { return XCTFail() }
+        let askedEmpty = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":true}"#
+        guard case .needsClarification(_, .modelAsked) = PreferenceValidator.validate(askedEmpty) else { return XCTFail() }
     }
 
     func testEmptyRequestAsksInsteadOfListingEverything() {
@@ -275,7 +278,7 @@ final class PlannerFlowTests: XCTestCase {
     }
 
     func testClarificationAndNoMatch() async {
-        let ask = good.replacingOccurrences(of: "false", with: "true")
+        let ask = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":true}"#
         let (clarify, _) = await Planner(engine: ScriptedEngine(replies: [ask])).plan("kahit saan", catalog: catalog, origin: .areaCenter(Fixture.origin))
         guard case .clarify = clarify else { return XCTFail() }
         let museum = good.replacingOccurrences(of: "park", with: "museum")

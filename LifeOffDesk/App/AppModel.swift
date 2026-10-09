@@ -319,15 +319,73 @@ final class AppModel: ObservableObject {
     @Published private(set) var stats = WalkStats.empty
     private var statsTask: Task<Void, Never>?
 
-    /// Recomputes lifetime/per-walk stats off the main thread for the walks currently shown.
+    /// Places each adventure passed (within 40 m of its accepted trail).
+    @Published private(set) var discoveries: [UUID: [Place]] = [:]
+
+    var discoveredPlaceIDs: Set<String> { Set(discoveries.values.flatMap { $0.map(\.id) }) }
+
+    /// Recomputes lifetime/per-adventure stats and discoveries off the main thread.
     func refreshStats() {
         statsTask?.cancel()
         let walks = historyWalks
         let grid = self.grid
+        let catalog = content?.catalog
         statsTask = Task { [weak self] in
-            let computed = await Task.detached(priority: .utility) { WalkStats.compute(walks: walks, grid: grid) }.value
+            let (computed, found) = await Task.detached(priority: .utility) { () -> (WalkStats, [UUID: [Place]]) in
+                let stats = WalkStats.compute(walks: walks, grid: grid)
+                var found: [UUID: [Place]] = [:]
+                if let catalog { for walk in walks { found[walk.id] = Discovery.placesPassed(by: walk, in: catalog) } }
+                return (stats, found)
+            }.value
             guard !Task.isCancelled else { return }
             self?.stats = computed
+            self?.discoveries = found
+        }
+    }
+
+    func discovered(in session: WalkSession) -> [Place] {
+        if let cached = discoveries[session.id] { return cached }
+        guard let catalog = content?.catalog else { return [] }
+        return Discovery.placesPassed(by: session, in: catalog)
+    }
+
+    // MARK: Next adventure
+
+    @Published private(set) var adventureIdeas: [AdventureIdea] = []
+
+    /// Real targets only: undiscovered catalogue places matching the user's taste, and computed
+    /// street frontiers (unexplored street length near them). Distances are straight-line.
+    func refreshAdventureIdeas() {
+        guard let content else { return }
+        let origin = currentPosition ?? historyWalks.max(by: { $0.startedAt < $1.startedAt })?.lastSample?.coordinate
+            ?? content.region.center
+        let exploration = displayExploration
+        let grid = self.grid
+        let discoveredIDs = discoveredPlaceIDs
+        let taste = AdventureSuggester.favouriteCategories(discoveries.values.flatMap { $0 } + (destination.map { [$0] } ?? []))
+        let roadContexts = content.packs.map(\.roads)
+        let catalog = content.catalog
+        Task { [weak self] in
+            let ideas = await Task.detached(priority: .userInitiated) { () -> [AdventureIdea] in
+                let center = grid.projection.project(origin)
+                let region = MeterRect(minX: center.x - 2000, minY: center.y - 2000, maxX: center.x + 2000, maxY: center.y + 2000)
+                let explored = grid.cells(for: exploration, region: region)
+                let roads = roadContexts.flatMap(\.roads).map(\.coordinates)
+                    .filter { road in road.contains { Geo.distanceMeters($0, origin) < 1800 } }
+                return AdventureSuggester.frontiers(from: origin, roads: roads, explored: explored, grid: grid, limit: 1)
+                    + AdventureSuggester.undiscoveredPlaces(from: origin, catalog: catalog, discoveredIDs: discoveredIDs,
+                                                            preferred: taste, limit: 2)
+            }.value
+            self?.adventureIdeas = ideas
+        }
+    }
+
+    func choose(_ idea: AdventureIdea) {
+        switch idea.kind {
+        case let .undiscoveredPlace(place): choose(place)
+        case let .frontier(meters, bearing):
+            choose(Place.frontierTarget(at: idea.target,
+                                        label: "New streets · \(AdventureSuggester.compassWord(bearing)) (\(Format.distance(meters)))"))
         }
     }
 

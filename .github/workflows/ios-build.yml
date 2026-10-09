@@ -57,6 +57,9 @@ jobs:
           xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 || true
           APP=$(find build/sim/Build/Products -name "LifeOffDesk.app" -maxdepth 3 | head -1)
           xcrun simctl install "$UDID" "$APP"
+          # Grant location up front so the system prompt never covers screenshots.
+          xcrun simctl privacy "$UDID" grant location com.lifeoffdesk.simulator || true
+          xcrun simctl location "$UDID" set 14.55420,121.02170 || true
           mkdir -p screenshots
           EXTRA=""
           shoot() {

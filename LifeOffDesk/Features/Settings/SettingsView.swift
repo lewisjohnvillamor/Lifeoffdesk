@@ -15,11 +15,11 @@ struct SettingsView: View {
                 Section("Privacy") {
                     Text("No account. Walks, exploration and planner requests stay on this iPhone; inference runs on-device. iOS device backups may include app data.")
                         .font(.footnote).foregroundStyle(Theme.secondaryInk)
-                    Button("Erase my walks and exploration", role: .destructive) { confirmErase = true }
+                    Button("Erase my adventures and exploration", role: .destructive) { confirmErase = true }
                         .foregroundStyle(Theme.danger)
                         .disabled(!model.canErase)
                     if !model.canErase {
-                        Text("Finish the current walk before erasing.").font(.footnote).foregroundStyle(Theme.secondaryInk)
+                        Text("Finish the current adventure before erasing.").font(.footnote).foregroundStyle(Theme.secondaryInk)
                     }
                 }
                 Section("Starter maps") {
@@ -56,7 +56,7 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .confirmationDialog("Erase all walks and exploration on this iPhone?", isPresented: $confirmErase,
+            .confirmationDialog("Erase all adventures and exploration on this iPhone?", isPresented: $confirmErase,
                                 titleVisibility: .visible) {
                 Button("Erase", role: .destructive) { model.erasePersonalData() }
             } message: {
@@ -101,8 +101,10 @@ struct AIDiagnosticsView: View {
                 Button("Verify SHA-256") { Task { await ai.verifyModelHash() } }
                 if let hash = ai.hashResult { Text(hash).font(.footnote.monospaced()) }
             }
-            Section("Taglish evaluation (12 cases)") {
-                Button(running ? "Running on this iPhone…" : "Run all cases") { Task { await runEvaluation() } }
+            Section("Taglish evaluation") {
+                Button(running ? "Running on this iPhone…" : "Run 14 tuning cases") { Task { await runEvaluation("taglish-cases") } }
+                    .disabled(running)
+                Button("Run 60 held-out cases") { Task { await runEvaluation("taglish-heldout") } }
                     .disabled(running)
                 if let first = firstRequestSeconds { row("First request after load", String(format: "%.2f s", first)) }
                 if !results.isEmpty {
@@ -134,9 +136,9 @@ struct AIDiagnosticsView: View {
         .font(.footnote)
     }
 
-    private func runEvaluation() async {
+    private func runEvaluation(_ file: String) async {
         guard let content = model.content,
-              let url = Bundle.main.url(forResource: "taglish-cases", withExtension: "json"),
+              let url = Bundle.main.url(forResource: file, withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let cases = try? JSONDecoder().decode(PlannerEvaluation.CaseFile.self, from: data).cases else { return }
         running = true

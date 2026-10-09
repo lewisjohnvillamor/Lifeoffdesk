@@ -1,7 +1,7 @@
 import LifeOffDeskCore
 import SwiftUI
 
-/// Walks tab: this week at a glance, the timelapse, and every walk by month.
+/// Adventures tab: this week at a glance, calendar, the timelapse, and every adventure by month.
 struct WalksView: View {
     @EnvironmentObject private var model: AppModel
     @State private var selected: WalkSession?
@@ -42,7 +42,7 @@ struct WalksView: View {
                 .padding(Theme.inset)
             }
             .background(PaperStyle.island)
-            .navigationTitle("Walks")
+            .navigationTitle("Adventures")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selected) { RecapView(session: $0).environmentObject(model) }
         }
@@ -64,13 +64,13 @@ struct WalksView: View {
                     .font(.footnote).foregroundStyle(Theme.secondaryInk)
             }
             HStack(spacing: 0) {
-                weekStat("\(thisWeek.count)", "Walks", last: "\(lastWeek.count)")
-                Divider().frame(height: 44)
-                weekStat(Self.km(thisWeek.reduce(0) { $0 + $1.distanceMeters }), "Walked",
-                         last: Self.km(lastWeek.reduce(0) { $0 + $1.distanceMeters }))
+                weekStat("\(thisWeek.count)", "Adventures", last: "\(lastWeek.count)")
                 Divider().frame(height: 44)
                 weekStat(Self.km(thisWeek.reduce(0) { $0 + $1.newDistanceMeters }), "New streets",
                          last: Self.km(lastWeek.reduce(0) { $0 + $1.newDistanceMeters }))
+                Divider().frame(height: 44)
+                weekStat("\(placesFound(from: start, to: end))", "Places found",
+                         last: "\(placesFound(from: lastStart, to: start))")
             }
             HStack {
                 ForEach(0..<7, id: \.self) { offset in
@@ -87,7 +87,7 @@ struct WalksView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .accessibilityElement()
-                    .accessibilityLabel("\(day.formatted(.dateTime.weekday(.wide))): \(walked ? "walked" : "no walk")")
+                    .accessibilityLabel("\(day.formatted(.dateTime.weekday(.wide))): \(walked ? "adventure" : "none")")
                 }
             }
         }
@@ -95,6 +95,12 @@ struct WalksView: View {
         .padding(18)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Theme.border))
+    }
+
+    /// Distinct places passed by adventures that started in [start, end).
+    private func placesFound(from start: Date, to end: Date) -> Int {
+        Set(model.historyWalks.filter { $0.startedAt >= start && $0.startedAt < end }
+            .flatMap { model.discoveries[$0.id] ?? [] }.map(\.id)).count
     }
 
     private func weekStat(_ value: String, _ title: String, last: String) -> some View {
@@ -150,7 +156,7 @@ struct WalksView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(count == 0)
-                        .accessibilityLabel("\(day.formatted(date: .complete, time: .omitted)), \(count) walk\(count == 1 ? "" : "s")")
+                        .accessibilityLabel("\(day.formatted(date: .complete, time: .omitted)), \(count) adventure\(count == 1 ? "" : "s")")
                     } else {
                         Color.clear.frame(height: 40)
                     }
@@ -190,7 +196,7 @@ struct WalksView: View {
                 }
             }
             if model.historyWalks.isEmpty {
-                Text("Your walks will appear here.").font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                Text("Your adventures will appear here.").font(.subheadline).foregroundStyle(Theme.secondaryInk)
                     .frame(maxWidth: .infinity).padding(.top, 24)
             }
             ForEach(groups.keys.sorted(by: >), id: \.self) { month in
@@ -224,12 +230,13 @@ struct WalksView: View {
             .frame(width: 64, height: 64)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                Text("Walk at \(walk.startedAt.formatted(date: .omitted, time: .shortened))").font(.headline)
+                Text("Adventure at \(walk.startedAt.formatted(date: .omitted, time: .shortened))").font(.headline)
                 Text("\(walk.startedAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())) · \(Int((walk.activeDuration(at: walk.endedAt ?? walk.startedAt) / 60).rounded())) min")
                     .font(.footnote).foregroundStyle(Theme.secondaryInk)
                 HStack(spacing: 4) {
-                    Text("\(Self.km(recap?.newDistanceMeters ?? 0)) new").font(.subheadline.weight(.semibold))
-                    Text("· \(Self.km(walk.distanceMeters))").font(.footnote).foregroundStyle(Theme.secondaryInk)
+                    Text("\(Self.km(recap?.newDistanceMeters ?? 0)) new streets").font(.subheadline.weight(.semibold))
+                    let found = model.discoveries[walk.id]?.count ?? 0
+                    Text("· \(found) place\(found == 1 ? "" : "s")").font(.footnote).foregroundStyle(Theme.secondaryInk)
                 }
             }
             Spacer()

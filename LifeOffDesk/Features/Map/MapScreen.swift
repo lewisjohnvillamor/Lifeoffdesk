@@ -73,13 +73,13 @@ struct MapScreen: View {
         .sheet(item: $model.presentedRecap) { session in
             RecapView(session: session).environmentObject(model)
         }
-        .alert("Walk paused", isPresented: Binding(get: { model.recoveredSession != nil },
+        .alert("Adventure paused", isPresented: Binding(get: { model.recoveredSession != nil },
                                                     set: { if !$0 { model.recoveredSession = nil } })) {
             Button("Resume walking") { model.resume() }
-            Button("Finish walk") { model.finish() }
+            Button("Finish") { model.finish() }
             Button("Later", role: .cancel) {}
         } message: {
-            Text("The app closed during your walk. Nothing was recorded while it was closed.")
+            Text("The app closed during your adventure. Nothing was recorded while it was closed.")
         }
     }
 
@@ -205,13 +205,11 @@ struct MapScreen: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             VStack(alignment: .leading, spacing: 10) {
                 if let session = model.activeSession {
-                    statRow("timer", "This walk", Format.duration(session.activeDuration(at: context.date)),
+                    statRow("timer", "This adventure", Format.duration(session.activeDuration(at: context.date)),
                             unit: Format.distance(session.distanceMeters))
                 }
-                statRow("pencil.line", "New today", Self.km(model.todayNewDistanceMeters), unit: "km")
-                statRow("flag", "Total new streets",
-                        Self.km(model.stats.totalNewDistanceMeters + (model.demoMode ? 0 : model.liveNewDistanceMeters)),
-                        unit: "km")
+                statRow("pencil.line", "New streets today", Self.km(model.todayNewDistanceMeters), unit: "km")
+                statRow("sparkles", "Places found", "\(model.discoveredPlaceIDs.count)", unit: "")
             }
         }
     }
@@ -346,7 +344,7 @@ struct HoldToEndButton: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Finish")
-        .accessibilityHint("Touch and hold to end the walk")
+        .accessibilityHint("Touch and hold to end the adventure")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onEnd() }
     }

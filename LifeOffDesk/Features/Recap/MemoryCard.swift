@@ -21,6 +21,7 @@ struct MemoryCardView: View {
     /// Subject cut-out for the sticker style (nil = use the photo with a white border).
     var sticker: UIImage?
     let isSample: Bool
+    var placesFound: Int = 0
 
     private var textColor: Color { style == .sticker ? PaperStyle.ink : .white }
 
@@ -56,7 +57,7 @@ struct MemoryCardView: View {
                             Text("km").font(.system(size: 15, weight: .semibold))
                             Text("New streets").font(.system(size: 13, weight: .medium)).padding(.leading, 6)
                         }
-                        Text("\(Self.km(recap.distanceMeters)) km · \(Self.minutes(recap.activeDuration)) min")
+                        Text("\(placesFound) place\(placesFound == 1 ? "" : "s") · \(Self.minutes(recap.activeDuration)) min")
                             .font(.system(size: 14, weight: .medium))
                         Text("There's more to life than your screen.")
                             .font(.system(size: 11)).opacity(0.85).padding(.top, 2)
@@ -294,7 +295,7 @@ struct MemoryCardSheet: View {
         let photos = model.moments(for: session).compactMap { model.photo(for: $0) }
         let card = MemoryCardView(session: session, recap: recap, style: style, photos: photos,
                                   selected: min(selected, max(0, photos.count - 1)), sticker: sticker,
-                                  isSample: model.isDemo(session))
+                                  isSample: model.isDemo(session), placesFound: model.discovered(in: session).count)
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {

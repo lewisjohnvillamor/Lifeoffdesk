@@ -16,23 +16,28 @@ struct RecapView: View {
                     Text("You made room for a little adventure.")
                         .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
                     if model.isDemo(session) {
-                        Label("Sample walk · not real GPS", systemImage: "sparkles")
+                        Label("Sample adventure · not real GPS", systemImage: "sparkles")
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
                     }
                     Button { showCard = true } label: {
                         MemoryCardView(session: session, recap: recap,
                                        photos: model.moments(for: session).compactMap { model.photo(for: $0) },
-                                       isSample: model.isDemo(session))
+                                       isSample: model.isDemo(session), placesFound: model.discovered(in: session).count)
                             .scaleEffect(0.78)
                             .frame(width: MemoryCardView.size.width * 0.78, height: MemoryCardView.size.height * 0.78)
                             .shadow(color: .black.opacity(0.15), radius: 14, y: 8)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Walk memory card. Add a photo and share.")
+                    .accessibilityLabel("Adventure card. Add a photo and share.")
                     HStack(spacing: 0) {
-                        stat("Distance", Format.distance(recap.distanceMeters))
-                        stat("Time", Format.duration(recap.activeDuration))
                         stat("New streets", Format.distance(recap.newDistanceMeters))
+                        stat("Places found", "\(model.discovered(in: session).count)")
+                        stat("Time", Format.duration(recap.activeDuration))
+                    }
+                    let found = model.discovered(in: session)
+                    if !found.isEmpty {
+                        Text("You passed " + found.prefix(4).map(\.name).joined(separator: ", ") + (found.count > 4 ? " and more" : ""))
+                            .font(.footnote).foregroundStyle(Theme.secondaryInk).multilineTextAlignment(.center)
                     }
                     Button { showCard = true } label: { Label("Make a card", systemImage: "camera") }
                         .buttonStyle(PrimaryButtonStyle())
