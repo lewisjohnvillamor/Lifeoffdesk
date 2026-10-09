@@ -1,5 +1,12 @@
 # Life Off Desk — build status
 
+## CI trimmed for the submission crunch (2026-10-09, founder decision)
+
+- The `simulator-screenshots` job is paused: it runs only via Actions → iOS build check → Run workflow. It was the slowest job (~10 min of macOS runner per push), and every branch push ran twice (push + pull_request).
+- Branch pushes now build through their PR only (main still builds on push), and a newer push cancels the older run.
+- Still on every PR: core Swift tests, Python tests, and the unsigned iOS device build.
+- **Re-enable after submission**: remove the `if:` on `simulator-screenshots` in `.github/workflows/ios-build.yml`.
+
 ## "Your world" AI coach on the map (2026-10-09, founder request)
 
 - Problem: the AI only answered when asked (planner, history search, recap). Now it also speaks first.

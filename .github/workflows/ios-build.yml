@@ -2,10 +2,15 @@
 # tests on macOS. It does not install on a phone or prove on-device inference.
 name: iOS build check
 on:
+  # Branch pushes are covered by their pull request; pushing to main still builds.
   push:
-    branches: [main, "claude/**"]
+    branches: [main]
   pull_request:
   workflow_dispatch:
+# A newer push replaces a run still in progress for the same branch/PR.
+concurrency:
+  group: ios-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: macos-15
@@ -33,7 +38,10 @@ jobs:
 
   # Visual check of the real SwiftUI map in the iOS Simulator (AI excluded there).
   # Screenshots are uploaded as an artifact; demo views show labelled synthetic data.
+  # Paused during the submission crunch (slowest job, ~10 min of macOS runner per push).
+  # Run it on demand: Actions → iOS build check → Run workflow. Re-enable per push afterwards.
   simulator-screenshots:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-15
     timeout-minutes: 40
     steps:
