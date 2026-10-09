@@ -62,7 +62,7 @@ public struct Planner: Sendable {
     }
 
     public func plan(_ request: String, catalog: PlaceCatalog, origin: DistanceOrigin,
-                     options: SearchOptions = SearchOptions()) async -> (PlannerResponse, PlannerTrace) {
+                     options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil) async -> (PlannerResponse, PlannerTrace) {
         let (outcome, trace) = await extract(request)
         switch outcome {
         case nil, .invalid?:
@@ -70,16 +70,17 @@ public struct Planner: Sendable {
         case let .needsClarification(prefs, reason)?:
             return (.clarify(prefs, question: PlannerCopy.clarification(reason)), trace)
         case let .valid(prefs)?:
-            return (Self.respond(prefs, catalog: catalog, origin: origin, options: options), trace)
+            return (Self.respond(prefs, catalog: catalog, origin: origin, options: options, graph: graph), trace)
         }
     }
 
     /// Deterministic part, also used by manual filters (which are not Local AI evidence).
     public static func respond(_ prefs: OutingPreferences, catalog: PlaceCatalog, origin: DistanceOrigin,
-                               options: SearchOptions) -> PlannerResponse {
-        let suggestions = PlaceSearch.suggest(prefs, catalog: catalog, origin: origin, options: options)
+                               options: SearchOptions, graph: WalkingGraph? = nil) -> PlannerResponse {
+        let suggestions = PlaceSearch.suggest(prefs, catalog: catalog, origin: origin, options: options, graph: graph)
         guard !suggestions.isEmpty else { return .noMatch(prefs) }
         return .suggestions(prefs, intro: PlannerCopy.intro(prefs: prefs, count: suggestions.count, origin: origin,
-                                                            radiusMeters: options.radiusMeters), suggestions)
+                                                            radiusMeters: options.radiusMeters,
+                                                            byStreets: suggestions.contains { $0.street != nil }), suggestions)
     }
 }

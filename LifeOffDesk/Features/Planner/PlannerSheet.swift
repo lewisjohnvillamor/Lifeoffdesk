@@ -316,9 +316,9 @@ struct AdventureIdeaCard: View {
     private var subtitle: String {
         switch idea.kind {
         case let .frontier(_, bearing):
-            return "Pa-\(AdventureSuggester.compassWord(bearing)) · \(Format.distance(idea.straightLineMeters)) straight-line"
+            return "Pa-\(AdventureSuggester.compassWord(bearing)) · \(PlannerCopy.distanceText(idea.street, straightLine: idea.straightLineMeters))"
         case let .undiscoveredPlace(place):
-            return "Hindi mo pa napupuntahan · \(PlannerCopy.categoryWord(place.category).capitalized) · \(Format.distance(idea.straightLineMeters))"
+            return "Hindi mo pa napupuntahan · \(PlannerCopy.categoryWord(place.category).capitalized) · \(PlannerCopy.distanceText(idea.street, straightLine: idea.straightLineMeters))"
         }
     }
 }

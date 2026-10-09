@@ -113,7 +113,7 @@ extension PlaceCatalog {
     }
 }
 
-/// Compact road context: visual only, never a routing graph.
+/// Compact road context: map drawing, street matching and street-distance estimates (not navigation).
 public struct RoadContext: Codable, Sendable {
     public struct Road: Codable, Sendable {
         /// OSM highway class.

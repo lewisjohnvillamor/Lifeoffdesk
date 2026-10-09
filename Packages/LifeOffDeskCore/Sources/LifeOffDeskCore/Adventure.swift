@@ -22,7 +22,7 @@ public enum Discovery {
 }
 
 /// A suggested next adventure. Targets are real records or computed street frontiers; the copy
-/// says which, and distances are straight-line.
+/// says which. Distances are straight-line unless `street` is filled in.
 public struct AdventureIdea: Hashable, Sendable, Identifiable {
     public enum Kind: Hashable, Sendable {
         /// A catalogue place the user has not passed yet.
@@ -34,6 +34,8 @@ public struct AdventureIdea: Hashable, Sendable, Identifiable {
     public var kind: Kind
     public var target: Coordinate
     public var straightLineMeters: Double
+    /// Distance along bundled streets, filled in by the app when a walking graph is ready.
+    public var street: StreetDistance? = nil
 
     public var id: String {
         switch kind {

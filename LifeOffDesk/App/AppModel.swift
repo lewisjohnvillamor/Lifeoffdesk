@@ -37,7 +37,7 @@ final class AppModel: ObservableObject {
     // Walking
     @Published private(set) var recorder: WalkRecorder?
     @Published private(set) var phase: WalkPhase = .idle
-    @Published private(set) var lastFix: TrackSample?
+    @Published private(set) var lastFix: TrackSample? { didSet { refreshDestinationStreet() } }
     @Published private(set) var lastFixReceivedAt: Date?
     @Published private(set) var lastRejection: RejectionReason?
     @Published var permissionDenied = false
@@ -46,7 +46,7 @@ final class AppModel: ObservableObject {
     @Published var presentedRecap: WalkSession?
 
     // Planner
-    @Published var destination: Place?
+    @Published var destination: Place? { didSet { refreshDestinationStreet() } }
     @Published var plannerText = ""
     @Published private(set) var plannerState: PlannerState = .idle
     @Published private(set) var lastTrace: PlannerTrace?
@@ -140,12 +140,43 @@ final class AppModel: ObservableObject {
 
     /// Built once in the background from bundled roads; nil until ready (legacy strip until then).
     private(set) var streetNetwork: StreetNetwork?
+    /// Street graph for "how far along streets"; nil until built (distances fall back to straight-line).
+    private(set) var walkingGraph: WalkingGraph?
+
+    /// Street distance from here to the chosen destination, recomputed when either moves 40 m.
+    @Published private(set) var destinationStreet: StreetDistance?
+    private var destinationStreetKey: (id: String, from: Coordinate)?
+
+    private func refreshDestinationStreet() {
+        guard let graph = walkingGraph, let place = destination, let from = currentPosition else {
+            if destination == nil { destinationStreet = nil; destinationStreetKey = nil }
+            return
+        }
+        if let key = destinationStreetKey, key.id == place.id, Geo.distanceMeters(key.from, from) < 40 { return }
+        if destinationStreetKey?.id != place.id { destinationStreet = nil }
+        destinationStreetKey = (place.id, from)
+        let target = place.coordinate
+        Task { [weak self] in
+            let result = await Task.detached(priority: .utility) { graph.distance(from: from, to: target) }.value
+            guard self?.destination?.id == place.id else { return }
+            self?.destinationStreet = result
+        }
+    }
     /// Matched-street reveal of the shown history (from `stats`), used for the paper island.
     @Published private(set) var streetReveal: Exploration?
     private var liveCache: (key: String, reveal: [ExploredPath], runs: [TrailRun])?
 
     private func buildStreetNetwork() {
         guard let content else { return }
+        Task { [weak self] in
+            // Walking graph over every bundled road (context trunk roads included), for distances.
+            let graph = await Task.detached(priority: .utility) {
+                WalkingGraph(roads: content.packs.flatMap(\.roads.roads))
+            }.value
+            self?.walkingGraph = graph
+            self?.refreshDestinationStreet()
+            self?.refreshAdventureIdeas()
+        }
         Task { [weak self] in
             let network = await Task.detached(priority: .utility) {
                 StreetNetwork(roads: content.matchingRoads, origin: content.region.center)
@@ -411,7 +442,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var adventureIdeas: [AdventureIdea] = []
 
     /// Real targets only: undiscovered catalogue places matching the user's taste, and computed
-    /// street frontiers (unexplored street length near them). Distances are straight-line.
+    /// street frontiers (unexplored street length near them). Distances follow streets once the graph is ready.
     func refreshAdventureIdeas() {
         guard let content else { return }
         let origin = currentPosition ?? historyWalks.max(by: { $0.startedAt < $1.startedAt })?.lastSample?.coordinate
@@ -424,21 +455,30 @@ final class AppModel: ObservableObject {
         let catalog = content.catalog
         let network = streetNetwork
         let walkedStreets = stats.streetCoverage
-        Task { [weak self] in
-            let ideas = await Task.detached(priority: .userInitiated) { () -> [AdventureIdea] in
-                if let network {
-                    return AdventureSuggester.frontiers(from: origin, network: network, coverage: walkedStreets, limit: 1)
-                        + AdventureSuggester.undiscoveredPlaces(from: origin, catalog: catalog, discoveredIDs: discoveredIDs,
-                                                                preferred: taste, limit: 2)
-                }
-                let center = grid.projection.project(origin)
-                let region = MeterRect(minX: center.x - 2000, minY: center.y - 2000, maxX: center.x + 2000, maxY: center.y + 2000)
-                let explored = grid.cells(for: exploration, region: region)
-                let roads = roadContexts.flatMap(\.roads).map(\.coordinates)
-                    .filter { road in road.contains { Geo.distanceMeters($0, origin) < 1800 } }
-                return AdventureSuggester.frontiers(from: origin, roads: roads, explored: explored, grid: grid, limit: 1)
+        let graph = walkingGraph
+        let suggest: @Sendable () -> [AdventureIdea] = {
+            if let network {
+                return AdventureSuggester.frontiers(from: origin, network: network, coverage: walkedStreets, limit: 1)
                     + AdventureSuggester.undiscoveredPlaces(from: origin, catalog: catalog, discoveredIDs: discoveredIDs,
                                                             preferred: taste, limit: 2)
+            }
+            let center = grid.projection.project(origin)
+            let region = MeterRect(minX: center.x - 2000, minY: center.y - 2000, maxX: center.x + 2000, maxY: center.y + 2000)
+            let explored = grid.cells(for: exploration, region: region)
+            let roads = roadContexts.flatMap(\.roads).map(\.coordinates)
+                .filter { road in road.contains { Geo.distanceMeters($0, origin) < 1800 } }
+            return AdventureSuggester.frontiers(from: origin, roads: roads, explored: explored, grid: grid, limit: 1)
+                + AdventureSuggester.undiscoveredPlaces(from: origin, catalog: catalog, discoveredIDs: discoveredIDs,
+                                                        preferred: taste, limit: 2)
+        }
+        Task { [weak self] in
+            let ideas = await Task.detached(priority: .userInitiated) { () -> [AdventureIdea] in
+                var ideas = suggest()
+                if let graph {
+                    let streets = graph.distances(from: origin, to: ideas.map(\.target))
+                    for i in ideas.indices { ideas[i].street = streets[i] }
+                }
+                return ideas
             }.value
             self?.adventureIdeas = ideas
         }
@@ -718,7 +758,8 @@ final class AppModel: ObservableObject {
             }
             self.plannerState = .thinking
             let (response, trace) = await Planner(engine: engine).plan(request, catalog: content.catalog,
-                                                                       origin: origin, options: options)
+                                                                       origin: origin, options: options,
+                                                                       graph: self.walkingGraph)
             guard !Task.isCancelled else { return }
             self.lastTrace = trace
             self.plannerState = .answered(response, usedAI: true)
@@ -735,7 +776,8 @@ final class AppModel: ObservableObject {
     func manualSearch(category: PlaceCategory) {
         guard let content, let origin = distanceOrigin else { return }
         let response = Planner.respond(OutingPreferences(categories: [category]), catalog: content.catalog,
-                                       origin: origin, options: SearchOptions(radiusMeters: searchRadiusMeters))
+                                       origin: origin, options: SearchOptions(radiusMeters: searchRadiusMeters),
+                                       graph: walkingGraph)
         plannerState = .answered(response, usedAI: false)
     }
 

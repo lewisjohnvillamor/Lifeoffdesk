@@ -194,7 +194,7 @@ struct MapScreen: View {
             Image(systemName: "flag.fill").font(.caption).accessibilityHidden(true)
             Text(place.name).font(.footnote.weight(.semibold)).lineLimit(1)
             if let position = model.currentPosition {
-                Text("· \(Format.distance(Geo.distanceMeters(position, place.coordinate))) straight-line")
+                Text("· " + PlannerCopy.distanceText(model.destinationStreet, straightLine: Geo.distanceMeters(position, place.coordinate)))
                     .font(.footnote).foregroundStyle(Theme.secondaryInk)
             }
             if model.phase == .idle {

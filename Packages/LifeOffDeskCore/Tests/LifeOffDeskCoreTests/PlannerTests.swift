@@ -155,7 +155,7 @@ final class PlaceSearchTests: XCTestCase {
         let caveat = PlannerCopy.caveat(unknown)
         XCTAssertTrue(caveat.contains("Hours & access unverified"))
         XCTAssertTrue(caveat.contains("price unknown"))
-        XCTAssertEqual(PlannerCopy.reason(unknown), "Café · 100 m")
+        XCTAssertEqual(PlannerCopy.reason(unknown), "Café · 100 m straight-line")
     }
 
     func testKeywordFindsPlacesByNameOrCuisineOnly() {

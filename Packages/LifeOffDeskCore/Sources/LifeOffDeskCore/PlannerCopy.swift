@@ -38,8 +38,9 @@ public enum PlannerCopy {
         }
     }
 
-    /// One short line above the results, e.g. "3 park malapit sa'yo · straight-line".
-    public static func intro(prefs: OutingPreferences, count: Int, origin: DistanceOrigin, radiusMeters: Double) -> String {
+    /// One short line above the results, e.g. "3 park malapit sa'yo · by streets".
+    public static func intro(prefs: OutingPreferences, count: Int, origin: DistanceOrigin, radiusMeters: Double,
+                             byStreets: Bool = false) -> String {
         let what = prefs.categories.isEmpty ? "lugar" : prefs.categories.map(categoryWord).joined(separator: "/")
         var parts: [String]
         switch origin {
@@ -48,17 +49,23 @@ public enum PlannerCopy {
         }
         if let minutes = prefs.durationMinutes { parts.append("\(minutes) min") }
         if let budget = prefs.budgetPHP { parts.append("₱\(budget)") }
-        parts.append("straight-line")
+        parts.append(byStreets ? "by streets" : "straight-line")
         return parts.joined(separator: " · ")
     }
 
-    /// Compact subtitle: "Park · 850 m", plus verified matches only.
+    /// Compact subtitle: "Park · 3.5 km lakad · ~47 min", plus verified matches only.
     public static func reason(_ suggestion: Suggestion) -> String {
-        var parts = [categoryWord(suggestion.place.category).capitalized, Format.distance(suggestion.straightLineMeters)]
+        var parts = [categoryWord(suggestion.place.category).capitalized, distanceText(suggestion.street, straightLine: suggestion.straightLineMeters)]
         for word in suggestion.matchedKeywords { parts.append(word) }
         for mood in suggestion.matchedMoods { parts.append("\(moodWord(mood)) ✓") }
         if suggestion.withinKnownBudget { parts.append("pasok sa budget") }
         return parts.joined(separator: " · ")
+    }
+
+    /// "3.5 km lakad · ~47 min" along mapped streets, or "1.5 km straight-line" when unknown.
+    public static func distanceText(_ street: StreetDistance?, straightLine: Double) -> String {
+        guard let street else { return "\(Format.distance(straightLine)) straight-line" }
+        return "\(Format.distance(street.meters)) lakad · ~\(street.walkingMinutes) min"
     }
 
     /// One caveat line summarising every uncertainty; full labels stay available on tap.
@@ -78,6 +85,7 @@ public enum PlannerCopy {
         if suggestion.uncertainties.contains(where: { if case .mayExceedTime = $0 { return true }; return false }) {
             parts.append("baka kulang ang oras")
         }
+        if suggestion.uncertainties.contains(.routeThroughRestricted) { parts.append("may private road sa daan") }
         return parts.joined(separator: " · ")
     }
 
@@ -92,6 +100,7 @@ public enum PlannerCopy {
         case let .mayExceedTime(minutes): return "Baka hindi kasya sa \(minutes) minutes mo"
         case let .noKeywordMatch(words): return "Walang exact match para sa \(words.joined(separator: ", ")); ito ang pinakamalapit na \(words.count == 1 ? "kategorya" : "mga kategorya")"
         case .cuisineFromSource: return "Cuisine galing sa OpenStreetMap (unverified)"
+        case .routeThroughRestricted: return "Ang pinakamaikling daan ay dumadaan sa private/gated road ayon sa OpenStreetMap; baka hindi ka papasukin"
         }
     }
 }
