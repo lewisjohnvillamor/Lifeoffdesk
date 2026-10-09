@@ -7,6 +7,7 @@ struct RecapView: View {
     @Environment(\.dismiss) private var dismiss
     let session: WalkSession
     @State private var showCard = false
+    @State private var confirmDelete = false
 
     var body: some View {
         let recap = model.recap(for: session)
@@ -22,7 +23,8 @@ struct RecapView: View {
                     Button { showCard = true } label: {
                         MemoryCardView(session: session, recap: recap,
                                        photos: model.moments(for: session).compactMap { model.photo(for: $0) },
-                                       isSample: model.isDemo(session), placesFound: model.discovered(in: session).count)
+                                       isSample: model.isDemo(session), placesFound: model.discovered(in: session).count,
+                                       route: model.cardRoute(for: session))
                             .scaleEffect(0.78)
                             .frame(width: MemoryCardView.size.width * 0.78, height: MemoryCardView.size.height * 0.78)
                             .shadow(color: .black.opacity(0.15), radius: 14, y: 8)
@@ -55,7 +57,25 @@ struct RecapView: View {
             .background(Theme.canvas)
             .navigationTitle(session.startedAt.formatted(date: .abbreviated, time: .shortened))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                if !model.isDemo(session) {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }
+                            .foregroundStyle(Theme.danger)
+                            .accessibilityLabel("Delete adventure")
+                    }
+                }
+            }
+            .confirmationDialog("Delete this adventure?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("Delete adventure", role: .destructive) {
+                    model.deleteAdventure(session)
+                    dismiss()
+                }
+                Button("Keep it", role: .cancel) {}
+            } message: {
+                Text("Its trail, photos and the streets it uncovered will be removed from this iPhone. This can't be undone.")
+            }
             .sheet(isPresented: $showCard) { MemoryCardSheet(session: session).environmentObject(model) }
         }
     }

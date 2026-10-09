@@ -15,6 +15,9 @@ targets:
         buildPhase: resources
       - path: ../eval/taglish-heldout.json
         buildPhase: resources
+      # Simulator-only test fixture for photo/collage/sticker screenshots.
+      - path: ../assets/mascot/life-off-desk-cat-concept.png
+        buildPhase: resources
     dependencies:REPLACE:
       - package: LifeOffDeskCore
     info:

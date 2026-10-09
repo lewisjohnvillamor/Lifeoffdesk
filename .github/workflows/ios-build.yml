@@ -84,6 +84,9 @@ jobs:
           shoot 06-planner-results --open-planner --planner-filter park
           shoot 07-recap-card --demo-map --open-recap
           shoot 08-memory-card --demo-map --open-card
+          shoot 08b-card-photo --demo-map --open-card --seed-photo --card-style Photo
+          shoot 08c-card-collage --demo-map --open-card --seed-photo --card-style Collage
+          shoot 08d-card-sticker --demo-map --open-card --seed-photo --card-style Sticker
           shoot 10-walks-tab --demo-map --tab walks
           shoot 11-me-tab --demo-map --tab me
           # Simulated GPS walk through the real tracking pipeline (simulator location, labelled in-app).

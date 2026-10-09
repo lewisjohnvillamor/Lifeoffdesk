@@ -89,6 +89,21 @@ public final class LocalStore: @unchecked Sendable {
         try clearActiveSession()
     }
 
+    /// Permanently removes one finished adventure and its captured photos.
+    public func deleteFinished(_ sessionID: UUID) throws {
+        let url = walksDirectory.appendingPathComponent("\(sessionID.uuidString).json")
+        try removeWithBackup(url)
+        var moments = loadMoments()
+        for memory in moments where memory.sessionID == sessionID {
+            try? fileManager.removeItem(at: memoriesDirectory.appendingPathComponent(memory.fileName))
+        }
+        moments.removeAll { $0.sessionID == sessionID }
+        if fileManager.fileExists(atPath: memoriesDirectory.path) {
+            try encoder.encode(moments).write(to: momentsIndexURL, options: .atomic)
+        }
+        try? fileManager.removeItem(at: memoriesDirectory.appendingPathComponent("\(sessionID.uuidString).jpg"))
+    }
+
     public func loadFinishedWalks() -> [WalkSession] {
         let urls = (try? fileManager.contentsOfDirectory(at: walksDirectory, includingPropertiesForKeys: nil)) ?? []
         return urls.filter { $0.pathExtension == "json" }

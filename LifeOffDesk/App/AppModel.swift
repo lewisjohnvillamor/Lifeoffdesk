@@ -748,6 +748,35 @@ final class AppModel: ObservableObject {
         destination = nil
     }
 
+    // MARK: Delete one adventure
+
+    /// Permanently removes a finished adventure: its trail, photos and the streets it uncovered.
+    func deleteAdventure(_ session: WalkSession) {
+        guard !isDemo(session), let store else { return }
+        do {
+            try store.deleteFinished(session.id)
+            finishedWalks.removeAll { $0.id == session.id }
+            moments.removeAll { $0.sessionID == session.id }
+            exploration.paths.removeAll { $0.sessionID == session.id }
+            try store.saveExploration(exploration)
+            if presentedRecap?.id == session.id { presentedRecap = nil }
+            refreshStats()
+        } catch {
+            storeProblem = "Could not delete the adventure: \(error.localizedDescription)"
+        }
+    }
+
+    /// Route for cards: matched street pieces (clean lines on real streets) plus off-street
+    /// stretches; falls back to the raw accepted trail before street data is ready.
+    func cardRoute(for session: WalkSession) -> [[Coordinate]] {
+        if let network = streetNetwork, let coverage = stats.coverageByWalk[session.id] {
+            let pieces = coverage.pieces(in: network).map { $0.points.map(network.projection.unproject) }
+            let off = stats.unmatchedByWalk[session.id] ?? []
+            if !pieces.isEmpty || !off.isEmpty { return pieces + off }
+        }
+        return session.segments.map { $0.map(\.coordinate) }
+    }
+
     // MARK: Privacy
 
     var canErase: Bool { recorder == nil }

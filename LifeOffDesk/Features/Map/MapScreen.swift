@@ -8,6 +8,7 @@ struct MapScreen: View {
     @State private var geometry: MapGeometry?
     @State private var showPlanner = false
     @State private var cardSession: WalkSession?
+    @State private var cardStyle: CardStyle = .photo
     @State private var showCamera = false
     @State private var followUser = true
     @State private var tilted = true
@@ -52,9 +53,20 @@ struct MapScreen: View {
             guard arguments.contains("--open-recap") || arguments.contains("--open-card") else { return }
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             guard model.demoMode, let walk = model.historyWalks.first else { return }
+            // --seed-photo: adds the bundled test image (simulator build only) to this sample adventure,
+            // exercising photo saving, thumbnails, collage and the sticker cut-out.
+            if arguments.contains("--seed-photo"), let image = UIImage(named: "life-off-desk-cat-concept.png") {
+                model.addMoment(image, to: walk, at: walk.lastSample?.coordinate)
+                model.addMoment(image, to: walk, at: walk.segments.first?.first?.coordinate)
+            }
+            if let i = arguments.firstIndex(of: "--card-style"), i + 1 < arguments.count {
+                cardStyle = CardStyle(rawValue: arguments[i + 1]) ?? .photo
+            }
             if arguments.contains("--open-card") { cardSession = walk } else { model.presentedRecap = walk }
         }
-        .sheet(item: $cardSession) { session in MemoryCardSheet(session: session).environmentObject(model) }
+        .sheet(item: $cardSession) { session in
+            MemoryCardSheet(session: session, initialStyle: cardStyle).environmentObject(model)
+        }
         #endif
         .onChange(of: model.demoMode) { _, on in
             if on { camera = MapCamera(center: .zero, pointsPerMeter: launchScale ?? 0.12) }
