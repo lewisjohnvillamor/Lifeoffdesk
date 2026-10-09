@@ -21,6 +21,19 @@ nwr["tourism"~"^(museum|viewpoint)$"]["name"]({b});
 way["highway"~"^(footway|path|pedestrian|residential|living_street|service|tertiary|secondary|primary)$"]({b});
 );out tags center geom;'''
 
+def representative_point(element):
+    """Node position, Overpass center, or bounds midpoint (`out geom` returns bounds, not center)."""
+    if element['type'] == 'node' and 'lat' in element and 'lon' in element:
+        return {'lat':element['lat'], 'lon':element['lon']}, 'node'
+    center = element.get('center', {})
+    if 'lat' in center and 'lon' in center:
+        return center, 'overpass-center'
+    bounds = element.get('bounds', {})
+    if all(k in bounds for k in ('minlat', 'minlon', 'maxlat', 'maxlon')):
+        return {'lat':(bounds['minlat']+bounds['maxlat'])/2,
+                'lon':(bounds['minlon']+bounds['maxlon'])/2}, 'bounds-midpoint'
+    return None, None
+
 def convert(raw, retrieved_at):
     if raw.get('remark'):
         raise ValueError('Overpass reported a partial/error response: ' + raw['remark'])
@@ -37,13 +50,14 @@ def convert(raw, retrieved_at):
         elif tags.get('tourism') in ('museum', 'viewpoint'):
             category = 'museum' if tags['tourism'] == 'museum' else 'scenic'
         if category and tags.get('name'):
-            position = element if element['type'] == 'node' else element.get('center', {})
-            if 'lat' in position and 'lon' in position:
+            position, method = representative_point(element)
+            if position:
                 places.append({'id':f"osm:{element['type']}:{element['id']}",
                                'name':tags['name'], 'latitude':position['lat'],
                                'longitude':position['lon'], 'category':category,
                                'tags':[], 'sourceURL':f"https://www.openstreetmap.org/{element['type']}/{element['id']}",
                                'retrievedAt':retrieved_at, 'verificationStatus':'source-only-unreviewed',
+                               'positionMethod':method,
                                'budgetPHP':None, 'quietness':None, 'openingHours':None,
                                'sourceTags':tags})
         geometry = element.get('geometry', [])
