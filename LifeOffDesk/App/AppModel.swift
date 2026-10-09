@@ -612,6 +612,12 @@ final class AppModel: ObservableObject {
     }
 
     /// Coverage at the live position; nil when there is no recent fix.
+    /// Detailed city pack under the user (e.g. "makati-cbd-starter"), for local hotlines.
+    var regionIDHere: String? {
+        guard let content, let position = currentPosition else { return nil }
+        return content.library.detailedRegionID(at: position)
+    }
+
     var coverageHere: StarterContent.Coverage? {
         guard let content, let position = currentPosition else { return nil }
         return content.coverage(at: position)

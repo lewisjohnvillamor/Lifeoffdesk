@@ -92,3 +92,21 @@ The cards **unsafe**, **lost** and **noGPS** describe only what the app can do: 
 - A model-only route offers alternatives.
 
 **Not yet measured:** the combined AI + keyword routing accuracy on the phone, and the model's behaviour on a red-team set run through the real Qwen3-1.7B.
+
+## Hotlines and new emergency cards (2026-10-10, founder phone test)
+
+**Hotlines** (`StarterData/hotlines.json`, from `scripts/build_hotlines.py`, 26 entries, checked 2026-10-09):
+- **Coverage:** 911, Red Cross 143, MMDA 136, PNP Highway Patrol Group, DOH 1555, Coast Guard, expressways (NLEX/SCTEX/CAVITEX/CALAX 1-35000, plus SLEX, Skyway/NAIAX, STAR and TPLEX), and 15 Metro Manila LGU rescue/DRRM lines.
+- **Sources:** each entry has a source URL and check date. SLEX, Skyway, STAR and TPLEX rely on one news report quoting San Miguel tollways, so they are marked "secondary" and labelled "(news report)" in the app.
+- **Left out:** Navotas and MCX (no current official number), and Pasig (only a 2020 news quote).
+- **Lookup is deterministic:** hotline questions ("number ng NLEX / highway patrol / Makati rescue") are answered from this file, never by the model. A question that also mentions police, a hospital or fire adds the nearest ones from the offline map, with Route buttons.
+- **Emergency answers:** below the 911 button they show your city's rescue line (from the detailed city pack you are in) and the Red Cross.
+- **Caveats:** many official pages are undated, and short codes (136, 161, 122) may need "02" from a mobile. Re-check before release.
+
+**New cards** (NHS, checked 2026-10-09): Stroke (FAST), Heart attack and chest pain (aspirin only as the source conditions it), Seizure. 999 is replaced with 911.
+
+**Matching fixes:**
+- **Tagalog roots:** affixed forms reach their root ("nakasugat" → sugat, "dumudugo" → dugo).
+- **Prefix terms:** prefix terms that swallowed unrelated words are now exact ("numb*" matched "number", "pantal*" matched "pantalon").
+- **Duplicate spellings:** spellings that normalise to the same words count once.
+- **Emergencies:** an emergency never continues the previous question.

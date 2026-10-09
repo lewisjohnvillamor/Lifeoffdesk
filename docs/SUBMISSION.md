@@ -1,35 +1,88 @@
 # Submission pack — AppBuildersPH Hackathon 2026 (Local AI)
 
-Deadline **10:00 AM, October 10, 2026 (Asia/Manila)** on https://cerebralvalley.ai/e/appbuildersph-hackathon-2026. One submission only, no edits, code freezes at 10:00 AM (judges review the repository as of the deadline). Repository: https://github.com/lewisjohnvillamor/Lifeoffdesk (public).
+Deadline **10:00 AM, October 10, 2026 (Asia/Manila)**. Submit once, only on Cerebral Valley: https://cerebralvalley.ai/e/appbuildersph-hackathon-2026/hackathon/submit. appbuildersph.com/hackathon/#submission just points there. One submission only, no edits, code freezes at 10:00 AM (judges review the repository as of the deadline). Repository: https://github.com/lewisjohnvillamor/Lifeoffdesk (public).
 
 Fields marked **FOUNDER** must be filled by the team; nothing here is invented on their behalf.
 
 ## The project
 
 - **Project name:** Life Off Desk
-- **Short description:** An offline iPhone app that gets you off your desk and exploring. Ask in Taglish ("tahimik na park, 30 mins lang") and an on-device LLM turns it into a search over real local places; walk, and a paper-map fog reveals the streets you actually covered. It also searches your past adventures and writes grounded Taglish recaps, all without the cloud.
-- **Team members:** **FOUNDER** — names exactly as listed on appbuildersph.com/hackathon.
-- **Public GitHub repository:** https://github.com/lewisjohnvillamor/Lifeoffdesk
+- **Short description:** An offline iPhone app that gets desk-bound people outside. An on-device AI notices when your world is getting smaller ("Uyyy, lumiliit na ang mundo mo!") and suggests a real nearby adventure. You can ask in Taglish ("tahimik na park, 30 mins lang"). As you walk, a paper map lifts its fog over the streets you actually covered. If something goes wrong, the SOS help chat understands Taglish (and photos), points you to reviewed first-aid and roadside cards, and shows 911, local hotlines and the nearest police or hospital. All of it works in Airplane Mode.
+- **Team name and members:** **FOUNDER**: use the team name and names exactly as on the official list.
+- **GitHub repository:** https://github.com/lewisjohnvillamor/Lifeoffdesk (public)
+- **Hardware tested on:**
+  - iPhone 12 Pro Max, the founder's own phone (A14 Bionic, 6 GB RAM). **FOUNDER**: add the iOS version from Settings → General → About.
+  - Development Mac with Apple silicon and Xcode. **FOUNDER**: add the model and macOS version.
+  - CI: GitHub Actions macOS runners (build and tests only).
 
 ## The proof
 
-- **Demo video (~1 minute):** **FOUNDER** — record on the iPhone 12 Pro Max in Airplane Mode (suggested shot list below).
-- **X / LinkedIn video URL:** **FOUNDER** — post must tag Devin / Cognition and include **#AppBuildersPH**.
+- **Demo video (~1 min):** https://youtu.be/FkGO5FMHM50
+- **Screenshots:**
+  - App Store-style panels: `marketing/mockups/store-1.jpg` … `store-7.jpg`.
+  - Per-feature panels: `marketing/mockups/*-portrait.jpg` (map, route, coach, help chat, recap, card).
+  - Raw captures: the `ci-screenshots` branch.
+  - Screens with sample adventures are labelled "Demo world" / "SAMPLE".
+- **X / LinkedIn video URL:** https://x.com/LewisV14590/status/2108647989216764234 (square launch film, posted 2026-10-10)
 - **What runs locally (on the iPhone, offline):**
-  - Qwen3-1.7B (Q4_K_M GGUF) through llama.cpp b11429 compiled into the app (Metal): Taglish planner intent extraction, history-search filter extraction, recap highlight selection and the "your world" coach (notices a shrinking or quiet exploring trend from computed facts and proposes a real quest), each grammar-constrained and validated.
-  - Apple Vision `VNGenerateForegroundInstanceMaskRequest` for the photo-sticker cut-out.
-  - Apple Speech (`SFSpeechRecognizer` with `requiresOnDeviceRecognition`) for push-to-talk requests in the planner; on-device only, never sent to Apple servers. Unavailable (and says so) if the iPhone has no on-device recognizer for Filipino or English.
-  - Deterministic engines: place search and ranking, street-distance shortest paths over bundled OpenStreetMap streets, GPS filtering and street matching, fog-of-war exploration, history search, recap facts, accessibility eligibility.
-  - All data: bundled OSM map/place packs (Makati CBD, Muntinlupa, Metro Manila main roads), walks, photos, preferences and AI caches, stored only on the device. No account.
-- **What requires internet:** nothing at runtime. The app makes no network calls. Internet is only needed **before** use: downloading the model and runtime once at build time (Hugging Face, GitHub releases; checksum-verified), and preparing map data at build time (OSM via an Overpass mirror). GPS works without data.
+  - **Qwen3-1.7B** (Q4_K_M GGUF) through **llama.cpp b11429**, compiled into the app (Metal). Every call is grammar-constrained JSON plus a validator with one repair attempt. It handles:
+    - Taglish planner intent
+    - history-search filters
+    - recap highlight choice
+    - the "your world" coach (picks facts, tone and quest from computed trends)
+    - "Para sa'yo" place recommendations (picks from real candidates)
+    - help-chat routing to a reviewed card, plus an emergency flag
+  - **Apple Speech**, on-device only (`requiresOnDeviceRecognition`): voice input in the planner and help chat.
+  - **Apple Vision**: `VNClassifyImageRequest` names objects in a help-chat photo (e.g. a tire); `VNGenerateForegroundInstanceMaskRequest` makes photo stickers.
+  - **Deterministic code** (no AI):
+    - place search and ranking, and walking routes over bundled OpenStreetMap streets
+    - GPS filtering, street matching and the fog-of-war map
+    - arrival detection, recaps and stats, and the recommendation rule checks
+    - the Taglish keyword safety net (emergencies can't be hidden by the model)
+    - the hotline lookup and the nearest police, hospital or fire station
+  - **Data, all on the device:**
+    - offline OSM map and place packs: Metro Manila main roads; detailed Makati, Muntinlupa, Taguig, Pasay and Parañaque
+    - 28 sourced help cards
+    - 26 sourced emergency hotlines
+    - your walks, photos and preferences
+  - No account, no server.
+- **What requires internet:** nothing at runtime; the app makes no network calls. GPS works without data, and tap-to-call uses the phone network. Internet is needed only before use:
+  - one-time setup to download the model (Hugging Face) and the llama.cpp runtime (GitHub releases), both pinned and checksum-verified
+  - preparing map data from OpenStreetMap (Overpass mirror) at build time
+  - refreshing help cards and hotlines from their sources, as a manual review step
 
 ## The disclosures
 
-- **Models used:** Qwen3-1.7B Q4_K_M GGUF (ggml-org quantization of Qwen3, Apache-2.0), pinned in `config/materials-lock.json`, SHA-256 `d2387ca2…b7b5`. Qwen3-0.6B Q4_0 was evaluated earlier and is no longer used. Apple Vision and Apple Speech on-device recognition (system frameworks).
-- **Technologies and frameworks:** Swift 5/SwiftUI (iOS 17), llama.cpp b11429 iOS XCFramework (MIT), CoreLocation, Vision, Speech, AVFoundation, PhotosUI, CryptoKit, Network, XcodeGen (MIT); Python 3 scripts for data preparation; GitHub Actions (macOS runners) for CI builds, tests and Simulator screenshots.
-- **APIs and cloud services:** none in the app. Build-time only: OpenStreetMap data via Overpass API mirrors (ODbL; attribution shown in-app), Hugging Face and GitHub for pinned downloads, GitHub Actions for CI.
-- **Existing code and assets:** no application code predates the hackathon (first commit 2026-10-09 15:14 +08:00, after building began). Pre-existing **planning material and assets** are disclosed: the product brief/ICP and build reference (`Life-Off-Desk-*.txt`), the brand guide, a static UI board (`design/`) and the cat mascot artwork (`assets/mascot/`) were prepared beforehand in ChatGPT conversations (AI-generated from the founder's visual direction). Open-source llama.cpp and the Qwen model are used unmodified. OSM data is third-party (ODbL).
-- **AI development tools:** ChatGPT / Codex (planning, briefs, mascot images), Claude Code by Anthropic (implementation of the app, core library, scripts, tests and docs during the hackathon). **FOUNDER:** add any other tools used (e.g. Devin) — do not omit any.
+- **Models used:**
+  - **Qwen3-1.7B Q4_K_M GGUF:** ggml-org quantization of Qwen3, Apache-2.0, pinned by commit and SHA-256 in `config/materials-lock.json`. Qwen3-0.6B was evaluated earlier and is not used.
+  - **Apple on-device models** through system frameworks: Speech recognition and Vision image classification and foreground masks.
+  - **Considered but not used:** a third-party 0.5B "survival" fine-tune. It is English-only and writes unreviewed advice.
+- **Technologies and frameworks:**
+  - **App:** Swift / SwiftUI (iOS 17) with CoreLocation, Vision, Speech, AVFoundation, PhotosUI, CryptoKit and Network; XcodeGen.
+  - **AI runtime:** the llama.cpp b11429 iOS XCFramework (MIT), with GBNF grammars.
+  - **Data preparation:** Python 3 scripts for map data, help cards, keywords and hotlines.
+  - **CI:** GitHub Actions.
+  - **Launch film:** Remotion (React) and FFmpeg, with the Inter font (SIL OFL).
+- **APIs and cloud services:**
+  - **In the app:** none.
+  - **Build or prep time only:**
+    - OpenStreetMap via Overpass API mirrors (ODbL; attribution shown in the app)
+    - Hugging Face and GitHub for pinned downloads
+    - GitHub Actions for CI
+    - Mixkit and Pexels for the launch film's music and stock clips (Mixkit Free License, Pexels License)
+- **Existing code and assets:**
+  - **No app code predates the hackathon.** The first commit is 2026-10-09 15:14 +08:00.
+  - **Prepared beforehand in ChatGPT conversations:** the product brief and build reference, the brand guide, a static UI board (`design/`) and the cat mascot art (`assets/mascot/`). These were AI-generated from the founder's direction.
+  - **Third-party:**
+    - OSM data (ODbL)
+    - help-card content paraphrased from NHS, St John Ambulance, WHO, the AA, GOV.UK and other linked public sources (each card links its source)
+    - hotline numbers from official LGU, agency and operator pages; SLEX/Skyway/STAR/TPLEX come from one news report and are labelled as such
+    - launch-film music "Just Keep Walking" by Michael Ramir C. and two stock clips (Mixkit Free License; Pexels License)
+    - llama.cpp and Qwen, used unmodified
+- **AI development tools:**
+  - **ChatGPT / Codex:** planning, briefs and mascot images before the build.
+  - **Claude Code (Anthropic):** implementation of the app, core library, scripts, tests, docs, marketing mockups and the launch film during the hackathon.
+  - **FOUNDER:** add any other tool used (e.g. Devin). Do not omit any.
 
 ## Why does this product benefit from running AI locally?
 
@@ -42,7 +95,8 @@ Life Off Desk is used *outside*, on foot, where the cloud is least reliable and 
 
 ## Evidence and honesty notes (avoid "fake benchmarks")
 
-- Core logic: 114 automated tests (Swift) + 11 Python tests, run in CI on every push.
+- Core logic: 165 automated tests (Swift) and 15 Python tests, run in CI on every push.
+- Help-chat routing, keywords only (no model): two held-out sets, 126/126 and 60/60 with 0 missed emergencies after fixes. Both sets have now been seen. Combined AI + keyword accuracy on the phone has not been measured.
 - Development-machine (Linux CPU) scores, labelled as such: planner v5 held-out 60/60 valid, 46/60 intent; history 14/14 valid, 10/14; recap 12/12; adaptive 14/14 valid, 10/14. The planner figure is not the phone result.
 - Phone, iPhone 12 Pro Max (`iPhone13,4`, iOS 26.6.2), Qwen3-1.7B Q4_K_M, the same 60 Taglish held-out cases, Airplane Mode on 2026-10-10: **60/60 schema-valid, 47/60 intent**. Case latency p50 **7.38 s**, p95 **8.84 s** (n=60). **7.42** generated tokens/s. Highest sampled physical footprint **532 MB**. Thermal state serious, then critical. Battery stayed **65% charging** because the phone was on the USB cable. The network path was offline at the start and the end. An earlier same-day run scored the same 47/60 in 340.0 s (p50 6.09 s) and did not record tokens, memory, heat, or battery. Reports are in `eval/results/`. Map-frame pacing was not measured.
 - Sample/demo adventures are synthetic and labelled "SAMPLE DATA" in the app.
@@ -62,7 +116,7 @@ Phone in **Airplane Mode** the whole time, mirrored over HDMI/USB-C.
 5. (3:45–4:30) Honesty and safety: ask for a wheelchair-accessible museum → honest "no reviewed record" state. Settings → AI diagnostics: model, hash, load time, offline network path.
 6. (4:30–5:00) Why local AI wins, and what's next (more city packs, reviewed accessibility facts).
 
-Rehearse every typed phrase on the phone first. Known weak phrasings (dev tests): "hindi ko pa napupuntahan" may not be read as "somewhere new"; "long walks" may become a sort; "first ever adventure" asks for a date. Time two or three requests in rehearsal; no phone latency has been recorded yet.
+Rehearse every typed phrase on the phone first. Known weak phrasings (dev tests): "hindi ko pa napupuntahan" may not be read as "somewhere new"; "long walks" may become a sort; "first ever adventure" asks for a date. The Airplane Mode held-out run measured p50 7.38 s per case; a live request can be slower while the phone is thermally critical.
 
 Backups: a pre-recorded 1-minute video on the laptop, demo mode for a populated map, and the model loaded once before going on stage (Settings → AI diagnostics → Load model now).
 
@@ -70,7 +124,7 @@ Backups: a pre-recorded 1-minute video on the laptop, demo mode for a populated 
 
 - [ ] FOUNDER fills team member names (official list) and the extra AI tools.
 - [ ] Record the ~1 min demo video on the phone (Airplane Mode visible).
-- [ ] Post it on X or LinkedIn tagging Devin / Cognition with #AppBuildersPH; paste the URL.
-- [ ] Optional: copy the AI diagnostics JSON from the phone into `docs/BUILD-STATUS.md` (real latency numbers) before the freeze.
+- [x] Posted on X: https://x.com/LewisV14590/status/2108647989216764234 (check it tags Devin / Cognition and has #AppBuildersPH).
+- [x] Phone held-out latency, memory, thermal state and battery are in `docs/BUILD-STATUS.md` and the README (Airplane Mode run, 2026-10-10).
 - [ ] Confirm the repo is public (it is as of 2026-10-09) and `main` holds the final build.
 - [ ] Submit once on Cerebral Valley; answers above are paste-ready.
