@@ -23,10 +23,8 @@ SHOTS = {
                 'iOS Simulator · Demo world (sample adventures and captures)'),
     'route': ('m6-route.png', 'Go somewhere new', 'A suggested route along mapped streets, fully offline.',
               'iOS Simulator · Makati · route on OpenStreetMap streets'),
-    'me': ('m4-me-demo.png', 'Your life off desk, in numbers', 'New streets, places found, area explored.',
-           'iOS Simulator · Demo world (sample adventures)'),
-    'adventures': ('m5-adventures-demo.png', 'Every adventure, kept', 'Search your past walks in Taglish.',
-                   'iOS Simulator · Demo world (sample adventures)'),
+    'recap': ('m8-recap.png', 'Every adventure, counted', 'New streets, places passed and time, computed on your phone.',
+              'iOS Simulator · sample adventure'),
     'card': ('m7-card-sticker.png', 'Make it a memory', 'Turn an adventure into a card to share.',
              'iOS Simulator · sample adventure'),
     'coach': ('iphone-coach.png', 'An AI that notices', 'On-device AI nudges you when your world gets smaller.',
@@ -195,7 +193,7 @@ STORE = [  # (kind, screens, title, subtitle)
     ('feature', ['iphone-coach.png'], 'AI that notices', 'On-device Qwen3\nnudges you outside'),
     ('feature', ['m6-route.png'], 'Go somewhere new', 'Real places, offline routes\non mapped streets'),
     ('feature', ['m1-demo-tilted.png'], 'Fog becomes paper', 'Every street you explore\nis inked in'),
-    ('feature', ['m4-me-demo.png'], 'Your life off desk', 'New streets, places found,\narea explored'),
+    ('feature', ['m8-recap.png'], 'Every adventure, counted', 'New streets and places,\ncomputed on your phone'),
     ('feature', ['m7-card-sticker.png'], 'Keep the memory', 'Turn an adventure\ninto a card'),
 ]
 

@@ -11,6 +11,8 @@ struct MapScreen: View {
     @State private var simCard: SimCard?
     @State private var showCamera = false
     @State private var showHelp = false
+    /// Photo pin the user tapped on the map.
+    @State private var openedMoment: WalkMemory?
     @State private var followUser = true
     @AppStorage("map.tilted") private var tilted = true
     @State private var launchScale: CGFloat?
@@ -24,8 +26,9 @@ struct MapScreen: View {
                 FogMapView(geometry: geometry, exploration: model.displayExploration,
                            trailRuns: model.displayedTrailRuns,
                            pins: model.mapMoments.compactMap { m in
-                               m.coordinate.map { (coordinate: $0, image: model.thumbnail(for: m)) }
+                               m.coordinate.map { MapPin(id: m.id, coordinate: $0, image: model.thumbnail(for: m)) }
                            },
+                           onPinTap: { id in openedMoment = model.mapMoments.first { $0.id == id } },
                            position: model.mapPosition, destination: model.destination,
                            route: model.destinationRoute?.points,
                            camera: $camera, tilted: tilted)
@@ -103,6 +106,14 @@ struct MapScreen: View {
         }
         .sheet(isPresented: $showPlanner) { PlannerSheet().environmentObject(model) }
         .sheet(isPresented: $showHelp) { HelpSheet().environmentObject(model) }
+        .sheet(item: $openedMoment) { memory in
+            MomentSheet(memory: memory) { session in
+                openedMoment = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { model.presentedRecap = session }
+            }
+            .environmentObject(model)
+            .presentationDetents([.medium, .large])
+        }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { model.captureMoment($0) }.ignoresSafeArea()
         }

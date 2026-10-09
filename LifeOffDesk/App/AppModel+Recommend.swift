@@ -66,8 +66,8 @@ extension AppModel {
                                           alternatives: candidates.count)
             let recent = history.recentCategories
             do {
-                // One AI session: pick, then a second pass double-checks the pick and may veto it,
-                // moving on to the next candidate. The judge never adds facts.
+                // The AI picks; instant rule checks (distance, taste, repeats) cross-check it and move
+                // to the next candidate if it fails. No second AI pass, so no extra waiting.
                 let result = try await self.ai.run { engine -> (Int, [PlaceRecommender.ReasonID], JudgeVerdict?, String?) in
                     let (outcome, _) = await RecommendationPrompt.choose(candidates, engine: engine)
                     guard case let .valid(choice) = outcome else {
@@ -75,11 +75,8 @@ extension AppModel {
                         return (0, [], nil, "AI reply was rejected")
                     }
                     let order = [choice.index] + candidates.indices.filter { $0 != choice.index }
-                    var firstVerdict: JudgeVerdict?
                     for index in order {
-                        let (check, _) = await JudgePrompt.check(candidates[index], taste: taste, recent: recent, engine: engine)
-                        guard case let .valid(verdict) = check else { break }
-                        if firstVerdict == nil { firstVerdict = verdict }
+                        let verdict = RecommendationCheck.verdict(candidates[index], taste: taste, recent: recent)
                         if verdict.verdict == .good {
                             let reasons = index == choice.index ? choice.reasons
                                 : Array([PlaceRecommender.ReasonID.likesCuisine, .likesCategory, .nearby]
@@ -87,8 +84,8 @@ extension AppModel {
                             return (index, reasons, verdict, nil)
                         }
                     }
-                    // Every candidate judged weak (or the judge failed): show the pick with its verdict.
-                    return (choice.index, choice.reasons, firstVerdict, nil)
+                    let verdict = RecommendationCheck.verdict(candidates[choice.index], taste: taste, recent: recent)
+                    return (choice.index, choice.reasons, verdict, nil)
                 }
                 if let problem = result.3 {
                     card.computedReason = problem
@@ -99,6 +96,9 @@ extension AppModel {
                 }
             } catch {
                 card.computedReason = "On-device AI unavailable"
+            }
+            if card.judge == nil {
+                card.judge = RecommendationCheck.verdict(card.candidate, taste: taste, recent: recent)
             }
             var updated = self.recommendationHistory
             updated.record(card.candidate.place, .shown, at: Date())

@@ -15,6 +15,24 @@ struct HelpSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     emergencyCard
+                    NavigationLink {
+                        SafetyChatView().environmentObject(model)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "cross.case.fill").font(.title3).foregroundStyle(Theme.canvas)
+                                .frame(width: 44, height: 44).background(Theme.primary, in: Circle())
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Ask the help assistant").font(.headline).foregroundStyle(Theme.ink)
+                                Text("First aid, heat, floods, bites, lost, low battery · offline")
+                                    .font(.caption).foregroundStyle(Theme.secondaryInk)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(Theme.secondaryInk)
+                        }
+                        .padding(14)
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.corner))
+                    }
+                    .buttonStyle(.plain)
                     locationCard
                     if let snapshot, snapshot.position != nil {
                         ForEach(HelpKind.allCases, id: \.self) { kind in

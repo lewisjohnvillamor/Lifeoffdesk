@@ -5,6 +5,7 @@ import SwiftUI
 struct MeView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showSettings = false
+    @State private var openedMoment: WalkMemory?
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,17 @@ struct MeView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView().environmentObject(model) }
+            .sheet(item: $openedMoment) { memory in
+                MomentSheet(memory: memory) { session in
+                    openedMoment = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                        model.selectedTab = .map
+                        model.presentedRecap = session
+                    }
+                }
+                .environmentObject(model)
+                .presentationDetents([.medium, .large])
+            }
             #if targetEnvironment(simulator)
             .task {
                 // Screenshot helper (simulator only).
@@ -130,6 +142,7 @@ struct MeView: View {
         } else {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
                 ForEach(shown) { moment in
+                    Button { openedMoment = moment } label: {
                     Group {
                         if let image = model.thumbnail(for: moment) {
                             Image(uiImage: image).resizable().scaledToFill()
@@ -139,6 +152,8 @@ struct MeView: View {
                     }
                     .frame(minWidth: 0, maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                     .accessibilityLabel("Photo from \(moment.takenAt.formatted(date: .abbreviated, time: .shortened))")
                 }
             }

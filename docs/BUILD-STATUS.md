@@ -1,16 +1,42 @@
 # Life Off Desk — build status
 
+## SOS help assistant: offline first-aid and safety chat (2026-10-09, founder request)
+
+- **Where:** SOS → "Ask the help assistant". Type or speak (on-device speech) in Taglish or English. Quick chips cover common cases (sugat, natapilok, sobrang init, nahimatay, kagat ng aso, baha, lowbat, naligaw).
+- **How it answers:** the on-device model (`SafetyPrompt` v1) **only routes** the question to one of 19 bundled cards and flags emergencies, as grammar-constrained, validated JSON. A deterministic keyword check can raise the emergency flag and covers the model being unavailable. Emergencies show "Call 911 now" first.
+- **The cards** (`StarterData/safety-guide.json`) are short paraphrases of linked public sources: NHS, St John Ambulance, WHO, US NWS, Apple. The unsafe, lost and noGPS cards are app guidance only. See `docs/SAFETY-GUIDE.md`.
+- **Limits:**
+  - The model never writes medical advice.
+  - No plant or mushroom identification (the card says a description isn't enough).
+  - The cards have not been reviewed by a clinician; founder review is recommended.
+  - Mayo, Red Cross and DOH were not fetchable.
+- **Tests:** 3 new tests (Taglish routing, the emergency net cannot be lowered, an unknown card is rejected, every topic has a sourced card). 145 Swift tests pass. **Not yet on the phone; no model eval of this prompt.**
+
+## Tappable photo pins, pin clustering, scale notes (2026-10-09, founder request)
+
+- **Tap a photo pin** on the map (or a photo in Me → Spots): a sheet shows the photo, date and time, and "Open this adventure" (its recap). Sample captures say they are illustrations.
+- **Clustering:** pins closer than ~40 pt on screen merge into one pin with a count bubble, recomputed as you zoom (grid-based, linear in the number of pins). Tapping a cluster zooms in 2.5× around it until the photos separate.
+- **Scale toward a year of daily adventures (365):**
+  - The island is one cached stroked outline per walk.
+  - The Adventures list is lazy, and pins are clustered.
+  - The blurred island shadow is skipped when zoomed far out (ppm < 0.05).
+- **Not addressed yet:**
+  - Every finished walk is a JSON file loaded at launch, with about 1 GPS fix per second (`distanceFilter = none`). 365 thirty-minute walks would be roughly 650k fixes, tens of MB to decode at launch.
+  - Stats recompute over all walks in the background after each change.
+  - Fixes would be thinning stored fixes (e.g. a 5 m spacing on save), a per-month cache of totals, and loading old walks lazily. These touch GPS and persistence (P0-tested areas), so they need their own tests.
+- Compile-checked in CI; **not yet tried on the phone** (tap targets on the tilted map especially).
+
 ## Adventures: faster loading and "Para sa'yo" recommendations (2026-10-09, founder request)
 
 - **Faster Adventures tab:** the page is now a LazyVStack, so adventure rows are built only as they scroll into view; before, all 84 sample rows were built up front. Route thumbnails draw at most 60 points per segment instead of every GPS fix.
 - **"Para sa'yo" (Find me a place)** at the top of Adventures:
   - **Taste (computed):** categories and cuisine words of the places your adventures passed (within 40 m).
-  - **Candidates (deterministic, `PlaceRecommender`):** catalogue places within 2.5 km, in a category you like (any category before you have history). Excluded: places already passed, saved, dismissed, or shown in the last 14 days, and help places. Ranked by taste share, cuisine match and distance, with a penalty for repeating the category of the last three suggestions so they rotate. The top few get street distances.
+  - **Candidates (deterministic, `PlaceRecommender`):** catalogue places within 10 km (founder decision; adventures may be by car), in a category you like (any category before you have history). Excluded: places already passed, saved, dismissed, or shown in the last 14 days, and help places. Ranked by taste share, cuisine match and distance, with a penalty for repeating the category of the last three suggestions so they rotate. The top few get street distances.
   - **On-device AI (`RecommendationPrompt` v1):** gets the top three candidates and their computed reasons. It returns grammar-constrained JSON with the pick and one or two reasons; the validator rejects unlisted picks and reasons, with one repair attempt. The Taglish line is rendered from the computed values, e.g. "Subukan mo ang …! Mukhang mahilig ka sa kape: 3 sa 4 na lugar na nadaanan mo ay kape. 400 m lang ang layo. Hindi mo pa ito napupuntahan."
   - **Actions:** Save (kept in a Saved row with Go and Remove), Go (sets the destination and route on the map), "Hindi ito · ibang lugar" (never suggested again; shows the next one).
   - **Labels:** "On-device AI picked this from N nearby matches · facts computed", or "Computed pick · <reason>" when the model is unavailable; "OpenStreetMap · hours & access unverified".
   - History and saved places live on the device (UserDefaults) and are cleared by Erase personal data.
-- **AI judge double-check (founder request):** after the pick, a second on-device pass (`JudgePrompt` v1) sees the computed taste summary, the categories of recent suggestions and the candidate's computed facts. It returns good/weak with a reason that must agree with the verdict (taste/cuisine/close vs off-taste/too far/same as recent). A weak verdict moves to the next candidate; if every candidate is weak, the pick is shown with its warning. The card shows "AI check: swak sa hilig mo" (or the warning). The judge can only veto and never adds facts, and it is the same 1.7B model, so it is a sanity check, not ground truth. It adds roughly one short generation per checked candidate. 1 test.
+- **Cross-check (founder decision: rule checks, not a second AI pass):** after the AI pick, instant rules over computed facts flag picks that are too far (over 10 km by streets, founder decision), the same category as the last two suggestions, or off-taste. A flagged pick moves to the next candidate; if all are flagged, the pick is shown with its heads-up. The card shows "Checked: swak sa hilig mo" (or the heads-up). No extra AI time. An AI-judge variant was built first and replaced, because it cost ~1–2 s per check for a less reliable result. 1 test.
 - **Anti-repeat rules (tested):** 14-day cooldown per place, dismissed places never again, already-visited places excluded, category rotation. 4 new core tests; 141 Swift tests pass. **Not yet on the phone; no model eval of this prompt yet.**
 
 ## Demo map lag fix, play button, follow during replay (2026-10-09, founder report)
