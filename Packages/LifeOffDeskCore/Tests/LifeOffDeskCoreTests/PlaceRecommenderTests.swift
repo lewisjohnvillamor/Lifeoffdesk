@@ -80,25 +80,24 @@ final class PlaceRecommenderTests: XCTestCase {
     }
 }
 
-final class RecommendationJudgeTests: XCTestCase {
-    private func candidate() -> PlaceRecommender.Candidate {
-        let place = Fixture.place("cafe", .cafe, east: 400, north: 0)
-        return PlaceRecommender.Candidate(place: place, street: nil, straightLineMeters: 400, score: 1,
-                                          reasons: [.likesCategory: "3 sa 4", .nearby: "400 m", .neverBeen: "oo"])
+final class RecommendationCheckTests: XCTestCase {
+    private func candidate(meters: Double, _ category: PlaceCategory = .cafe,
+                           reasons: [PlaceRecommender.ReasonID: String]) -> PlaceRecommender.Candidate {
+        PlaceRecommender.Candidate(place: Fixture.place("x", category, east: meters, north: 0), street: nil,
+                                   straightLineMeters: meters, score: 1, reasons: reasons)
     }
 
-    func testVerdictAndReasonMustAgreeAndPromptCarriesComputedTaste() async {
-        let taste = PlaceRecommender.Taste(places: [Fixture.place("a", .cafe, east: 0, north: 0),
-                                                    Fixture.place("b", .cafe, east: 1, north: 0),
-                                                    Fixture.place("c", .park, east: 2, north: 0)])
-        let engine = ScriptedEngine(replies: [#"{"verdict":"good","reason":"tooFar"}"#,
-                                              #"{"verdict":"good","reason":"tasteMatch"}"#])
-        let (outcome, attempts) = await JudgePrompt.check(candidate(), taste: taste, recent: [.park], engine: engine)
-        guard case let .valid(verdict) = outcome else { return XCTFail("expected repaired verdict") }
-        XCTAssertEqual(attempts.count, 2, "good + tooFar contradicts itself and is repaired")
-        XCTAssertEqual(verdict, JudgeVerdict(verdict: .good, reason: .tasteMatch))
-        XCTAssertTrue(engine.counter.prompts[0].contains("Taste: cafe 2 of 3, park 1 of 3"))
-        XCTAssertTrue(engine.counter.prompts[0].contains("Recent suggestions: park"))
-        XCTAssertEqual(JudgePrompt.label(verdict), "AI check: swak sa hilig mo")
+    func testRulesFlagFarRepeatedAndOffTastePicksInstantly() {
+        let taste = PlaceRecommender.Taste(places: [Fixture.place("a", .cafe, east: 0, north: 0)])
+        let liked: [PlaceRecommender.ReasonID: String] = [.likesCategory: "1 sa 1"]
+        XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 2000, reasons: liked), taste: taste, recent: []).reason, .tooFar)
+        XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 400, reasons: liked), taste: taste, recent: [.cafe, .cafe]).reason, .sameAsRecent)
+        XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 400, .park, reasons: [:]), taste: taste, recent: []).reason, .offTaste)
+        let good = RecommendationCheck.verdict(candidate(meters: 400, reasons: liked.merging([.likesCuisine: "coffee"]) { a, _ in a }),
+                                               taste: taste, recent: [.park])
+        XCTAssertEqual(good, JudgeVerdict(verdict: .good, reason: .cuisineMatch))
+        XCTAssertEqual(RecommendationCheck.label(good), "Checked: swak sa paborito mong pagkain/inumin")
+        XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 300, .museum, reasons: [:]),
+                                                   taste: .init(places: []), recent: []).reason, .closeEnough)
     }
 }

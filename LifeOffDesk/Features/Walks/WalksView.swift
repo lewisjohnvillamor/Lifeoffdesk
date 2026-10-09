@@ -87,7 +87,7 @@ struct WalksView: View {
                              ?? "On-device AI picked this from \(card.alternatives) nearby matches · facts computed")
                             .font(.caption2).foregroundStyle(Theme.secondaryInk)
                         if let judge = card.judge {
-                            Label(JudgePrompt.label(judge), systemImage: judge.verdict == .good ? "checkmark.seal.fill" : "exclamationmark.triangle")
+                            Label(RecommendationCheck.label(judge), systemImage: judge.verdict == .good ? "checkmark.seal.fill" : "exclamationmark.triangle")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(judge.verdict == .good ? Theme.primary : Theme.danger)
                         }
