@@ -79,6 +79,7 @@ public enum PlannerEvaluation {
             case let ("budgetPHP", .int(v)): ok = prefs?.budgetPHP == v
             case let ("categories", .strings(v)): ok = Set(v).isSubset(of: Set(prefs?.categories.map(\.rawValue) ?? []))
             case let ("moodTags", .strings(v)): ok = Set(v).isSubset(of: Set(prefs?.moodTags.map(\.rawValue) ?? []))
+            case let ("keywords", .strings(v)): ok = Set(v).isSubset(of: Set(prefs?.keywords ?? []))
             case let ("travelMode", .string(v)): ok = prefs?.travelMode == v
             case let ("needsClarification", .bool(v)): ok = (outcomeName == "clarify") == v
             case ("unsupportedFact", _):
@@ -96,7 +97,7 @@ public enum PlannerEvaluation {
         }
         let prefsText = prefs.map { p in
             "duration=\(p.durationMinutes.map(String.init) ?? "null") budget=\(p.budgetPHP.map(String.init) ?? "null") " +
-            "categories=\(p.categories.map(\.rawValue)) moods=\(p.moodTags.map(\.rawValue)) clarify=\(p.needsClarification)"
+            "categories=\(p.categories.map(\.rawValue)) moods=\(p.moodTags.map(\.rawValue)) keywords=\(p.keywords) clarify=\(p.needsClarification)"
         }
         return CaseResult(id: testCase.id, prompt: testCase.prompt,
                           rawOutputs: trace.attempts.map(\.rawOutput), attemptSeconds: trace.attempts.map(\.seconds),

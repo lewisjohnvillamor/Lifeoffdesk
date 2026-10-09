@@ -21,6 +21,10 @@ public enum Uncertainty: Hashable, Sendable {
     case accessUnverified
     case approximatePosition
     case mayExceedTime(minutes: Int)
+    /// The request named something specific ("pizza") that no nearby record mentions.
+    case noKeywordMatch([String])
+    /// A keyword matched the OSM cuisine tag, which nobody has reviewed.
+    case cuisineFromSource
 }
 
 public struct Suggestion: Hashable, Identifiable, Sendable {
@@ -28,6 +32,7 @@ public struct Suggestion: Hashable, Identifiable, Sendable {
     public var straightLineMeters: Double
     public var matchedCategory: PlaceCategory?
     public var matchedMoods: [MoodTag]
+    public var matchedKeywords: [String] = []
     public var withinKnownBudget: Bool
     public var uncertainties: [Uncertainty]
 
@@ -59,11 +64,23 @@ public enum PlaceSearch {
     public static func suggest(_ prefs: OutingPreferences, catalog: PlaceCatalog, origin: DistanceOrigin,
                                options: SearchOptions = SearchOptions()) -> [Suggestion] {
         let reach = prefs.durationMinutes.map(SearchOptions.approximateOneWayReachMeters)
+        // Specific words ("pizza") narrow results to places whose name or OSM cuisine mentions them.
+        let keywordMatches: (Place) -> [String] = { place in
+            prefs.keywords.filter { word in place.searchableTerms.contains { $0.contains(word) } }
+        }
+        let keywordHits = prefs.keywords.isEmpty ? [] : catalog.places.filter {
+            !keywordMatches($0).isEmpty && Geo.distanceMeters(origin.coordinate, $0.coordinate) <= options.radiusMeters
+        }
+        let useKeywords = !keywordHits.isEmpty
+        // Nothing mentions the word and no category to fall back on: an honest empty result.
+        if !prefs.keywords.isEmpty && !useKeywords && prefs.categories.isEmpty { return [] }
         var results: [(Suggestion, fitsTime: Bool)] = []
         for place in catalog.places {
+            let matchedKeywords = keywordMatches(place)
+            if useKeywords && matchedKeywords.isEmpty { continue }
             let distance = Geo.distanceMeters(origin.coordinate, place.coordinate)
             guard distance <= options.radiusMeters else { continue }
-            if !prefs.categories.isEmpty && !prefs.categories.contains(place.category) { continue }
+            if !useKeywords && !prefs.categories.isEmpty && !prefs.categories.contains(place.category) { continue }
 
             var uncertainties: [Uncertainty] = []
             var withinBudget = false
@@ -88,11 +105,16 @@ public enum PlaceSearch {
             if place.openingHours == nil { uncertainties.append(.hoursUnverified(sourceClaim: place.sourceOpeningHours)) }
             if !place.isReviewed { uncertainties.append(.accessUnverified) }
             if place.positionMethod == "bounds-midpoint" { uncertainties.append(.approximatePosition) }
+            if !prefs.keywords.isEmpty && !useKeywords { uncertainties.insert(.noKeywordMatch(prefs.keywords), at: 0) }
+            if matchedKeywords.contains(where: { word in !place.name.lowercased().contains(word) }) {
+                uncertainties.append(.cuisineFromSource)
+            }
 
-            let suggestion = Suggestion(place: place, straightLineMeters: distance,
+            var suggestion = Suggestion(place: place, straightLineMeters: distance,
                                         matchedCategory: prefs.categories.contains(place.category) ? place.category : nil,
                                         matchedMoods: matchedMoods, withinKnownBudget: withinBudget,
                                         uncertainties: uncertainties)
+            suggestion.matchedKeywords = matchedKeywords
             results.append((suggestion, fitsTime))
         }
         results.sort { a, b in

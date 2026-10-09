@@ -96,38 +96,3 @@ struct RoutePreview: View {
         }
     }
 }
-
-struct HistoryView: View {
-    @EnvironmentObject private var model: AppModel
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if model.demoMode {
-                    Text("Demo mode: these are synthetic sample walks, not real GPS.")
-                        .font(.footnote).foregroundStyle(Theme.danger)
-                }
-                if model.historyWalks.isEmpty {
-                    Text("No finished walks yet. Your walks stay on this iPhone.")
-                        .foregroundStyle(Theme.secondaryInk)
-                }
-                ForEach(model.historyWalks) { walk in
-                    NavigationLink {
-                        RecapView(session: walk).environmentObject(model)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(walk.startedAt.formatted(date: .abbreviated, time: .shortened)).foregroundStyle(Theme.ink)
-                            Text("\(Format.distance(walk.distanceMeters)) · \(Format.duration(walk.activeDuration(at: walk.endedAt ?? Date())))")
-                                .font(.footnote).foregroundStyle(Theme.secondaryInk)
-                        }
-                        .frame(minHeight: Theme.minTarget)
-                    }
-                }
-            }
-            .navigationTitle("Past walks")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-        }
-    }
-}

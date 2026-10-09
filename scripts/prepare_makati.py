@@ -28,7 +28,7 @@ def load_region(region_id):
 def query_for(bbox, highways=None, include_places=True):
     b = ','.join(str(bbox[k]) for k in ('south', 'west', 'north', 'east'))
     classes = '|'.join(highways or FULL_DETAIL_HIGHWAYS)
-    places = f'''nwr["amenity"~"^(cafe|library)$"]["name"]({b});
+    places = f'''nwr["amenity"~"^(cafe|library|restaurant|fast_food|food_court)$"]["name"]({b});
 nwr["leisure"="park"]["name"]({b});
 nwr["tourism"~"^(museum|viewpoint)$"]["name"]({b});
 ''' if include_places else ''
@@ -60,6 +60,8 @@ def convert(raw, retrieved_at, require_places=True):
         category = None
         if tags.get('amenity') in ('cafe', 'library'):
             category = tags['amenity']
+        elif tags.get('amenity') in ('restaurant', 'fast_food', 'food_court'):
+            category = 'food'
         elif tags.get('leisure') == 'park':
             category = 'park'
         elif tags.get('tourism') in ('museum', 'viewpoint'):

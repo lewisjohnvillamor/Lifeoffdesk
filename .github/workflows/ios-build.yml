@@ -81,6 +81,8 @@ jobs:
           shoot 06-planner-results --open-planner --planner-filter park
           shoot 07-recap-card --demo-map --open-recap
           shoot 08-memory-card --demo-map --open-card
+          shoot 10-walks-tab --demo-map --tab walks
+          shoot 11-me-tab --demo-map --tab me
           # Simulated GPS walk through the real tracking pipeline (simulator location, labelled in-app).
           xcrun simctl privacy "$UDID" grant location-always com.lifeoffdesk.simulator || xcrun simctl privacy "$UDID" grant location com.lifeoffdesk.simulator || true
           xcrun simctl location "$UDID" set 14.55420,121.02170 || true

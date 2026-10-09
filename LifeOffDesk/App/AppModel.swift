@@ -14,6 +14,7 @@ enum WalkPhase: Equatable {
 
 enum PlannerState: Equatable {
     case idle
+    case locating
     case loadingModel
     case thinking
     case answered(PlannerResponse, usedAI: Bool)
@@ -61,6 +62,8 @@ final class AppModel: ObservableObject {
     private var replayTask: Task<Void, Never>?
     private var replayIndex = 0
 
+    @Published var selectedTab: AppTab = .map
+
     let ai = AIService()
     private let location = LocationService()
     private var lastPersist = Date.distantPast
@@ -93,9 +96,12 @@ final class AppModel: ObservableObject {
             MainActor.assumeIsolated { self?.authorizationChanged(status) }
         }
         location.onError = { [weak self] message in
-            MainActor.assumeIsolated { self?.locationError = message }
+            // One-shot fixes outside a walk fail quietly; only walking errors need a banner.
+            MainActor.assumeIsolated { if self?.recorder != nil { self?.locationError = message } }
         }
         loadPersonalData()
+        refreshStats()
+        refreshIdleLocation()
     }
 
     // MARK: Loading and recovery
@@ -130,6 +136,10 @@ final class AppModel: ObservableObject {
     /// Saved exploration plus the walk in progress, for rendering. In Demo mode: the sample
     /// walks plus any replay in progress, and nothing personal.
     var displayExploration: Exploration {
+        if var base = timelapseBase {
+            if let replay { base.merge(replay.partialSession) }
+            return base
+        }
         if demoMode {
             guard let replay else { return demoExploration }
             var shown = demoExploration.excluding(sessionID: replay.source.id)
@@ -149,22 +159,43 @@ final class AppModel: ObservableObject {
     }
 
     var displayedTrail: [[TrackSample]] {
-        demoMode ? (replay?.partialSession.segments ?? []) : (recorder?.session.segments ?? [])
+        if demoMode || timelapseBase != nil { return replay?.partialSession.segments ?? [] }
+        return recorder?.session.segments ?? []
     }
 
     /// Marker position: live GPS, or the replay's current sample (labelled) in Demo mode.
     var mapPosition: Coordinate? {
-        demoMode ? replay?.currentSample?.coordinate : currentPosition
+        (demoMode || timelapseBase != nil) ? replay?.currentSample?.coordinate : currentPosition
     }
 
     var historyWalks: [WalkSession] { demoMode ? (demo?.walks ?? []) : finishedWalks }
 
     func isDemo(_ session: WalkSession) -> Bool { demo?.contains(session) ?? false }
 
-    /// A fix only counts as "you are here" while it is recent.
+    /// A fix only counts as "you are here" while it is recent (30 s walking, 5 min from a one-shot fix).
     var currentPosition: Coordinate? {
-        guard let lastFix, let at = lastFixReceivedAt, Date().timeIntervalSince(at) < 30 else { return nil }
-        return lastFix.coordinate
+        guard let lastFix, let at = lastFixReceivedAt else { return nil }
+        let limit: TimeInterval = recorder?.session.state == .walking ? 30 : 300
+        return Date().timeIntervalSince(at) < limit ? lastFix.coordinate : nil
+    }
+
+    /// One-shot fixes outside a walk: shown as "you are here" and used for planning; never trail.
+    private func handleIdleFix(_ samples: [TrackSample]) {
+        let now = Date()
+        guard let best = samples.filter({ $0.horizontalAccuracy >= 0 && $0.horizontalAccuracy <= 100
+                                            && now.timeIntervalSince($0.timestamp) < 60 })
+                                 .min(by: { $0.horizontalAccuracy < $1.horizontalAccuracy }) else { return }
+        lastFix = best
+        lastFixReceivedAt = now
+    }
+
+    /// Ask for a fresh position when planning or choosing a destination (prompts once if needed).
+    func refreshIdleLocation(promptIfNeeded: Bool = false) {
+        switch location.authorization {
+        case .authorized: location.requestOneShot()
+        case .notDetermined where promptIfNeeded: location.requestPermission()
+        default: break
+        }
     }
 
     /// Coverage at the live position; nil when there is no recent fix.
@@ -200,6 +231,7 @@ final class AppModel: ObservableObject {
 
     private func authorizationChanged(_ status: LocationService.Authorization) {
         permissionDenied = status == .denied || status == .restricted
+        if status == .authorized && recorder == nil && !startPending { location.requestOneShot() }
         guard startPending else {
             if permissionDenied && phase == .walking { location.stop() }
             return
@@ -267,16 +299,84 @@ final class AppModel: ObservableObject {
             }
         }
         finishedWalks.insert(session, at: 0)
+        refreshStats()
         recorder = nil
         recoveredSession = nil
         phase = .idle
         presentedRecap = session
     }
 
+    /// Recap measured against walks that started earlier (cached in `stats` when available).
     func recap(for session: WalkSession) -> WalkRecap {
-        let base = isDemo(session) ? demoExploration : exploration
-        return WalkRecap.compute(session: session, exploration: base, grid: grid, now: session.endedAt ?? Date())
+        if let cached = stats.recaps[session.id] { return cached }
+        var earlier = Exploration()
+        for walk in historyWalks where walk.startedAt < session.startedAt && walk.id != session.id { earlier.merge(walk) }
+        return WalkRecap.compute(session: session, exploration: earlier, grid: grid, now: session.endedAt ?? Date())
     }
+
+    // MARK: History stats
+
+    @Published private(set) var stats = WalkStats.empty
+    private var statsTask: Task<Void, Never>?
+
+    /// Recomputes lifetime/per-walk stats off the main thread for the walks currently shown.
+    func refreshStats() {
+        statsTask?.cancel()
+        let walks = historyWalks
+        let grid = self.grid
+        statsTask = Task { [weak self] in
+            let computed = await Task.detached(priority: .utility) { WalkStats.compute(walks: walks, grid: grid) }.value
+            guard !Task.isCancelled else { return }
+            self?.stats = computed
+        }
+    }
+
+    /// New-ground distance of the walk in progress (dotted part of the trail).
+    var liveNewDistanceMeters: Double {
+        guard recorder != nil || replay != nil else { return 0 }
+        return displayedTrailRuns.filter(\.isNew).reduce(0) { total, run in
+            zip(run.points, run.points.dropFirst()).reduce(total) { $0 + Geo.distanceMeters($1.0, $1.1) }
+        }
+    }
+
+    /// New streets today: finished walks that started today plus the live walk.
+    var todayNewDistanceMeters: Double {
+        let start = Calendar.current.startOfDay(for: Date())
+        let finished = stats.recaps(in: historyWalks, from: start, to: start.addingTimeInterval(86_400))
+        return finished.reduce(0) { $0 + $1.newDistanceMeters } + (demoMode ? 0 : liveNewDistanceMeters)
+    }
+
+    // MARK: Timelapse ("Watch your map grow")
+
+    @Published private(set) var timelapseBase: Exploration?
+
+    /// Replays every shown walk in date order, revealing the map as it grew.
+    func startTimelapse() {
+        let ordered = historyWalks.sorted { $0.startedAt < $1.startedAt }
+        guard !ordered.isEmpty, recorder == nil else { return }
+        stopReplay()
+        replayTask = Task { [weak self] in
+            var base = Exploration()
+            for walk in ordered {
+                guard let self, !Task.isCancelled else { return }
+                self.timelapseBase = base
+                var current = WalkReplay(source: walk)
+                let step = max(1, current.totalSamples / 40)
+                while !current.isFinished, !Task.isCancelled {
+                    current.advance(by: step)
+                    self.replay = current
+                    try? await Task.sleep(nanoseconds: 16_000_000)
+                }
+                base.merge(walk)
+            }
+            self?.timelapseBase = base
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            self?.timelapseBase = nil
+            self?.replay = nil
+        }
+    }
+
+    var isTimelapseRunning: Bool { timelapseBase != nil }
 
     // MARK: New-ground classification
 
@@ -354,6 +454,7 @@ final class AppModel: ObservableObject {
         if !on {
             stopReplay()
             demoMode = false
+            refreshStats()
             return
         }
         guard recorder == nil else { return }
@@ -374,6 +475,7 @@ final class AppModel: ObservableObject {
         }
         demoProblem = nil
         demoMode = true
+        refreshStats()
     }
 
     /// Animates one sample walk revealing the fog (~20 s), cycling through the sample walks.
@@ -397,6 +499,7 @@ final class AppModel: ObservableObject {
     }
 
     func stopReplay() {
+        timelapseBase = nil
         replayTask?.cancel()
         replayTask = nil
         replay = nil
@@ -405,7 +508,10 @@ final class AppModel: ObservableObject {
     // MARK: Samples
 
     private func handle(_ samples: [TrackSample]) {
-        guard var current = recorder, current.session.state == .walking else { return }
+        guard var current = recorder, current.session.state == .walking else {
+            handleIdleFix(samples)
+            return
+        }
         let now = Date()
         var acceptedAny = false
         for sample in samples {
@@ -455,11 +561,20 @@ final class AppModel: ObservableObject {
 
     func ask() {
         let request = plannerText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !request.isEmpty, let content, let origin = distanceOrigin else { return }
+        guard !request.isEmpty, let content else { return }
         plannerTask?.cancel()
         let options = SearchOptions(radiusMeters: searchRadiusMeters)
         plannerTask = Task { [weak self] in
             guard let self else { return }
+            // Prefer where the user actually is: wait briefly for a fresh one-shot fix.
+            if self.currentPosition == nil && self.location.authorization == .authorized {
+                self.plannerState = .locating
+                self.refreshIdleLocation()
+                for _ in 0..<16 where self.currentPosition == nil && !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+            }
+            guard let origin = self.distanceOrigin else { return }
             self.plannerState = .loadingModel
             guard let engine = await self.ai.ensureLoaded() else {
                 switch self.ai.state {
@@ -494,6 +609,7 @@ final class AppModel: ObservableObject {
 
     func choose(_ place: Place) {
         destination = place
+        refreshIdleLocation()
     }
 
     func clearDestination() {
@@ -510,6 +626,7 @@ final class AppModel: ObservableObject {
             try store.erasePersonalData()
             exploration = Exploration()
             finishedWalks = []
+            refreshStats()
             destination = nil
             lastFix = nil
             lastFixReceivedAt = nil

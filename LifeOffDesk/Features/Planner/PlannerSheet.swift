@@ -9,6 +9,7 @@ struct PlannerSheet: View {
 
     /// Quick picks fill the request and still go through the on-device model.
     private let quickPicks: [(icon: String, text: String)] = [
+        ("fork.knife", "Pizza malapit"),
         ("cup.and.saucer", "Kape muna, 30 mins"),
         ("leaf", "Tahimik na park"),
         ("building.columns", "Museum, may 1 hour ako"),
@@ -39,11 +40,16 @@ struct PlannerSheet: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 6)
                     .background(Theme.canvas)
             }
-            .onAppear { if model.plannerText.isEmpty { inputFocused = true } }
+            .onAppear {
+                model.refreshIdleLocation(promptIfNeeded: true)
+                if model.plannerText.isEmpty { inputFocused = true }
+            }
         }
     }
 
-    private var isBusy: Bool { model.plannerState == .loadingModel || model.plannerState == .thinking }
+    private var isBusy: Bool {
+        model.plannerState == .loadingModel || model.plannerState == .thinking || model.plannerState == .locating
+    }
     private var showQuickPicks: Bool { model.plannerState == .idle }
     private var canAsk: Bool { !model.plannerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
@@ -123,10 +129,11 @@ struct PlannerSheet: View {
         switch model.plannerState {
         case .idle:
             EmptyView()
-        case .loadingModel, .thinking:
+        case .locating, .loadingModel, .thinking:
             HStack(spacing: 10) {
                 ProgressView()
-                Text(model.plannerState == .loadingModel ? "Loading…" : "Nag-iisip…").foregroundStyle(Theme.secondaryInk)
+                Text(model.plannerState == .locating ? "Hinahanap ka…" : model.plannerState == .loadingModel ? "Loading…" : "Nag-iisip…")
+                    .foregroundStyle(Theme.secondaryInk)
             }
             .accessibilityElement(children: .combine)
         case let .modelUnavailable(message):
@@ -162,7 +169,7 @@ struct PlannerSheet: View {
 
     private var manualFilters: some View {
         HStack(spacing: 8) {
-            ForEach([PlaceCategory.park, .cafe, .museum, .library], id: \.self) { category in
+            ForEach([PlaceCategory.food, .cafe, .park, .museum], id: \.self) { category in
                 Button(PlannerCopy.categoryWord(category).capitalized) { model.manualSearch(category: category) }
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.ink)
@@ -238,6 +245,7 @@ struct SuggestionCard: View {
         switch suggestion.place.category {
         case .park: return "leaf.fill"
         case .cafe: return "cup.and.saucer.fill"
+        case .food: return "fork.knife"
         case .museum: return "building.columns.fill"
         case .library: return "books.vertical.fill"
         case .scenic: return "binoculars.fill"

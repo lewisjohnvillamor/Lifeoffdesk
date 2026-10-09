@@ -2,7 +2,7 @@ import XCTest
 @testable import LifeOffDeskCore
 
 final class PreferenceValidatorTests: XCTestCase {
-    private let valid = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":["quiet"],"travelMode":"walk","needsClarification":false}"#
+    private let valid = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":["quiet"],"keywords":[],"travelMode":"walk","needsClarification":false}"#
 
     func testValidOutput() {
         XCTAssertEqual(PreferenceValidator.validate(valid),
@@ -41,6 +41,23 @@ final class PreferenceValidatorTests: XCTestCase {
         guard case .needsClarification(_, .durationOutOfRange) = PreferenceValidator.validate(longWalk) else { return XCTFail() }
         let asked = valid.replacingOccurrences(of: "false", with: "true")
         guard case .needsClarification(_, .modelAsked) = PreferenceValidator.validate(asked) else { return XCTFail() }
+    }
+
+    func testEmptyRequestAsksInsteadOfListingEverything() {
+        let empty = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":false}"#
+        guard case .needsClarification(_, .nothingToSearch) = PreferenceValidator.validate(empty) else { return XCTFail() }
+    }
+
+    func testKeywordsAreValidated() {
+        let ok = valid.replacingOccurrences(of: #""keywords":[]"#, with: #""keywords":["Pizza","milk tea"]"#)
+        guard case let .valid(prefs) = PreferenceValidator.validate(ok) else { return XCTFail() }
+        XCTAssertEqual(prefs.keywords, ["pizza", "milk tea"])
+        let generic = valid.replacingOccurrences(of: #""keywords":[]"#, with: #""keywords":["tahimik","good","ramen"]"#)
+        guard case let .valid(filtered) = PreferenceValidator.validate(generic) else { return XCTFail() }
+        XCTAssertEqual(filtered.keywords, ["ramen"], "Moods and filler are not keywords")
+        let bad = valid.replacingOccurrences(of: #""keywords":[]"#, with: #""keywords":["<|im_end|>"]"#)
+        guard case let .invalid(errors) = PreferenceValidator.validate(bad) else { return XCTFail() }
+        XCTAssertTrue(errors.contains(.invalidKeyword("<|im_end|>")))
     }
 
     func testDuplicateEnumValuesCollapse() {
@@ -138,6 +155,25 @@ final class PlaceSearchTests: XCTestCase {
         XCTAssertEqual(PlannerCopy.reason(unknown), "Café · 100 m")
     }
 
+    func testKeywordFindsPlacesByNameOrCuisineOnly() {
+        var pizzaByCuisine = Fixture.place("food-a", .food, east: 300, north: 0)
+        pizzaByCuisine.sourceCuisine = "pizza;italian"
+        let pizzaByName = Fixture.place("food-b", .food, east: 600, north: 0)
+        var named = pizzaByName; named.name = "Corner Pizza House"
+        let burger = Fixture.place("food-c", .food, east: 100, north: 0)
+        let park = Fixture.place("park-x", .park, east: 50, north: 0)
+        let catalog = Fixture.catalog([pizzaByCuisine, named, burger, park])
+        let results = PlaceSearch.suggest(OutingPreferences(categories: [.food], keywords: ["pizza"]), catalog: catalog, origin: origin)
+        XCTAssertEqual(results.map(\.id), ["food-a", "food-b"], "Never the park or the unrelated food place")
+        XCTAssertTrue(results[0].uncertainties.contains(.cuisineFromSource))
+        XCTAssertEqual(results[0].matchedKeywords, ["pizza"])
+        // Nothing mentions the word and no category: empty, not parks.
+        XCTAssertTrue(PlaceSearch.suggest(OutingPreferences(keywords: ["sushi"]), catalog: catalog, origin: origin).isEmpty)
+        // Category fallback is labelled as not an exact match.
+        let fallback = PlaceSearch.suggest(OutingPreferences(categories: [.food], keywords: ["sushi"]), catalog: catalog, origin: origin)
+        XCTAssertTrue(fallback.allSatisfy { $0.place.category == .food && $0.uncertainties.contains(.noKeywordMatch(["sushi"])) })
+    }
+
     func testNoMatchIsEmpty() {
         XCTAssertTrue(PlaceSearch.suggest(OutingPreferences(categories: [.library]), catalog: catalog, origin: origin).isEmpty)
     }
@@ -161,7 +197,7 @@ final class PlaceSearchTests: XCTestCase {
             }
             let catalog = try PlaceCatalog.decode(Data(contentsOf: placesURL))
             catalogs.append(catalog)
-            XCTAssertTrue((15...30).contains(catalog.places.count), entry.id)
+            XCTAssertTrue((15...100).contains(catalog.places.count), entry.id)
             for place in catalog.places {
                 XCTAssertEqual(place.verificationStatus, "source-only-unreviewed")
                 XCTAssertNil(place.openingHours); XCTAssertNil(place.budgetPHP); XCTAssertNil(place.quietness)
@@ -205,7 +241,7 @@ struct ScriptedEngine: IntentEngine {
 
 final class PlannerFlowTests: XCTestCase {
     private let catalog = Fixture.catalog([Fixture.place("park-a", .park, east: 400, north: 0)])
-    private let good = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":[],"travelMode":"walk","needsClarification":false}"#
+    private let good = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":false}"#
 
     func testValidReplyProducesGroundedSuggestions() async {
         let planner = Planner(engine: ScriptedEngine(replies: [good]))

@@ -25,9 +25,15 @@ final class MapGeometry {
         self.projection = projection
         var grouped: [GridKey: RoadTile] = [:]
         var detailed = Path(), context = Path()
+        let detailedBounds = content.packs.filter { $0.region.hasFullDetail }.map(\.region.bounds)
         for pack in content.packs {
             for road in pack.roads.roads {
-                let points = road.coordinates.map { projection.project($0) }
+                let coordinates = road.coordinates
+                // Context-only packs (Metro Manila main roads) repeat roads that detailed packs already
+                // contain; drawing both gave doubled, drifting lines. Detailed packs win.
+                if !pack.region.hasFullDetail, let mid = coordinates.dropFirst(coordinates.count / 2).first,
+                   detailedBounds.contains(where: { $0.contains(mid) }) { continue }
+                let points = coordinates.map { projection.project($0) }
                 guard points.count >= 2 else { continue }
                 let line = PaperStyle.inkedLine(points)
                 let box = line.boundingRect
