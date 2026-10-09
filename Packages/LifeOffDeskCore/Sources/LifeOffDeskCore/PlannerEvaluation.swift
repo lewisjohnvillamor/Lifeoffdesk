@@ -84,6 +84,9 @@ public enum PlannerEvaluation {
                 let actual = prefs?.keywords ?? []
                 ok = v.allSatisfy { want in actual.contains { $0.contains(want) || want.contains($0) } }
             case let ("travelMode", .string(v)): ok = prefs?.travelMode == v
+            case let ("novelty", .string(v)): ok = prefs?.novelty.rawValue == v
+            case let ("accessNeeds", .strings(v)): ok = Set(v) == Set(prefs?.accessNeeds.map(\.rawValue) ?? [])
+            case let ("routeAccess", .bool(v)): ok = (prefs?.routeAccess ?? false) == v
             case let ("needsClarification", .bool(v)): ok = (outcomeName == "clarify") == v
             case ("unsupportedFact", _):
                 // The app never asserts live hours: every card carries an hours label or there are no cards.

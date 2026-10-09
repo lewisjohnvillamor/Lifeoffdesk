@@ -92,7 +92,7 @@ struct WalksView: View {
                 if !chips.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
-                            ForEach(chips, id: \.id) { chip in
+                            ForEach(chips) { chip in
                                 Button { model.applyHistoryQuery(HistoryCopy.removing(chip.id, from: query)) } label: {
                                     HStack(spacing: 4) {
                                         Text(chip.label)

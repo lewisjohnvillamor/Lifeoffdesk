@@ -258,8 +258,13 @@ public enum HistoryCopy {
     public static let clarifyDates = "Anong araw o linggo ang hinahanap mo? Halimbawa: kahapon, last week, o Oct 3–5."
     public static let clarifyDuration = "Medyo magkasalungat ang haba ng lakad na hinanap mo. Ilang minuto?"
 
+    public struct Chip: Hashable, Identifiable, Sendable {
+        public var id: String
+        public var label: String
+    }
+
     /// Visible, removable filter chips.
-    public static func chips(_ query: HistoryQueryV1) -> [(id: String, label: String)] {
+    public static func chips(_ query: HistoryQueryV1) -> [Chip] {
         var chips: [(String, String)] = []
         switch query.period {
         case .all: break
@@ -281,7 +286,7 @@ public enum HistoryCopy {
         case .oldest: chips.append(("sort", "Oldest first"))
         case .longest: chips.append(("sort", "Longest first"))
         }
-        return chips
+        return chips.map { Chip(id: $0.0, label: $0.1) }
     }
 
     /// Removes one chip's filter; the rest of the query stays.

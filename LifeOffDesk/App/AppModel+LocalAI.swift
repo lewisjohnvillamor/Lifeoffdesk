@@ -181,8 +181,8 @@ extension AppModel {
 
     private func rerun(_ prefs: OutingPreferences) {
         guard let content, let origin = distanceOrigin else { return }
-        let usedAI: Bool
-        if case let .answered(_, ai) = plannerState { usedAI = ai } else { usedAI = false }
+        var usedAI = false
+        if case let .answered(_, used) = plannerState { usedAI = used }
         let response = Planner.respond(prefs, catalog: content.catalog, origin: origin,
                                        options: SearchOptions(radiusMeters: searchRadiusMeters),
                                        graph: walkingGraph, context: searchContext)

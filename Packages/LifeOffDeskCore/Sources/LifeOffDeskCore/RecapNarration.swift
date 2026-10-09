@@ -14,6 +14,11 @@ public struct RecapFacts: Hashable, Sendable, Codable {
         public var id: FactID
         /// Display value computed by app code, e.g. "0.55 km".
         public var value: String
+        public init(id: FactID, value: String) { self.id = id; self.value = value }
+    }
+
+    public init(sessionID: UUID, facts: [Fact], placeNames: [String]) {
+        self.sessionID = sessionID; self.facts = facts; self.placeNames = placeNames
     }
 
     public var sessionID: UUID
@@ -55,6 +60,7 @@ public struct RecapNarrationChoice: Hashable, Sendable, Codable {
     public enum Tone: String, Codable, CaseIterable, Sendable { case chill, proud, curious }
     public var factIDs: [RecapFacts.FactID]
     public var tone: Tone
+    public init(factIDs: [RecapFacts.FactID], tone: Tone) { self.factIDs = factIDs; self.tone = tone }
 }
 
 public enum RecapNarrationValidator {
@@ -178,6 +184,10 @@ public struct NarrationRecord: Hashable, Sendable, Codable {
     public var key: String
     public var choice: RecapNarrationChoice
     public var createdAt: Date
+
+    public init(sessionID: UUID, key: String, choice: RecapNarrationChoice, createdAt: Date) {
+        self.sessionID = sessionID; self.key = key; self.choice = choice; self.createdAt = createdAt
+    }
 
     public static func key(facts: RecapFacts, modelID: String, language: String = "taglish") -> String {
         "\(facts.sessionID.uuidString)|\(facts.hash)|s\(RecapFacts.schemaVersion)|p\(RecapNarrationPrompt.promptVersion)|\(modelID)|\(language)"
