@@ -130,7 +130,7 @@ struct MapScreen: View {
         HStack(alignment: .center) {
             roundIcon("sparkles", label: "Help me choose somewhere", size: 48) { showPlanner = true }
             Spacer()
-            Text(model.demoMode ? "Sample walks · not real GPS" : "There's more to life than your screen.")
+            Text(model.demoMode ? "Sample adventures · not real GPS" : "There's more to life than your screen.")
                 .font(.footnote)
                 .foregroundStyle(model.demoMode ? Theme.danger : Theme.secondaryInk)
                 .multilineTextAlignment(.center)
@@ -260,7 +260,7 @@ struct MapScreen: View {
     @ViewBuilder private var centerControls: some View {
         switch model.phase {
         case .idle where model.demoMode:
-            labeledIcon(model.replay == nil ? "play.fill" : "arrow.clockwise", "Replay", label: "Replay a sample walk",
+            labeledIcon(model.replay == nil ? "play.fill" : "arrow.clockwise", "Replay", label: "Replay a sample adventure",
                         primary: true, size: 72) { model.startReplay() }
         case .idle, .requestingPermission:
             labeledIcon("figure.walk", "Start exploring", label: "Start exploring", primary: true, size: 76) { model.startWalking() }
