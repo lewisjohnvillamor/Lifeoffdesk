@@ -148,6 +148,26 @@ class RegionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             makati.bbox_from_boundary(raw, 'Atlantis')
 
+    def test_places_on_the_box_edge_stay_inside_after_rounding(self):
+        import json, tempfile
+        region = {'id':'edge','name':'Edge','coverageStatus':'fixture','source':'fixture','localDir':'edge',
+                  'bbox':{'south':14.5,'west':121.0,'north':14.6,'east':121.1}}
+        place = lambda i, lat: {'id':f'osm:node:{i}','name':f'P{i}','latitude':lat,'longitude':121.05,
+                                'category':'cafe','sourceURL':'https://www.openstreetmap.org/node/1',
+                                'retrievedAt':'t','verificationStatus':'source-only-unreviewed','sourceTags':{}}
+        with tempfile.TemporaryDirectory() as d:
+            src, out = Path(d)/'src', Path(d)/'out'
+            src.mkdir()
+            (src/'manifest.json').write_text(json.dumps({'attribution':'a','licenseURL':'l','retrievedAt':'t'}))
+            (src/'roads.geojson').write_text(json.dumps({'type':'FeatureCollection','features':[]}))
+            # 14.6000004 rounds to 14.6 (inside); 14.6000006 rounds to 14.600001 (outside, dropped).
+            (src/'places-source.json').write_text(json.dumps([place(1, 14.55), place(2, 14.6000004), place(3, 14.6000006)]))
+            catalog.build_region(region, src, out)
+            kept = json.loads((out/'places.json').read_text())['places']
+            self.assertEqual(sorted(p['id'] for p in kept), ['osm:node:1', 'osm:node:2'])
+            for p in kept:
+                self.assertTrue(region['bbox']['south'] <= p['latitude'] <= region['bbox']['north'])
+
 class DemoWalkTests(unittest.TestCase):
     def test_generator_is_deterministic_and_labelled(self):
         import json, subprocess, sys

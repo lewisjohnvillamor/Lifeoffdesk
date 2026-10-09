@@ -106,8 +106,10 @@ def build_region(region, source_dir, output_dir):
         places = json.loads((source_dir/'places-source.json').read_text())
         bbox = region['bbox']
         # Area features crossing the edge can have a midpoint outside the box; keep the pack self-consistent.
-        places = [p for p in places if bbox['south'] <= p['latitude'] <= bbox['north']
-                  and bbox['west'] <= p['longitude'] <= bbox['east']]
+        # Check the rounded coordinates the pack will store: a place within ~5 cm of the edge can
+        # otherwise round to just outside the box.
+        places = [p for p in places if bbox['south'] <= round(p['latitude'], 6) <= bbox['north']
+                  and bbox['west'] <= round(p['longitude'], 6) <= bbox['east']]
         anchor = anchor or median_anchor(places)
         # Full-city regions select from the whole administrative box; the CBD keeps its walking radius.
         radius = MAX_RADIUS_M if region.get('anchor') else None
