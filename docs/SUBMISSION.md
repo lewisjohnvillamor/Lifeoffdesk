@@ -23,7 +23,7 @@ Fields marked **FOUNDER** must be filled by the team; nothing here is invented o
   - Per-feature panels: `marketing/mockups/*-portrait.jpg` (map, route, coach, help chat, recap, card).
   - Raw captures: the `ci-screenshots` branch.
   - Screens with sample adventures are labelled "Demo world" / "SAMPLE".
-- **X / LinkedIn video URL:** **FOUNDER**. Post the square cut (`marketing/life-off-desk-launch-square.mp4`), tag Devin / Cognition and include #AppBuildersPH.
+- **X / LinkedIn video URL:** https://x.com/LewisV14590/status/2108647989216764234 (square launch film, posted 2026-10-10)
 - **What runs locally (on the iPhone, offline):**
   - **Qwen3-1.7B** (Q4_K_M GGUF) through **llama.cpp b11429**, compiled into the app (Metal). Every call is grammar-constrained JSON plus a validator with one repair attempt. It handles:
     - Taglish planner intent
@@ -124,7 +124,7 @@ Backups: a pre-recorded 1-minute video on the laptop, demo mode for a populated 
 
 - [ ] FOUNDER fills team member names (official list) and the extra AI tools.
 - [ ] Record the ~1 min demo video on the phone (Airplane Mode visible).
-- [ ] Post it on X or LinkedIn tagging Devin / Cognition with #AppBuildersPH; paste the URL.
+- [x] Posted on X: https://x.com/LewisV14590/status/2108647989216764234 (check it tags Devin / Cognition and has #AppBuildersPH).
 - [ ] Optional: copy the AI diagnostics JSON from the phone into `docs/BUILD-STATUS.md` (real latency numbers) before the freeze.
 - [ ] Confirm the repo is public (it is as of 2026-10-09) and `main` holds the final build.
 - [ ] Submit once on Cerebral Valley; answers above are paste-ready.
