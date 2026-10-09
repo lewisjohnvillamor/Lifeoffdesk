@@ -172,7 +172,8 @@ public enum CoachRenderer {
         guard let value = facts.value(id) else { return nil }
         switch id {
         case .daysSinceLast: return value == "0" ? "nag-adventure ka today" : value == "1" ? "1 araw mula sa huling adventure mo" : "\(value) araw mula sa huling adventure mo"
-        case .reachNow: return "\(value) lang ang pinakamalayo mo nitong 2 linggo"
+        // "lang" (only) fits a shrinking world; for a steady or growing one it would read as a put-down.
+        case .reachNow: return "\(value)\(facts.signal == .shrinking ? " lang" : "") ang pinakamalayo mo nitong 2 linggo"
         case .reachBefore: return "\(value) ang pinakamalayo mo noong nakaraang 2 linggo"
         case .newStreetsNow: return "\(value) ng bagong kalye nitong 2 linggo"
         case .newStreetsBefore: return "\(value) ng bagong kalye noong nakaraang 2 linggo"

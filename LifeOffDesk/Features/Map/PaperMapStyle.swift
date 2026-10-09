@@ -124,38 +124,43 @@ final class IslandCache {
         return result
     }
 
+    /// One rounded outline around the walked line (reveal width = 2 × radius). Earlier this
+    /// stamped a 14-sided torn-paper disc every ~8 m: fine for one walk, but 200+ km of sample
+    /// adventures meant ~400k vertices clipped several times per frame (visible lag). A simplified
+    /// polyline stroked once is a few thousand elements and draws smoothly.
     static func island(along points: [MeterPoint], radius: CGFloat) -> Path {
-        var stamps: [CGPoint] = []
-        let spacing = radius * 0.55
         guard let first = points.first else { return Path() }
-        stamps.append(CGPoint(x: first.x, y: first.y))
-        var carry: CGFloat = 0
-        for (a, b) in zip(points, points.dropFirst()) {
-            let dx = CGFloat(b.x - a.x), dy = CGFloat(b.y - a.y)
-            let length = hypot(dx, dy)
-            var travelled = spacing - carry
-            while travelled <= length {
-                let t = travelled / length
-                stamps.append(CGPoint(x: CGFloat(a.x) + dx * t, y: CGFloat(a.y) + dy * t))
-                travelled += spacing
-            }
-            carry = length - (travelled - spacing)
-        }
-        if let last = points.last, points.count > 1 { stamps.append(CGPoint(x: last.x, y: last.y)) }
-
+        let line = simplify(points.map { CGPoint(x: $0.x, y: $0.y) }, tolerance: max(1, radius * 0.2))
         var path = Path()
-        let vertices = 14
-        for stamp in stamps {
-            let gx = Int((stamp.x * 1.7).rounded()), gy = Int((stamp.y * 1.7).rounded())
-            for v in 0..<vertices {
-                let angle = CGFloat(v) / CGFloat(vertices) * 2 * .pi
-                // Two noise octaves: slow wobble plus fine torn-paper jitter.
-                let r = radius * (1 + 0.13 * PaperStyle.noise(gx, gy, v / 3) + 0.07 * PaperStyle.noise(gx, gy, v + 101))
-                let point = CGPoint(x: stamp.x + cos(angle) * r, y: stamp.y + sin(angle) * r)
-                if v == 0 { path.move(to: point) } else { path.addLine(to: point) }
-            }
-            path.closeSubpath()
+        if line.count == 1 {
+            path.addEllipse(in: CGRect(x: first.x - radius, y: first.y - radius, width: radius * 2, height: radius * 2))
+            return path
         }
-        return path
+        path.move(to: line[0])
+        for point in line.dropFirst() { path.addLine(to: point) }
+        return path.strokedPath(StrokeStyle(lineWidth: radius * 2, lineCap: .round, lineJoin: .round))
+    }
+
+    /// Douglas–Peucker (iterative): drops points within `tolerance` metres of the simplified line.
+    static func simplify(_ points: [CGPoint], tolerance: CGFloat) -> [CGPoint] {
+        guard points.count > 2 else { return points }
+        var keep = [Bool](repeating: false, count: points.count)
+        keep[0] = true; keep[points.count - 1] = true
+        var stack = [(0, points.count - 1)]
+        while let (a, b) = stack.popLast() {
+            guard b > a + 1 else { continue }
+            let p = points[a], q = points[b]
+            let dx = q.x - p.x, dy = q.y - p.y, length = max(hypot(dx, dy), 0.0001)
+            var worst = 0 as CGFloat, index = a
+            for i in (a + 1)..<b {
+                let distance = abs(dy * points[i].x - dx * points[i].y + q.x * p.y - q.y * p.x) / length
+                if distance > worst { worst = distance; index = i }
+            }
+            if worst > tolerance {
+                keep[index] = true
+                stack.append((a, index)); stack.append((index, b))
+            }
+        }
+        return points.indices.filter { keep[$0] }.map { points[$0] }
     }
 }

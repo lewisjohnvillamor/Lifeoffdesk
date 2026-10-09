@@ -93,6 +93,10 @@ struct MapScreen: View {
             frame(route.points, using: geometry, padding: 120)
         }
         .onChange(of: camera) { _, camera in reportViewport(camera) }
+        // Replays and "Watch your world grow" follow the moving pointer.
+        .onChange(of: model.replay?.source.id) { _, id in
+            if id != nil { followUser = true }
+        }
         .onChange(of: model.mapPosition) { _, position in
             guard followUser, let position, let geometry else { return }
             camera.center = geometry.point(position)
@@ -371,8 +375,9 @@ struct MapScreen: View {
     @ViewBuilder private var centerControls: some View {
         switch model.phase {
         case .idle where model.demoMode:
-            labeledIcon(model.replay == nil ? "play.fill" : "arrow.clockwise", "Replay", label: "Replay a sample adventure",
-                        primary: true, size: 72) { model.startReplay() }
+            // Same big walk button as "Start exploring", so the demo feels like the real app.
+            labeledIcon("figure.walk", model.replay == nil ? "Play a sample adventure" : "Next sample adventure",
+                        label: "Play a sample adventure", primary: true, size: 76) { model.startReplay() }
         case .idle, .requestingPermission:
             labeledIcon("figure.walk", "Start exploring", label: "Start exploring", primary: true, size: 76) { model.startWalking() }
                 .disabled(model.phase == .requestingPermission)
