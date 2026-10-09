@@ -27,6 +27,11 @@ final class SafetyChat: ObservableObject {
     let loadProblem: String?
 
     init() {
+        // Routing terms (Taglish/Tagalog/English); without them the model alone routes.
+        if SafetyKeywords.lexicon == nil,
+           let url = Bundle.main.url(forResource: "safety-lexicon", withExtension: "json", subdirectory: "StarterData") {
+            SafetyKeywords.lexicon = try? SafetyLexicon.decode(Data(contentsOf: url))
+        }
         if let url = Bundle.main.url(forResource: "safety-guide", withExtension: "json", subdirectory: "StarterData") {
             do {
                 guide = try SafetyGuide.decode(Data(contentsOf: url)); loadProblem = nil
