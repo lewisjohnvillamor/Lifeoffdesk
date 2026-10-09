@@ -31,7 +31,7 @@ EMERGENCY = [
     "tinuklaw", "natuklaw", "kagat ng ahas", "nakagat ng ahas", "kinagat ng ahas", "snake bite", "snakebite",
     "anaphylaxis", "namamaga ang lalamunan", "sumisikip ang lalamunan", "swollen throat", "throat closing",
     "walang pulso", "no pulse", "cardiac arrest", "heatstroke", "heat stroke", "hindi pinapawisan",
-    "hindi pinagpapawisan", "not sweating", "nalunod", "nalulunod", "drowning", "nakuryente", "electrocuted", "may baril", "tinutukan", "nalason", "poisoned",
+    "hindi pinagpapawisan", "not sweating", "nalunod", "nalulunod", "drowning", "may sunog", "nasusunog", "sunog sa", "there is fire", "there is a fire", "theres a fire", "on fire", "house fire", "building fire", "nakuryente", "electrocuted", "may baril", "tinutukan", "nalason", "poisoned",
 ]
 
 TOPICS = {
