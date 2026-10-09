@@ -25,6 +25,10 @@ PER_CUISINE = 4
 MAX_PER_CHAIN = 1
 MAX_RADIUS_M = 2500
 
+EMPTY_FACTS_NOTE = ('No reviewed access facts yet. Missing evidence means unknown; it never satisfies a hard '
+                    'access requirement.')
+
+
 def haversine_m(a, b):
     lat1, lon1 = map(math.radians, a)
     lat2, lon2 = map(math.radians, b)
@@ -140,6 +144,13 @@ def build_region(region, source_dir, output_dir):
                              f'{sorted(RESTRICTED_ACCESS)} excluded. Not a human review.',
             'places': selected})
         names.insert(0, 'places.json')
+        # Reviewed access evidence (docs/ACCESSIBILITY-AND-SAFETY.md) is curated by hand and kept across
+        # rebuilds; a new pack starts with an empty sidecar. Source OSM tags are never promoted into it.
+        facts_path = output_dir/'place-facts.json'
+        if not facts_path.exists():
+            write_json(facts_path, {'schemaVersion': 1, 'regionID': region['id'],
+                                    'note': EMPTY_FACTS_NOTE, 'facts': []})
+        names.append('place-facts.json')
     write_json(output_dir/'roads.json', {**common,
         'note': 'Visual context only; not a routing graph. Restricted flag reflects source tags only.',
         'roads': compact_roads(roads)})

@@ -6,6 +6,7 @@ struct PlannerSheet: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @FocusState private var inputFocused: Bool
+    @State private var savedPrefs = false
 
     /// Quick picks fill the request and still go through the on-device model.
     private let quickPicks: [(icon: String, text: String)] = [
@@ -93,6 +94,7 @@ struct PlannerSheet: View {
     private func send() {
         guard canAsk else { return }
         inputFocused = false
+        savedPrefs = false
         model.ask()
     }
 
@@ -163,20 +165,74 @@ struct PlannerSheet: View {
 
     @ViewBuilder private func answer(_ response: PlannerResponse, usedAI: Bool) -> some View {
         switch response {
-        case let .suggestions(_, intro, suggestions):
+        case let .suggestions(prefs, intro, suggestions):
             Text(usedAI ? intro : "Filter (no AI) · \(intro)")
                 .font(.footnote).foregroundStyle(Theme.secondaryInk)
+            requirementChips(prefs)
+            if usedAI, let applied = model.lastTrace?.appliedSaved, !applied.isEmpty {
+                Text("Galing sa saved preferences: \(applied.joined(separator: ", ")). Ang tinype mo ang laging nasusunod.")
+                    .font(.caption).foregroundStyle(Theme.secondaryInk)
+            }
             VStack(spacing: 10) {
                 ForEach(suggestions) { SuggestionCard(suggestion: $0) }
             }
-        case .noMatch:
-            note(PlannerCopy.noMatch)
-            manualFilters
-        case let .clarify(_, question):
+            if usedAI { savePreferencesButton }
+        case let .noMatch(prefs):
+            if !prefs.accessNeeds.isEmpty {
+                requirementChips(prefs)
+                note(PlannerCopy.noEligibleAccess)
+                Button("Alisin ang access requirement (unverified results)") { model.searchWithoutAccessNeeds(prefs) }
+                    .font(.subheadline.weight(.semibold))
+            } else {
+                note(PlannerCopy.noMatch)
+                manualFilters
+            }
+        case let .clarify(prefs, question):
             note(question)
+            if let prefs, prefs.routeAccess {
+                Button("Oo, step-free entrance lang ang i-filter") { model.searchVenueEntranceOnly(prefs) }
+                    .font(.subheadline.weight(.semibold))
+            }
         case .failed:
             note(PlannerCopy.modelFailure)
             manualFilters
+        }
+    }
+
+    /// Hard requirements stay visible and removable; they are never relaxed silently.
+    @ViewBuilder private func requirementChips(_ prefs: OutingPreferences) -> some View {
+        if !prefs.accessNeeds.isEmpty || prefs.novelty != .any {
+            HStack(spacing: 6) {
+                ForEach(prefs.accessNeeds, id: \.self) { need in
+                    Button { model.searchWithoutAccessNeeds(prefs) } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "figure.roll").accessibilityHidden(true)
+                            Text(need == .stepFreeEntrance ? "Step-free entrance (required)" : "Wheelchair access (required)")
+                            Image(systemName: "xmark").font(.caption2.bold())
+                        }
+                    }
+                    .accessibilityLabel("Required: \(need == .stepFreeEntrance ? "step-free entrance" : "wheelchair access"). Remove")
+                }
+                if prefs.novelty != .any {
+                    Text(prefs.novelty == .new ? "Bago para sa'yo" : "Mga dati mong nadaanan")
+                }
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Theme.ink)
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder private var savePreferencesButton: some View {
+        if model.preferencesLocked == nil {
+            Button {
+                savedPrefs = model.savePlannerPreferences()
+            } label: {
+                Label(savedPrefs ? "Saved as my preferences" : "Save these preferences",
+                      systemImage: savedPrefs ? "checkmark" : "bookmark")
+            }
+            .font(.footnote.weight(.semibold))
+            .disabled(savedPrefs)
         }
     }
 
@@ -239,6 +295,7 @@ struct SuggestionCard: View {
             .buttonStyle(.plain)
             if expanded {
                 VStack(alignment: .leading, spacing: 4) {
+                    ForEach(suggestion.accessLabels, id: \.self) { Text("• " + $0) }
                     ForEach(suggestion.uncertainties, id: \.self) { Text("• " + PlannerCopy.label($0)) }
                     if let url = URL(string: suggestion.place.sourceURL) {
                         Link("Source record", destination: url).foregroundStyle(Theme.primary)

@@ -49,6 +49,10 @@ struct MeView: View {
                 Text(String(format: "%.2f km", stats.totalNewDistanceMeters / 1000))
                     .font(.system(size: 52, weight: .bold, design: .rounded).monospacedDigit())
                 Text("Total new streets").font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                if model.offStreetMeters >= 10 {
+                    Text("+ \(Format.distance(model.offStreetMeters)) off mapped streets (counts toward area, not streets)")
+                        .font(.caption).foregroundStyle(Theme.secondaryInk).padding(.top, 2)
+                }
             }
             HStack(spacing: 0) {
                 total("\(stats.walkCount)", "Adventures")

@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
     let grid: ExplorationGrid
 
     // Personal data
-    private let store: LocalStore?
+    let store: LocalStore?
     @Published private(set) var storeProblem: String?
     @Published private(set) var exploration = Exploration()
     @Published private(set) var finishedWalks: [WalkSession] = []
@@ -48,7 +48,7 @@ final class AppModel: ObservableObject {
     // Planner
     @Published var destination: Place? { didSet { refreshDestinationStreet() } }
     @Published var plannerText = ""
-    @Published private(set) var plannerState: PlannerState = .idle
+    @Published var plannerState: PlannerState = .idle
     @Published private(set) var lastTrace: PlannerTrace?
     @Published var searchRadiusMeters: Double = SearchOptions.defaultRadiusMeters
     private var plannerTask: Task<Void, Never>?
@@ -63,6 +63,17 @@ final class AppModel: ObservableObject {
     private var replayIndex = 0
 
     @Published var selectedTab: AppTab = .map
+
+    // MARK: Local AI features (P0-12–15); logic lives in AppModel+LocalAI.swift
+    /// Saved preferences (nil = none saved). Only changed by an explicit user action.
+    @Published var preferenceProfile: PreferenceProfile?
+    /// Set when preferences.json was written by a newer app version; editing is disabled.
+    @Published var preferencesLocked: String?
+    @Published var preferencesProblem: String?
+    @Published var historyQuery: HistoryQueryV1?
+    @Published var historyState: HistoryState = .idle
+    @Published var narrations: [UUID: NarrationState] = [:]
+    var historyTask: Task<Void, Never>?
 
     let ai = AIService()
     private let location = LocationService()
@@ -112,6 +123,12 @@ final class AppModel: ObservableObject {
         exploration = store.loadExploration() ?? Exploration()
         finishedWalks = store.loadFinishedWalks()
         moments = store.loadMoments()
+        switch store.loadPreferences() {
+        case .none: preferenceProfile = nil
+        case let .loaded(profile): preferenceProfile = profile
+        case let .newerSchema(version):
+            preferencesLocked = "Saved by a newer app version (schema \(version)); kept untouched."
+        }
         if let active = store.loadActiveSession() {
             if finishedWalks.contains(where: { $0.id == active.id }) {
                 // Crashed between saving the finished walk and clearing the active file.
@@ -749,10 +766,11 @@ final class AppModel: ObservableObject {
             guard let origin = self.distanceOrigin else { return }
             self.plannerState = self.ai.state == .ready ? .thinking : .loadingModel
             let catalog = content.catalog, graph = self.walkingGraph
+            let context = self.searchContext, saved = self.preferenceProfile
             do {
                 let (response, trace) = try await self.ai.run { engine in
                     await Planner(engine: engine).plan(request, catalog: catalog, origin: origin,
-                                                       options: options, graph: graph)
+                                                       options: options, graph: graph, context: context, saved: saved)
                 }
                 guard !Task.isCancelled else { return }
                 self.lastTrace = trace
@@ -778,9 +796,11 @@ final class AppModel: ObservableObject {
     /// Manual fallback. Keeps the app usable without AI but is labelled as such and is not Local AI evidence.
     func manualSearch(category: PlaceCategory) {
         guard let content, let origin = distanceOrigin else { return }
-        let response = Planner.respond(OutingPreferences(categories: [category]), catalog: content.catalog,
+        let response = Planner.respond(OutingPreferences(categories: [category],
+                                                         accessNeeds: preferenceProfile?.accessNeeds ?? []),
+                                       catalog: content.catalog,
                                        origin: origin, options: SearchOptions(radiusMeters: searchRadiusMeters),
-                                       graph: walkingGraph)
+                                       graph: walkingGraph, context: searchContext)
         plannerState = .answered(response, usedAI: false)
     }
 
@@ -801,6 +821,8 @@ final class AppModel: ObservableObject {
         do {
             try store.deleteFinished(session.id)
             finishedWalks.removeAll { $0.id == session.id }
+            narrations[session.id] = nil
+            if let query = historyQuery { applyHistoryQuery(query) }
             moments.removeAll { $0.sessionID == session.id }
             exploration.paths.removeAll { $0.sessionID == session.id }
             try store.saveExploration(exploration)
@@ -838,6 +860,10 @@ final class AppModel: ObservableObject {
             lastFix = nil
             lastFixReceivedAt = nil
             moments = []
+            preferenceProfile = nil
+            preferencesLocked = nil
+            narrations = [:]
+            clearHistorySearch()
             storeProblem = nil
         } catch {
             storeProblem = "Erase failed: \(error.localizedDescription)"

@@ -25,21 +25,39 @@ struct MemoryCardView: View {
     /// Route to draw (matched streets); nil = raw accepted trail.
     var route: [[Coordinate]]? = nil
 
-    private var textColor: Color { style == .sticker ? PaperStyle.ink : .white }
+    /// No photo to show: use the paper-map look with an inked route instead of an empty backdrop.
+    private var onPaper: Bool {
+        switch style {
+        case .sticker: return true
+        case .photo: return !photos.indices.contains(selected)
+        case .collage: return photos.isEmpty
+        }
+    }
+    private var textColor: Color { onPaper ? PaperStyle.ink : .white }
+    private var routeLines: [[Coordinate]] { (route ?? session.segments.map { $0.map(\.coordinate) }).filter { $0.count > 1 } }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             background
-            if style != .sticker {
+            if !onPaper {
                 LinearGradient(colors: [.black.opacity(0.35), .clear, .clear, .black.opacity(0.65)],
                                startPoint: .top, endPoint: .bottom)
             }
-            RouteOverlay(lines: route ?? session.segments.map { $0.map(\.coordinate) },
-                         start: session.segments.first?.first?.coordinate, end: session.lastSample?.coordinate,
-                         label: session.destinationName, color: style == .sticker ? PaperStyle.ink : .white)
-                .padding(.horizontal, 44)
-                .padding(.top, style == .sticker ? 70 : 110)
-                .padding(.bottom, style == .sticker ? 330 : 220)
+            if routeLines.isEmpty {
+                // Nothing to draw: say why instead of showing an empty card.
+                Text("No GPS trail recorded for this adventure.\nWalk outdoors with Location on to draw your route.")
+                    .font(.system(size: 14, weight: .medium)).multilineTextAlignment(.center)
+                    .foregroundStyle(textColor.opacity(0.8))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(40)
+            } else {
+                RouteOverlay(lines: routeLines,
+                             start: session.segments.first?.first?.coordinate, end: session.lastSample?.coordinate,
+                             label: session.destinationName, color: onPaper ? PaperStyle.ink : .white)
+                    .padding(.horizontal, 44)
+                    .padding(.top, style == .sticker ? 70 : 110)
+                    .padding(.bottom, style == .sticker ? 330 : 220)
+            }
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Text(Self.dateText(session.startedAt)).font(.system(size: 15, weight: .semibold))
@@ -66,7 +84,7 @@ struct MemoryCardView: View {
                             .font(.system(size: 11)).opacity(0.85).padding(.top, 2)
                     }
                     Spacer()
-                    BrandBadge(onPaper: style == .sticker)
+                    BrandBadge(onPaper: onPaper)
                 }
             }
             .foregroundStyle(textColor)
@@ -79,9 +97,9 @@ struct MemoryCardView: View {
     @ViewBuilder private var background: some View {
         switch style {
         case .photo:
-            if photos.indices.contains(selected) { fill(photos[selected]) } else { forest }
+            if photos.indices.contains(selected) { fill(photos[selected]) } else { paper }
         case .collage:
-            if photos.isEmpty { forest } else { collage }
+            if photos.isEmpty { paper } else { collage }
         case .sticker:
             ZStack {
                 PaperStyle.island
@@ -96,10 +114,10 @@ struct MemoryCardView: View {
         }
     }
 
-    private var forest: some View {
+    private var paper: some View {
         ZStack {
-            LinearGradient(colors: [Color(hex: 0x46785B), Color(hex: 0x283A31)], startPoint: .top, endPoint: .bottom)
-            Rectangle().fill(ImagePaint(image: PaperStyle.fiberTile, scale: 0.5)).opacity(0.35)
+            PaperStyle.island
+            Rectangle().fill(ImagePaint(image: PaperStyle.fiberTile, scale: 0.5)).opacity(0.6)
         }
     }
 

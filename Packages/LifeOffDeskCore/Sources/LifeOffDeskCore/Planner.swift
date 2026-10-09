@@ -22,6 +22,8 @@ public struct PlannerAttempt: Hashable, Sendable {
 public struct PlannerTrace: Hashable, Sendable {
     public var attempts: [PlannerAttempt] = []
     public var engineError: String?
+    /// Fields filled from saved preferences (shown to the user; the request always wins).
+    public var appliedSaved: [String] = []
 }
 
 /// Runs: model intent extraction → validation (one bounded repair) → deterministic search.
@@ -71,8 +73,13 @@ public struct Planner: Sendable {
         case let .needsClarification(prefs, reason)?:
             return (.clarify(prefs, question: PlannerCopy.clarification(reason)), trace)
         case let .valid(prefs)?:
-            let resolved = PreferenceResolver.resolve(request: prefs, saved: saved, radiusMeters: options.radiusMeters)
-            return (Self.respond(resolved.prefs, catalog: catalog, origin: origin, options: options, graph: graph,
+            // A radius left at the default is not an explicit choice, so a saved radius may apply.
+            let explicit = options.radiusMeters == SearchOptions.defaultRadiusMeters ? nil : options.radiusMeters
+            let resolved = PreferenceResolver.resolve(request: prefs, saved: saved, radiusMeters: explicit)
+            var trace = trace
+            trace.appliedSaved = resolved.fromSaved
+            let resolvedOptions = SearchOptions(radiusMeters: resolved.radiusMeters, limit: options.limit)
+            return (Self.respond(resolved.prefs, catalog: catalog, origin: origin, options: resolvedOptions, graph: graph,
                                  context: context), trace)
         }
     }

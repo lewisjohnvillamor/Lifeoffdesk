@@ -7,6 +7,7 @@ struct WalksView: View {
     @State private var selected: WalkSession?
     @State private var month = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
     @State private var selectedDay: Date?
+    @State private var searchText = ""
 
     private var calendar: Calendar { Calendar.current }
 
@@ -17,6 +18,10 @@ struct WalksView: View {
                     if model.demoMode {
                         Label("Sample adventures · not real GPS", systemImage: "sparkles")
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
+                    }
+                    searchCard
+                    if model.historyQuery != nil || model.historyState != .idle {
+                        searchResults
                     }
                     weekCard
                     Button {
@@ -46,6 +51,85 @@ struct WalksView: View {
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selected) { RecapView(session: $0).environmentObject(model) }
         }
+    }
+
+    // MARK: Search (P0-12: on-device AI turns the question into filters; app code searches)
+
+    private var searchCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkle.magnifyingglass").foregroundStyle(Theme.secondaryInk).accessibilityHidden(true)
+                TextField("Hanapin: \"short walks last week na may photos\"", text: $searchText)
+                    .submitLabel(.search)
+                    .onSubmit { model.searchHistory(searchText) }
+                    .disabled(!model.historySearchAvailable)
+                if model.historyState == .searching {
+                    ProgressView()
+                } else if !searchText.isEmpty || model.historyQuery != nil {
+                    Button {
+                        searchText = ""
+                        model.clearHistorySearch()
+                    } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.secondaryInk) }
+                    .accessibilityLabel("Clear search")
+                }
+            }
+            .padding(12)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.border))
+            if model.demoMode {
+                Text("Search covers your own saved adventures, not sample data.")
+                    .font(.caption).foregroundStyle(Theme.secondaryInk)
+            } else if model.finishedWalks.isEmpty {
+                Text("No saved adventures yet.").font(.caption).foregroundStyle(Theme.secondaryInk)
+            }
+        }
+    }
+
+    private var searchResults: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let query = model.historyQuery {
+                let chips = HistoryCopy.chips(query)
+                if !chips.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(chips, id: \.id) { chip in
+                                Button { model.applyHistoryQuery(HistoryCopy.removing(chip.id, from: query)) } label: {
+                                    HStack(spacing: 4) {
+                                        Text(chip.label)
+                                        Image(systemName: "xmark").font(.caption2.bold())
+                                    }
+                                    .font(.footnote.weight(.semibold))
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(PaperStyle.paper, in: Capsule())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Remove filter \(chip.label)")
+                            }
+                        }
+                    }
+                }
+                if query.categories.isEmpty == false {
+                    Text("“Dumaan malapit” = within 40 m of your trail; not proof you went inside.")
+                        .font(.caption).foregroundStyle(Theme.secondaryInk)
+                }
+            }
+            switch model.historyState {
+            case .idle, .searching: EmptyView()
+            case let .clarify(question):
+                Text(question).font(.subheadline).foregroundStyle(Theme.ink)
+            case let .failed(message):
+                Text(message).font(.footnote).foregroundStyle(Theme.danger)
+            case let .results(ids):
+                let walks = ids.compactMap { id in model.finishedWalks.first { $0.id == id } }
+                Text(walks.isEmpty ? "Walang tugma. Subukang alisin ang isang filter." : "\(walks.count) adventure\(walks.count == 1 ? "" : "s")")
+                    .font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryInk)
+                ForEach(walks) { walk in
+                    Button { selected = walk } label: { row(walk) }.buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     // MARK: This week

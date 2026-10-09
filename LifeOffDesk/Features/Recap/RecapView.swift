@@ -41,6 +41,7 @@ struct RecapView: View {
                         Text("You passed " + found.prefix(4).map(\.name).joined(separator: ", ") + (found.count > 4 ? " and more" : ""))
                             .font(.footnote).foregroundStyle(Theme.secondaryInk).multilineTextAlignment(.center)
                     }
+                    narration
                     Button { showCard = true } label: { Label("Make a card", systemImage: "camera") }
                         .buttonStyle(PrimaryButtonStyle())
                     if recap.wasRecovered {
@@ -119,5 +120,43 @@ struct RoutePreview: View {
                 context.stroke(path, with: .color(Theme.primary), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
             }
         }
+    }
+}
+
+extension RecapView {
+    /// P0-13: the model only picks computed facts and a tone; numbers come from the recap.
+    @ViewBuilder private var narration: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            switch model.narrations[session.id] {
+            case nil:
+                if let cached = model.cachedNarration(for: session) {
+                    narrationText(cached, note: "AI-selected highlights · values computed from your trail")
+                } else {
+                    Button { model.requestNarration(for: session) } label: {
+                        Label("Taglish recap", systemImage: "sparkles")
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityHint("Uses the on-device model to pick highlights; numbers are computed")
+                }
+            case .working?:
+                HStack(spacing: 8) { ProgressView(); Text("Pumipili ng highlights…").font(.footnote) }
+            case let .ai(text)?:
+                narrationText(text, note: "AI-selected highlights · values computed from your trail")
+            case let .fallback(text, reason)?:
+                narrationText(text, note: "Computed summary (no AI result: \(reason))")
+                Button("Try again") { model.requestNarration(for: session) }.font(.footnote)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func narrationText(_ text: String, note: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(text).font(.body).foregroundStyle(Theme.ink)
+            Text(note).font(.caption).foregroundStyle(Theme.secondaryInk)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

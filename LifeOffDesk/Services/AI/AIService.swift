@@ -68,6 +68,11 @@ final class AIService: ObservableObject {
         try await coordinator.perform(work)
     }
 
+    /// Loads the model without generating (diagnostics: check file, memory and load time).
+    func preload() async {
+        _ = try? await coordinator.perform { _ in true }
+    }
+
     /// Cancels pending AI work and releases the model once native work stops (walk start,
     /// memory warning, erase). Never blocks the caller.
     func unload() {

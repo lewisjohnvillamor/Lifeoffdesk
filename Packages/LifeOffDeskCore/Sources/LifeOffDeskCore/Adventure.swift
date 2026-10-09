@@ -51,7 +51,7 @@ public enum AdventureSuggester {
     public static func frontiers(from origin: Coordinate, roads: [[Coordinate]], explored: Set<GridCell>,
                                  grid: ExplorationGrid, searchRadius: Double = 1500, minimumMeters: Double = 300,
                                  limit: Int = 2) -> [AdventureIdea] {
-        struct Sector { var meters = 0.0; var sumLat = 0.0; var sumLon = 0.0; var weight = 0.0 }
+        struct Sector { var meters = 0.0; var sumLat = 0.0; var sumLon = 0.0; var weight = 0.0; var mids: [Coordinate] = [] }
         var sectors = [Int: Sector]()
         for road in roads {
             for (a, b) in zip(road, road.dropFirst()) {
@@ -66,11 +66,14 @@ public enum AdventureSuggester {
                 // Weight nearer segments more so the target sits at the near edge of the fog.
                 let w = length / max(distance, 50)
                 sector.sumLat += mid.latitude * w; sector.sumLon += mid.longitude * w; sector.weight += w
+                sector.mids.append(mid)
                 sectors[sectorIndex] = sector
             }
         }
         let ideas = sectors.values.filter { $0.meters >= minimumMeters && $0.weight > 0 }.map { sector -> AdventureIdea in
-            let target = Coordinate(latitude: sector.sumLat / sector.weight, longitude: sector.sumLon / sector.weight)
+            let centroid = Coordinate(latitude: sector.sumLat / sector.weight, longitude: sector.sumLon / sector.weight)
+            // The centroid can fall inside a block; the target is the unexplored street point nearest to it.
+            let target = sector.mids.min { Geo.distanceMeters($0, centroid) < Geo.distanceMeters($1, centroid) } ?? centroid
             return AdventureIdea(kind: .frontier(unexploredMeters: sector.meters, bearingDegrees: bearing(from: origin, to: target)),
                                  target: target, straightLineMeters: Geo.distanceMeters(origin, target))
         }

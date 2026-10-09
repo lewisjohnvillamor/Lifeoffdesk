@@ -22,6 +22,7 @@ struct SettingsView: View {
                         Text("Finish the current adventure before erasing.").font(.footnote).foregroundStyle(Theme.secondaryInk)
                     }
                 }
+                PreferencesSection()
                 Section("Starter maps") {
                     ForEach(model.content?.packs ?? [], id: \.region.id) { pack in
                         VStack(alignment: .leading, spacing: 4) {
@@ -99,6 +100,10 @@ struct AIDiagnosticsView: View {
                     row("Context / threads / GPU layers", "\(info.contextLength) / \(info.threads) / \(info.gpuLayers)")
                 }
                 row("State", "\(ai.state)")
+                Text("The model loads only when needed (planner, search, recap or this button) and unloads when an adventure starts.")
+                    .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                Button(ai.state == .loading ? "Loading…" : "Load model now") { Task { await ai.preload() } }
+                    .disabled(ai.state == .loading || ai.state == .ready || model.activeSession != nil)
                 Button("Verify SHA-256") { Task { await ai.verifyModelHash() } }
                 if let hash = ai.hashResult { Text(hash).font(.footnote.monospaced()) }
             }
@@ -212,4 +217,108 @@ final class NetworkStatus: ObservableObject {
     }
 
     deinit { monitor.cancel() }
+}
+
+/// P0-14: explicit, editable preferences. Nothing is saved unless the user taps Save.
+struct PreferencesSection: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var draft = PreferenceProfile()
+    @State private var loaded = false
+    @State private var saved = false
+
+    var body: some View {
+        Section {
+            if let locked = model.preferencesLocked {
+                Text(locked).font(.footnote).foregroundStyle(Theme.danger)
+            } else {
+                categoryPicker
+                Picker("Usual time", selection: Binding(get: { draft.durationMinutes ?? 0 },
+                                                        set: { draft.durationMinutes = $0 == 0 ? nil : $0 })) {
+                    Text("Not set").tag(0)
+                    ForEach([15, 30, 45, 60, 90, 120], id: \.self) { Text("\($0) min").tag($0) }
+                }
+                Picker("Search radius", selection: Binding(get: { Int(draft.radiusMeters ?? 0) },
+                                                           set: { draft.radiusMeters = $0 == 0 ? nil : Double($0) })) {
+                    Text("Default (2 km)").tag(0)
+                    ForEach([500, 1000, 2000, 3000, 5000], id: \.self) { Text(Format.distance(Double($0))).tag($0) }
+                }
+                Picker("Prefer", selection: $draft.novelty) {
+                    Text("Anything").tag(PreferenceProfile.Novelty.any)
+                    Text("New places").tag(PreferenceProfile.Novelty.new)
+                    Text("Familiar places").tag(PreferenceProfile.Novelty.familiar)
+                }
+                Toggle("Step-free entrance required", isOn: need(.stepFreeEntrance))
+                Toggle("Wheelchair access required", isOn: need(.wheelchair))
+                if !draft.accessNeeds.isEmpty {
+                    Text("Hard filter: only places with a reviewed, current record qualify. Few or none may show. The path to a place is never verified. Stored only on this iPhone; remove anytime.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                }
+                HStack {
+                    Button(saved ? "Saved" : "Save preferences") { saved = model.savePreferences(draft) }
+                        .buttonStyle(.borderedProminent)
+                    Spacer()
+                    Button("Reset", role: .destructive) {
+                        model.resetPreferences()
+                        draft = PreferenceProfile()
+                        saved = false
+                    }
+                    .disabled(model.preferenceProfile == nil)
+                }
+                if let problem = model.preferencesProblem {
+                    Text(problem).font(.footnote).foregroundStyle(Theme.danger)
+                } else if !saved && draft != savedComparable {
+                    Text("Unsaved changes").font(.footnote).foregroundStyle(Theme.secondaryInk)
+                }
+            }
+        } header: {
+            Text("My preferences")
+        } footer: {
+            Text("Used to fill gaps in a planner request; what you type always wins. Never learned from your routes or photos.")
+        }
+        .onAppear {
+            guard !loaded else { return }
+            loaded = true
+            draft = model.preferenceProfile ?? PreferenceProfile()
+            draft.updatedAt = nil
+        }
+        .onChange(of: draft) { _, _ in saved = false }
+    }
+
+    /// The saved profile without its timestamp, to detect unsaved edits.
+    private var savedComparable: PreferenceProfile {
+        var p = model.preferenceProfile ?? PreferenceProfile()
+        p.updatedAt = nil
+        return p
+    }
+
+    private var categoryPicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Favourite kinds of places (up to 3)").font(.subheadline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(PlaceCategory.allCases, id: \.self) { category in
+                        let on = draft.categories.contains(category)
+                        Button(PlannerCopy.categoryWord(category).capitalized) {
+                            if on { draft.categories.removeAll { $0 == category } }
+                            else if draft.categories.count < 3 { draft.categories.append(category) }
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(on ? Theme.primary : Theme.surface, in: Capsule())
+                        .foregroundStyle(on ? Theme.canvas : Theme.ink)
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                    }
+                }
+            }
+        }
+    }
+
+    private func need(_ need: AccessNeed) -> Binding<Bool> {
+        Binding(get: { draft.accessNeeds.contains(need) },
+                set: { on in
+                    if on { if !draft.accessNeeds.contains(need) { draft.accessNeeds.append(need) } }
+                    else { draft.accessNeeds.removeAll { $0 == need } }
+                })
+    }
 }
