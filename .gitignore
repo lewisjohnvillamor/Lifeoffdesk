@@ -20,3 +20,5 @@ private/
 .build/
 .swiftpm/
 Tools/**/.build/
+LifeOffDesk/LifeOffDesk.xcodeproj/
+LifeOffDesk/Info.plist
