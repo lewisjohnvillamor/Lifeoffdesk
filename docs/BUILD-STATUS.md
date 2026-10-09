@@ -87,7 +87,12 @@ The UI smoke test confirms walking entry remains available, not a completed walk
 - Provisional reveal corridor widened from 25 m to 50 m total so explored areas read as places, not lines. Still a tuning value; check outdoors.
 - Planner copy cut down: one input with send arrow, quick picks, compact cards with one caveat line (full uncertainty labels on tap).
 - Fixed a real performance bug: recaps rasterised every stored walk on the main thread (seconds with a long history; it also blocked the recap sheet). Now neighbourhood-only capsule rasterisation; test proves identical results. Core suite 12 s → ~2 s.
-- CI now captures Simulator screenshots (blank, demo, close-up, flat, planner, recap, memory card).
+- CI now captures Simulator screenshots (intro pages, blank, demo, close-up, flat, planner, recap, memory card, and a simulated-GPS walk through the real tracking pipeline: 91 m / 0:40 recorded, dotted trail and icon controls rendered).
+- One-time skippable five-page intro (founder decision); smoke test checks it shows once.
+- Trail styling: new ground as ink dots, revisited streets as a solid grey line.
+- Walk controls are round icons (camera, pause/resume, finish) with accessibility labels.
+- Captured moments: camera during a walk; photo saved on device with the latest accepted fix (none without a fix) and pinned on the map; erase removes them.
+- Memory card styles: Photo / Collage / Sticker, choose from the walk's photos, add from library or take a final photo. Sticker uses iOS 17 on-device subject lifting; not verifiable in Simulator (white-border fallback used there).
 
 ## Gate table
 
@@ -110,7 +115,7 @@ The UI smoke test confirms walking entry remains available, not a completed walk
 
 ## Tested here (Linux container, 2026-10-09)
 
-**Core unit tests — 49 passing** (demo dataset + replay tests added; multi-region pack checks and a Muntinlupa search test). Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
+**Core unit tests — 50 passing** (demo dataset + replay tests added; multi-region pack checks and a Muntinlupa search test). Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
 
 Two defects found and fixed by these tests: random GPS jitter leaked into the trail with the original 5 m threshold (now combined-accuracy threshold + speed hint), and 5 m raster cells under-counted the 25 m corridor (now 2.5 m).
 
