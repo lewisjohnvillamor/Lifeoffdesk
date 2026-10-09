@@ -413,7 +413,7 @@ The v2 prompt was adjusted after seeing v1 failures, so the 12 cases are no long
 ## Known limitations
 
 - The pinned xcframework has no simulator slice. `project-simulator.yml` now supports UI/walking checks with AI explicitly unavailable; real inference still requires the device.
-- The model file is bundled into the app (~429 MB) by default; it can instead be copied to the app's Documents folder via Finder.
+- The current selected model is `Qwen3-1.7B-Q4_K_M.gguf` (1,282,439,264 bytes) and is bundled into the app by default; it can instead be copied to the app's Documents folder via Finder. The ~429 MB figure above belongs to the historical 0.6B development diagnostic, not the current app configuration.
 - Map rendering is a simple projected Canvas of OSM road lines; no labels, no routing, no tiles.
 - Distances are straight-line from the current fix, or from the starter-area reference point (labelled) when there is no fix.
 - GPS thresholds are provisional values from ARCHITECTURE-AND-DATA.md, not tuned outdoors.
