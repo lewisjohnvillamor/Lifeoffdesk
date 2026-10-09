@@ -155,7 +155,13 @@
    "walang hininga",
    "not breathing",
    "stopped breathing",
-   "chest compression*"
+   "chest compression*",
+   "nalunod",
+   "nalulunod",
+   "lunod",
+   "drowning",
+   "drowned",
+   "drown"
   ],
   "choking": [
    "nabulunan",

@@ -197,4 +197,12 @@ final class SafetyGuideTests: XCTestCase {
         let guide = try SafetyGuide.decode(Data(contentsOf: Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/safety-guide.json")))
         for topic in [SafetyTopic.stroke, .heartAttack, .seizure] { XCTAssertNotNil(guide.card(topic)) }
     }
+
+    func testDrowningIsAnEmergencyWithTheCPRCardAndNeverAFollowUp() {
+        for q in ["nalunod sa ilog", "drowning", "may nalulunod sa pool"] {
+            XCTAssertTrue(SafetyKeywords.emergency(in: q), q)
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .cpr, q)
+            XCTAssertNil(SafetyPrompt.followUp(q, previous: "nakagat ako ng aso"), q)
+        }
+    }
 }

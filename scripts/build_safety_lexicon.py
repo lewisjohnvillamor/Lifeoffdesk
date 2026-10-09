@@ -44,7 +44,9 @@ TOPICS = {
     "seizure": ["seizure", "seizures", "seizing", "nangingisay", "nanginginig at walang malay", "kinukumbulsyon",
                 "kombulsyon", "kumbulsyon", "epilepsy", "epileptic", "having a fit", "convulsion", "convulsions", "naninigas"],
     "cpr": ["cpr", "walang pulso", "no pulse", "cardiac arrest", "hindi humihinga", "di humihinga", "walang hininga",
-            "not breathing", "stopped breathing", "chest compression*"],
+            "not breathing", "stopped breathing", "chest compression*",
+            # Drowning: once out of the water, the CPR card's first steps (safety, response, breathing) apply.
+            "nalunod", "nalulunod", "lunod", "drowning", "drowned", "drown"],
     "choking": ["nabulunan", "nabubulunan", "bulunan", "nabilaukan", "nabibilaukan", "nasamid", "choking", "choke", "choked", "chokes",
                 "may bara sa lalamunan", "naipit sa lalamunan", "stuck in throat", "stuck in my throat"],
     "bleeding": ["dugo", "dumudugo", "nagdurugo", "duguan", "sugat", "nasugatan", "sugatan", "hiwa", "nahiwa", "nahiwaan",
