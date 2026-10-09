@@ -63,7 +63,7 @@ struct MeView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 0) {
-                Text(String(format: "%.2f km", stats.totalNewDistanceMeters / 1000))
+                Text(Format.distance(stats.totalNewDistanceMeters))
                     .font(.system(size: 52, weight: .bold, design: .rounded).monospacedDigit())
                 Text(model.statsPending ? "Calculating your totals…" : "Total new streets")
                     .font(.subheadline).foregroundStyle(Theme.secondaryInk)

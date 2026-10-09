@@ -137,3 +137,23 @@ extension Place {
 
     public var isFrontier: Bool { verificationStatus == "computed-frontier" }
 }
+
+/// Arriving at the chosen destination. Founder report: walking to Starbucks and stopping left the
+/// route and destination up with no "you have arrived". Within 30 m of the place (plus up to 20 m of
+/// the fix's reported accuracy) counts as arrived; a building entrance is rarely at the mapped point.
+public enum Arrival {
+    public static let radiusMeters = 30.0
+    public static let maxAccuracyAllowance = 20.0
+
+    public static func reached(_ position: Coordinate, accuracyMeters: Double?, place: Coordinate) -> Bool {
+        let allowance = min(max(accuracyMeters ?? 0, 0), maxAccuracyAllowance)
+        return Geo.distanceMeters(position, place) <= radiusMeters + allowance
+    }
+
+    /// Whether any accepted sample of the walk reached the place.
+    public static func reached(by session: WalkSession, place: Coordinate) -> Bool {
+        session.segments.contains { segment in
+            segment.contains { reached($0.coordinate, accuracyMeters: $0.horizontalAccuracy, place: place) }
+        }
+    }
+}

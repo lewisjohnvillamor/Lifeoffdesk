@@ -16,6 +16,25 @@ final class AdventureTests: XCTestCase {
         XCTAssertTrue(Discovery.placesPassed(by: WalkSession(startedAt: Fixture.time(0)), in: Fixture.catalog([near])).isEmpty)
     }
 
+    func testArrivalWithinThirtyMetresPlusLimitedAccuracy() {
+        let place = Fixture.place("cafe", .cafe, east: 100, north: 0).coordinate
+        func at(_ east: Double, accuracy: Double) -> Bool {
+            let s = Fixture.sample(east: east, north: 0, at: 0, accuracy: accuracy)
+            return Arrival.reached(s.coordinate, accuracyMeters: s.horizontalAccuracy, place: place)
+        }
+        XCTAssertTrue(at(75, accuracy: 5), "25 m away")
+        XCTAssertFalse(at(60, accuracy: 5), "40 m away with a good fix")
+        XCTAssertTrue(at(58, accuracy: 15), "42 m away, 15 m accuracy")
+        XCTAssertFalse(at(40, accuracy: 100), "a poor fix adds at most 20 m")
+        XCTAssertTrue(Arrival.reached(by: walk([0, 40, 80]), place: place))
+        XCTAssertFalse(Arrival.reached(by: walk([0, 40]), place: place))
+    }
+
+    func testSmallDistancesShowInMetresNotZeroKilometres() {
+        XCTAssertEqual(Format.distanceParts(4).value + " " + Format.distanceParts(4).unit, "4 m")
+        XCTAssertEqual(Format.distanceParts(1234).value + " " + Format.distanceParts(1234).unit, "1.23 km")
+    }
+
     func testFrontierTargetIsOnAStreetNotInsideABlock() {
         let grid = ExplorationGrid(origin: Fixture.origin)
         func line(_ points: [(Double, Double)]) -> [Coordinate] {

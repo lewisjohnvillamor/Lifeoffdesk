@@ -62,6 +62,12 @@ public enum Format {
         return String(format: "%.2f km", meters / 1000)
     }
 
+    /// Value and unit apart for big-number layouts: metres under 1 km, so 4 m never shows as "0.00 km".
+    public static func distanceParts(_ meters: Double) -> (value: String, unit: String) {
+        if meters < 1000 { return ("\(Int(meters.rounded()))", "m") }
+        return (String(format: "%.2f", meters / 1000), "km")
+    }
+
     public static func duration(_ seconds: TimeInterval) -> String {
         let total = Int(seconds.rounded(.down))
         let h = total / 3600, m = (total % 3600) / 60, s = total % 60

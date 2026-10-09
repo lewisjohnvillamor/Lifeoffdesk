@@ -415,5 +415,5 @@ struct WalksView: View {
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Theme.border))
     }
 
-    static func km(_ meters: Double) -> String { String(format: "%.2f km", meters / 1000) }
+    static func km(_ meters: Double) -> String { Format.distance(meters) }
 }

@@ -35,6 +35,7 @@ struct RecapView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Adventure card. Add a photo and share.")
                     HStack(spacing: 0) {
+                        stat("Walked", Format.distance(recap.distanceMeters))
                         stat("New streets", Format.distance(recap.newDistanceMeters))
                         stat("Places found", "\(model.discovered(in: session).count)")
                         stat("Time", Format.duration(recap.activeDuration))
@@ -43,6 +44,15 @@ struct RecapView: View {
                         Text("On foot \(Format.distance(recap.onFootMeters)) · Riding \(Format.distance(recap.ridingMeters))")
                             .font(.footnote).foregroundStyle(Theme.secondaryInk)
                             .accessibilityLabel("On foot \(Format.distance(recap.onFootMeters)), riding \(Format.distance(recap.ridingMeters))")
+                    }
+                    if let place = model.destinationReached(by: session) {
+                        Label("You reached \(place.name)", systemImage: "flag.checkered")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.primary)
+                    }
+                    if recap.newDistanceMeters < 50 && recap.distanceMeters >= 100 {
+                        // Honest small numbers: streets walked before don't count as new.
+                        Text("Most of this route was already on your map, so it adds little new street.")
+                            .font(.footnote).foregroundStyle(Theme.secondaryInk).multilineTextAlignment(.center)
                     }
                     let found = model.discovered(in: session)
                     if !found.isEmpty {
