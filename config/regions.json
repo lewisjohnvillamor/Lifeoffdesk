@@ -14,11 +14,7 @@
       },
       "language": "tl-PH+en",
       "catalogCategories": [
-        "park",
-        "cafe",
-        "museum",
-        "library",
-        "scenic"
+        "all named OSM places"
       ],
       "source": "OpenStreetMap via one-time Overpass query",
       "localDir": "makati",
@@ -41,11 +37,7 @@
       },
       "language": "tl-PH+en",
       "catalogCategories": [
-        "park",
-        "cafe",
-        "museum",
-        "library",
-        "scenic"
+        "all named OSM places"
       ],
       "source": "OpenStreetMap via one-time Overpass query",
       "localDir": "muntinlupa",
@@ -53,6 +45,57 @@
       "places": true,
       "anchor": null,
       "boundarySource": "https://www.openstreetmap.org/relation/1346849 (bounding box of the administrative boundary, includes water)"
+    },
+    {
+      "id": "paranaque",
+      "name": "Parañaque",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "paranaque",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Parañaque'",
+      "boundaryName": "Parañaque"
+    },
+    {
+      "id": "pasay",
+      "name": "Pasay",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "pasay",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Pasay'",
+      "boundaryName": "Pasay"
+    },
+    {
+      "id": "taguig",
+      "name": "Taguig",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "taguig",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Taguig'",
+      "boundaryName": "Taguig"
     },
     {
       "id": "metro-manila",

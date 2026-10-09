@@ -325,6 +325,9 @@ struct SuggestionCard: View {
         case .museum: return "building.columns.fill"
         case .library: return "books.vertical.fill"
         case .scenic: return "binoculars.fill"
+        case .sports: return "figure.tennis"
+        case .shopping: return "bag.fill"
+        case .landmark: return "building.fill"
         case .other: return "mappin"
         }
     }

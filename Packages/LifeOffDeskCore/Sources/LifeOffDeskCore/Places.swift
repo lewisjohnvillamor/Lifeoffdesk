@@ -1,7 +1,7 @@
 import Foundation
 
 public enum PlaceCategory: String, Codable, CaseIterable, Sendable {
-    case park, cafe, food, museum, library, scenic, other
+    case park, cafe, food, museum, library, scenic, sports, shopping, landmark, other
 }
 
 public enum MoodTag: String, Codable, CaseIterable, Sendable {
@@ -31,13 +31,20 @@ public struct Place: Codable, Hashable, Identifiable, Sendable {
     public var sourceLevel: String?
     /// OSM cuisine tag, e.g. "pizza;italian" (source claim, unreviewed).
     public var sourceCuisine: String?
+    /// What OSM says the place is, e.g. "pickleball", "mall", "place_of_worship", "pharmacy".
+    public var sourceKind: String? = nil
 
-    /// Lower-cased words a keyword can match: the name plus OSM cuisine values.
+    /// Lower-cased words a keyword can match: the name, OSM cuisine values, the OSM kind and
+    /// everyday English/Taglish words for that kind ("simbahan" finds a place_of_worship).
     public var searchableTerms: [String] {
         var terms = [name.lowercased()]
         if let cuisine = sourceCuisine {
             terms += cuisine.lowercased().split(whereSeparator: { $0 == ";" || $0 == "," })
                 .map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "_", with: " ") }
+        }
+        if let kind = sourceKind?.lowercased() {
+            terms.append(kind.replacingOccurrences(of: "_", with: " "))
+            terms += PlaceKindWords.words[kind] ?? []
         }
         return terms
     }
@@ -131,4 +138,32 @@ public struct RoadContext: Codable, Sendable {
     public var schemaVersion: Int
     public var attribution: String
     public var roads: [Road]
+}
+
+/// Deterministic synonyms for OSM kinds so keyword search works in English and Taglish.
+/// Only describes what the tag means; it never adds facts about a specific place.
+public enum PlaceKindWords {
+    public static let words: [String: [String]] = [
+        "place_of_worship": ["church", "simbahan", "chapel", "kapilya", "mosque", "temple"],
+        "mall": ["mall", "shopping"], "department_store": ["department store", "mall"],
+        "supermarket": ["supermarket", "grocery", "groseri"], "convenience": ["convenience store", "sari-sari"],
+        "marketplace": ["market", "palengke"], "pharmacy": ["pharmacy", "botika", "drugstore"],
+        "chemist": ["pharmacy", "botika"], "hospital": ["hospital", "ospital"], "clinic": ["clinic", "klinika"],
+        "bank": ["bank", "bangko"], "school": ["school", "paaralan", "eskwela"], "university": ["university", "school"],
+        "bakery": ["bakery", "panaderya", "tinapay"], "bar": ["bar", "inuman", "beer"], "pub": ["pub", "bar", "beer"],
+        "ice_cream": ["ice cream", "sorbetes"], "cinema": ["cinema", "sine", "movie"], "theatre": ["theater", "teatro"],
+        "spa": ["spa", "masahe", "massage"], "massage": ["massage", "masahe"], "beauty": ["salon", "parlor"],
+        "hairdresser": ["barber", "salon", "gupit"], "books": ["bookstore", "libro"],
+        "pickleball": ["pickleball", "court"], "tennis": ["tennis", "court"], "basketball": ["basketball", "basketbol", "court"],
+        "badminton": ["badminton", "court"], "volleyball": ["volleyball", "court"], "soccer": ["football", "soccer"],
+        "golf": ["golf"], "golf_course": ["golf"], "miniature_golf": ["mini golf", "golf"],
+        "swimming": ["swimming", "pool", "langoy"], "swimming_pool": ["swimming", "pool", "langoy"],
+        "fitness_centre": ["gym", "fitness"], "fitness_station": ["outdoor gym", "fitness"], "fitness": ["gym", "fitness"],
+        "sports_centre": ["sports center", "court", "gym"], "running": ["running", "track", "takbo"],
+        "track": ["running track", "takbo"], "skateboard": ["skate"], "bowling_alley": ["bowling"],
+        "playground": ["playground", "palaruan"], "dog_park": ["dog park", "aso"], "garden": ["garden", "hardin"],
+        "townhall": ["city hall", "munisipyo"], "fountain": ["fountain"], "monument": ["monument", "bantayog"],
+        "memorial": ["memorial"], "attraction": ["attraction", "pasyalan"], "artwork": ["art", "public art"],
+        "gallery": ["gallery", "art"], "arts_centre": ["art", "arts center"],
+    ]
 }

@@ -18,11 +18,6 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 RESTRICTED_ACCESS = {'private', 'no', 'customers', 'permit', 'residents'}
-MAX_CAFES = 3
-MAX_NON_CAFE = 27
-MAX_FOOD = 60
-PER_CUISINE = 4
-MAX_PER_CHAIN = 1
 MAX_RADIUS_M = 2500
 
 EMPTY_FACTS_NOTE = ('No reviewed access facts yet. Missing evidence means unknown; it never satisfies a hard '
@@ -41,45 +36,23 @@ def median_anchor(places):
     lons = sorted(p['longitude'] for p in places)
     return (round(lats[len(lats)//2], 6), round(lons[len(lons)//2], 6))
 
-def select_food(places, anchor, max_radius_m):
-    """Nearest named food places: up to PER_CUISINE nearest per cuisine (variety), then nearest overall."""
-    pool = [p for p in sorted(places, key=lambda p: (haversine_m(anchor, (p['latitude'], p['longitude'])), p['id']))
-            if p['category'] == 'food' and p.get('sourceTags', {}).get('access') not in RESTRICTED_ACCESS
-            and (max_radius_m is None or haversine_m(anchor, (p['latitude'], p['longitude'])) <= max_radius_m)]
-    chosen, names, per_cuisine = [], set(), {}
-    for place in pool:  # variety pass
-        cuisine = (place.get('sourceTags', {}).get('cuisine') or '').split(';')[0].strip()
-        if cuisine and per_cuisine.get(cuisine, 0) < PER_CUISINE and place['name'].casefold() not in names \
-                and len(chosen) < MAX_FOOD:
-            chosen.append(place); names.add(place['name'].casefold())
-            per_cuisine[cuisine] = per_cuisine.get(cuisine, 0) + 1
-    for place in pool:  # fill nearest
-        if len(chosen) >= MAX_FOOD:
-            break
-        if place['name'].casefold() not in names:
-            chosen.append(place); names.add(place['name'].casefold())
-    return chosen
-
 def select_places(places, anchor, max_radius_m=MAX_RADIUS_M):
-    """Nearest non-café categories within the radius plus a few nearest distinct cafés and food places."""
-    chosen, cafes, seen_names = [], [], {}
-    for place in sorted(places, key=lambda p: (haversine_m(anchor, (p['latitude'], p['longitude'])), p['id'])):
-        tags = place.get('sourceTags', {})
-        if tags.get('access') in RESTRICTED_ACCESS:
+    """Every named source place except restricted-access ones (and, for an anchored area, outside its
+    radius). Chain branches are separate places: each Starbucks is somewhere a person can walk to.
+    The app filters by the user's own distance, so a city-wide cap would hide nearby places."""
+    chosen = []
+    for place in sorted(places, key=lambda p: p['id']):
+        if not place.get('name') or place.get('sourceTags', {}).get('access') in RESTRICTED_ACCESS:
             continue
         if max_radius_m is not None and haversine_m(anchor, (place['latitude'], place['longitude'])) > max_radius_m:
             continue
-        if place['category'] == 'food':
-            continue
-        if place['category'] == 'cafe':
-            key = place['name'].casefold()
-            if seen_names.get(key, 0) >= MAX_PER_CHAIN or len(cafes) >= MAX_CAFES:
-                continue
-            seen_names[key] = seen_names.get(key, 0) + 1
-            cafes.append(place)
-        elif len(chosen) < MAX_NON_CAFE:
-            chosen.append(place)
-    return sorted(chosen + cafes + select_food(places, anchor, max_radius_m), key=lambda p: p['id'])
+        chosen.append(place)
+    return chosen
+
+def legacy_kind(place):
+    """Kind for places prepared before `kind` was recorded (whitelist-era local-data)."""
+    tags = place.get('sourceTags', {})
+    return tags.get('amenity') or tags.get('leisure') or tags.get('tourism') or tags.get('shop')
 
 def app_place(place):
     tags = place.get('sourceTags', {})
@@ -102,6 +75,7 @@ def app_place(place):
         'sourceFee': tags.get('fee'),
         'sourceLevel': tags.get('level'),
         'sourceCuisine': tags.get('cuisine'),
+        'sourceKind': place.get('kind') or legacy_kind(place),
     }
 
 def compact_roads(roads):
@@ -130,18 +104,20 @@ def build_region(region, source_dir, output_dir):
     anchor = tuple(region['anchor']) if region.get('anchor') else None
     if region.get('places', True):
         places = json.loads((source_dir/'places-source.json').read_text())
+        bbox = region['bbox']
+        # Area features crossing the edge can have a midpoint outside the box; keep the pack self-consistent.
+        places = [p for p in places if bbox['south'] <= p['latitude'] <= bbox['north']
+                  and bbox['west'] <= p['longitude'] <= bbox['east']]
         anchor = anchor or median_anchor(places)
         # Full-city regions select from the whole administrative box; the CBD keeps its walking radius.
         radius = MAX_RADIUS_M if region.get('anchor') else None
         selected = [app_place(p) for p in select_places(places, anchor, radius)]
         if not selected:
             raise ValueError(f"No places selected for {region['id']}")
-        rule_radius = f'within {MAX_RADIUS_M} m of {anchor}' if radius else f'inside the region box, nearest to {anchor}'
+        rule_radius = f'within {MAX_RADIUS_M} m of {anchor}' if radius else 'inside the region box'
         write_json(output_dir/'places.json', {**common,
-            'selectionRule': f'Rule-based subset: up to {MAX_NON_CAFE} named OSM parks/museums/libraries/viewpoints '
-                             f'{rule_radius}, the {MAX_CAFES} nearest distinctly named cafes and up to {MAX_FOOD} food '
-                             f'places (up to {PER_CUISINE} nearest per cuisine first); source access tags '
-                             f'{sorted(RESTRICTED_ACCESS)} excluded. Not a human review.',
+            'selectionRule': f'All named OSM parks, cafés, food places, museums, libraries and viewpoints {rule_radius}; '
+                             f'source access tags {sorted(RESTRICTED_ACCESS)} excluded. Not a human review.',
             'places': selected})
         names.insert(0, 'places.json')
         # Reviewed access evidence (docs/ACCESSIBILITY-AND-SAFETY.md) is curated by hand and kept across
@@ -182,7 +158,7 @@ def main():
     index = []
     for region in config['regions']:
         source_dir = args.input_root/region['localDir']
-        if not (source_dir/'manifest.json').exists():
+        if not region.get('bbox') or not (source_dir/'manifest.json').exists():
             print(f"{region['id']}: not prepared (run prepare_makati.py --region {region['id']}); skipped")
             continue
         build_region(region, source_dir, args.output/region['id'])

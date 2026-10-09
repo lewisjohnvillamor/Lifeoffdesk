@@ -98,6 +98,8 @@ class RegionTests(unittest.TestCase):
         self.assertEqual(ids[0], 'makati-cbd-starter')
         self.assertIn('muntinlupa', ids)
         for region in config['regions']:
+            if not region.get('bbox'):
+                continue  # resolved from the OSM boundary at preparation time
             query = makati.query_for(region['bbox'], region.get('highways'), region.get('places', True))
             self.assertIn('way["highway"', query)
             self.assertEqual('leisure' in query, region.get('places', True))
@@ -109,16 +111,42 @@ class RegionTests(unittest.TestCase):
         self.assertEqual(places, [])
         self.assertEqual(len(roads['features']), 1)
 
-    def test_selection_caps_and_skips_restricted_access(self):
+    def test_selection_keeps_every_named_place_and_skips_restricted_access(self):
         def place(i, category, access=None, name=None):
             return {'id':f'osm:node:{i}','name':name or f'P{i}','latitude':14.4+i*1e-4,'longitude':121.0,
                     'category':category,'sourceTags':{'access':access} if access else {}}
         places = [place(i, 'park') for i in range(40)] + [place(100, 'park', access='private')] + \
                  [place(200+i, 'cafe', name='Same Chain') for i in range(5)] + [place(300, 'cafe', name='Other')]
         chosen = catalog.select_places(places, (14.4, 121.0), None)
-        self.assertEqual(sum(p['category']=='park' for p in chosen), catalog.MAX_NON_CAFE)
-        self.assertEqual(sum(p['category']=='cafe' for p in chosen), 2, 'one per chain name')
-        self.assertNotIn('osm:node:100', [p['id'] for p in chosen])
+        ids = [p['id'] for p in chosen]
+        self.assertEqual(sum(p['category']=='park' for p in chosen), 40, 'no city-wide cap')
+        self.assertEqual(sum(p['category']=='cafe' for p in chosen), 6, 'chain branches are separate places')
+        self.assertNotIn('osm:node:100', ids)
+        near = catalog.select_places(places, (14.4, 121.0), 200)
+        self.assertTrue(all(catalog.haversine_m((14.4, 121.0), (p['latitude'], p['longitude'])) <= 200 for p in near))
+
+    def test_classifier_covers_businesses_sports_and_landmarks(self):
+        c = makati.classify
+        self.assertEqual(c({'leisure':'pitch','sport':'pickleball'}), ('sports', 'pickleball', 'Pickleball court'))
+        self.assertEqual(c({'leisure':'golf_course','name':'Alabang Golf'})[0], 'sports')
+        self.assertEqual(c({'shop':'mall','name':'Festival Mall'}), ('shopping', 'mall', 'Festival Mall'))
+        self.assertEqual(c({'amenity':'place_of_worship','name':'St. Jerome'})[0], 'landmark')
+        self.assertEqual(c({'amenity':'pharmacy','name':'Mercury Drug'}), ('other', 'pharmacy', 'Mercury Drug'))
+        self.assertEqual(c({'amenity':'cafe','name':'Starbucks'})[0], 'cafe')
+        self.assertIsNone(c({'amenity':'parking','name':'Lot A'}), 'parking is not an outing')
+        self.assertIsNone(c({'amenity':'pharmacy'}), 'unnamed non-sports places are skipped')
+
+    def test_bbox_comes_from_the_city_level_boundary(self):
+        raw = {'elements': [
+            {'type':'relation','id':2,'tags':{'name':'Pasay','admin_level':'10'},
+             'bounds':{'minlat':14.52,'minlon':121.0,'maxlat':14.53,'maxlon':121.01}},
+            {'type':'relation','id':1,'tags':{'name':'Pasay','admin_level':'6'},
+             'bounds':{'minlat':14.49,'minlon':120.97,'maxlat':14.56,'maxlon':121.03}}]}
+        bbox, source = makati.bbox_from_boundary(raw, 'Pasay')
+        self.assertEqual(bbox, {'south':14.49,'west':120.97,'north':14.56,'east':121.03})
+        self.assertTrue(source.endswith('/relation/1'))
+        with self.assertRaises(ValueError):
+            makati.bbox_from_boundary(raw, 'Atlantis')
 
 class DemoWalkTests(unittest.TestCase):
     def test_generator_is_deterministic_and_labelled(self):

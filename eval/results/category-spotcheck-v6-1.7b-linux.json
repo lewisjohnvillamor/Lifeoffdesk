@@ -1,0 +1,142 @@
+{
+  "firstRequestSeconds" : 27.491798877716064,
+  "grammar" : true,
+  "label" : "Development-machine diagnostic. NOT iPhone evidence.",
+  "loadSeconds" : 5.603797078132629,
+  "machine" : "Linux Ubuntu 24.04.5 LTS, CPU only",
+  "modelBytes" : 1282439264,
+  "modelPath" : "Qwen3-1.7B-Q4_K_M.gguf",
+  "results" : [
+    {
+      "allSuggestionsInCatalog" : true,
+      "attemptSeconds" : [
+        27.37202823162079
+      ],
+      "id" : 801,
+      "intentPass" : true,
+      "notes" : [
+
+      ],
+      "outcome" : "noMatch",
+      "preferences" : "duration=null budget=null categories=[\"sports\"] moods=[] keywords=[\"pickleball\"] clarify=false",
+      "prompt" : "Pickleball tayo mamaya",
+      "rawOutputs" : [
+        "{\"durationMinutes\":null,\"budgetPHP\":null,\"categories\":[\"sports\"],\"moodTags\":[],\"keywords\":[\"pickleball\"],\"novelty\":\"any\",\"accessNeeds\":[],\"routeAccess\":false,\"travelMode\":\"walk\",\"needsClarification\":false}"
+      ],
+      "schemaValid" : true,
+      "suggestionIDs" : [
+
+      ]
+    },
+    {
+      "allSuggestionsInCatalog" : true,
+      "attemptSeconds" : [
+        27.279871463775635
+      ],
+      "id" : 802,
+      "intentPass" : true,
+      "notes" : [
+
+      ],
+      "outcome" : "noMatch",
+      "preferences" : "duration=null budget=null categories=[\"sports\"] moods=[] keywords=[\"golf\"] clarify=false",
+      "prompt" : "Golf muna this weekend",
+      "rawOutputs" : [
+        "{\"durationMinutes\":null,\"budgetPHP\":null,\"categories\":[\"sports\"],\"moodTags\":[],\"keywords\":[\"golf\"],\"novelty\":\"any\",\"accessNeeds\":[],\"routeAccess\":false,\"travelMode\":\"walk\",\"needsClarification\":false}"
+      ],
+      "schemaValid" : true,
+      "suggestionIDs" : [
+
+      ]
+    },
+    {
+      "allSuggestionsInCatalog" : true,
+      "attemptSeconds" : [
+        27.627228498458862
+      ],
+      "id" : 803,
+      "intentPass" : true,
+      "notes" : [
+
+      ],
+      "outcome" : "noMatch",
+      "preferences" : "duration=null budget=null categories=[\"shopping\"] moods=[] keywords=[] clarify=false",
+      "prompt" : "Punta tayo sa mall",
+      "rawOutputs" : [
+        "{\"durationMinutes\":null,\"budgetPHP\":null,\"categories\":[\"shopping\"],\"moodTags\":[],\"keywords\":[],\"novelty\":\"any\",\"accessNeeds\":[],\"routeAccess\":false,\"travelMode\":\"walk\",\"needsClarification\":false}"
+      ],
+      "schemaValid" : true,
+      "suggestionIDs" : [
+
+      ]
+    },
+    {
+      "allSuggestionsInCatalog" : true,
+      "attemptSeconds" : [
+        27.61957359313965
+      ],
+      "id" : 804,
+      "intentPass" : true,
+      "notes" : [
+
+      ],
+      "outcome" : "noMatch",
+      "preferences" : "duration=null budget=null categories=[\"landmark\"] moods=[] keywords=[] clarify=false",
+      "prompt" : "Simbahan na malapit dito",
+      "rawOutputs" : [
+        "{\"durationMinutes\":null,\"budgetPHP\":null,\"categories\":[\"landmark\"],\"moodTags\":[],\"keywords\":[],\"novelty\":\"any\",\"accessNeeds\":[],\"routeAccess\":false,\"travelMode\":\"walk\",\"needsClarification\":false}"
+      ],
+      "schemaValid" : true,
+      "suggestionIDs" : [
+
+      ]
+    },
+    {
+      "allSuggestionsInCatalog" : true,
+      "attemptSeconds" : [
+        27.82133138179779
+      ],
+      "id" : 805,
+      "intentPass" : true,
+      "notes" : [
+
+      ],
+      "outcome" : "suggestions",
+      "preferences" : "duration=30 budget=null categories=[\"cafe\"] moods=[] keywords=[] clarify=false",
+      "prompt" : "Kape muna, 30 mins",
+      "rawOutputs" : [
+        "{\"durationMinutes\":30,\"budgetPHP\":null,\"categories\":[\"cafe\"],\"moodTags\":[],\"keywords\":[],\"novelty\":\"any\",\"accessNeeds\":[],\"routeAccess\":false,\"travelMode\":\"walk\",\"needsClarification\":false}"
+      ],
+      "schemaValid" : true,
+      "suggestionIDs" : [
+        "osm:node:1068757285",
+        "osm:node:13744077801",
+        "osm:node:1068757292"
+      ]
+    },
+    {
+      "allSuggestionsInCatalog" : true,
+      "attemptSeconds" : [
+        28.24488651752472
+      ],
+      "id" : 806,
+      "intentPass" : true,
+      "notes" : [
+
+      ],
+      "outcome" : "suggestions",
+      "preferences" : "duration=null budget=null categories=[\"park\"] moods=[\"quiet\"] keywords=[] clarify=false",
+      "prompt" : "Tahimik na park sana",
+      "rawOutputs" : [
+        "{\"durationMinutes\":null,\"budgetPHP\":null,\"categories\":[\"park\"],\"moodTags\":[\"quiet\"],\"keywords\":[],\"novelty\":\"any\",\"accessNeeds\":[],\"routeAccess\":false,\"travelMode\":\"walk\",\"needsClarification\":false}"
+      ],
+      "schemaValid" : true,
+      "suggestionIDs" : [
+        "osm:way:777918857",
+        "osm:way:777918859",
+        "osm:way:35893855"
+      ]
+    }
+  ],
+  "runtime" : "0.6.0-dev"
+}
