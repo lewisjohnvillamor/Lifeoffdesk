@@ -16,8 +16,8 @@ struct MapScreen: View {
             Theme.canvas.ignoresSafeArea()
             if let geometry {
                 FogMapView(geometry: geometry, exploration: model.displayExploration,
-                           activeSegments: model.activeSession?.segments ?? [],
-                           position: model.currentPosition, destination: model.destination,
+                           activeSegments: model.displayedTrail,
+                           position: model.mapPosition, destination: model.destination,
                            camera: $camera)
                     .ignoresSafeArea()
                     .simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { _ in followUser = false })
@@ -35,7 +35,11 @@ struct MapScreen: View {
             .padding(.bottom, 8)
         }
         .onAppear(perform: setUp)
-        .onChange(of: model.currentPosition) { _, position in
+        .onChange(of: model.demoMode) { _, on in
+            // Frame the sample area when entering Demo mode.
+            if on { camera = MapCamera(center: .zero, pointsPerMeter: 0.12) }
+        }
+        .onChange(of: model.mapPosition) { _, position in
             guard followUser, let position, let geometry else { return }
             camera.center = geometry.point(position)
         }
@@ -90,6 +94,15 @@ struct MapScreen: View {
     }
 
     @ViewBuilder private var statusBanners: some View {
+        if model.demoMode {
+            banner(icon: "sparkles", text: model.replay == nil
+                   ? "DEMO MAP: synthetic sample walks along real streets. Not real GPS or anyone's walks."
+                   : "REPLAY of a synthetic sample walk. Not real GPS.",
+                   action: ("Exit demo", { model.setDemoMode(false) }))
+        }
+        if let problem = model.demoProblem {
+            banner(icon: "exclamationmark.triangle", text: problem)
+        }
         if model.permissionDenied {
             banner(icon: "location.slash", text: "Location is off for Life Off Desk. Walks need it; past walks and planning still work.",
                    action: ("Open Settings", model.openSystemSettings))
@@ -135,6 +148,13 @@ struct MapScreen: View {
         VStack(alignment: .leading, spacing: 12) {
             if let destination = model.destination { destinationRow(destination) }
             switch model.phase {
+            case .idle where model.demoMode:
+                Text("This is how a well-explored map looks.")
+                    .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
+                Button(model.replay == nil ? "Replay a sample walk" : "Replay another sample walk") { model.startReplay() }
+                    .buttonStyle(PrimaryButtonStyle())
+                Button("Back to my map") { model.setDemoMode(false) }
+                    .buttonStyle(SecondaryButtonStyle())
             case .idle, .requestingPermission:
                 Text("A little walk can open up your world.")
                     .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)

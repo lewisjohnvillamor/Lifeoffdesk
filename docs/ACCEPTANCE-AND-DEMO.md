@@ -29,6 +29,10 @@ Proposed AI usability target: warm response within 10 seconds for a short reques
 
 Prepare a recorded backup of a real prior run. Label replay and simulation clearly. A recording is fallback evidence, not a substitute for a required live demo if the event forbids it.
 
+## Blank slate vs explored map
+
+Settings → Presentation → **Demo map** switches the map to bundled synthetic walks (`scripts/build_demo_walks.py`) so the audience sees a well-explored map; **Replay a sample walk** animates the fog reveal. The UI labels this as synthetic, not real GPS. Turning it off (or tapping Start walking) returns to the personal map, which may be blank. Say plainly in the pitch that the explored map is sample data; real walks are shown separately.
+
 ## Evidence template
 
 ```text

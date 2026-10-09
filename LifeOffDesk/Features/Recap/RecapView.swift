@@ -12,6 +12,10 @@ struct RecapView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    if model.isDemo(session) {
+                        Label("Synthetic demo walk: generated along real streets, not real GPS.", systemImage: "sparkles")
+                            .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
+                    }
                     Text("You made room for a little adventure.")
                         .font(.title2.weight(.semibold)).foregroundStyle(Theme.ink)
                     RoutePreview(segments: session.segments)
@@ -100,11 +104,15 @@ struct HistoryView: View {
     var body: some View {
         NavigationStack {
             List {
-                if model.finishedWalks.isEmpty {
+                if model.demoMode {
+                    Text("Demo mode: these are synthetic sample walks, not real GPS.")
+                        .font(.footnote).foregroundStyle(Theme.danger)
+                }
+                if model.historyWalks.isEmpty {
                     Text("No finished walks yet. Your walks stay on this iPhone.")
                         .foregroundStyle(Theme.secondaryInk)
                 }
-                ForEach(model.finishedWalks) { walk in
+                ForEach(model.historyWalks) { walk in
                     NavigationLink {
                         RecapView(session: walk).environmentObject(model)
                     } label: {
