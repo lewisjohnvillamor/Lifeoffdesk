@@ -212,4 +212,10 @@ final class SafetyGuideTests: XCTestCase {
         XCTAssertNotNil(SafetyPrompt.followUp("tapos?", previous: "natapilok ako"))
         XCTAssertNotNil(SafetyPrompt.followUp("what if namamaga", previous: "natapilok ako"))
     }
+
+    func testTheftGoesToTheUnsafeCard() {
+        for q in ["theif", "may magnanakaw", "na-snatch phone ko", "my wallet was stolen", "naagawan ako ng bag"] {
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .unsafe, q)
+        }
+    }
 }
