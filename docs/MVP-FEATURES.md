@@ -12,7 +12,7 @@ The opening screen is a warm ivory map with **Start walking** as its main action
 
 | ID | Feature | Minimum behavior | Acceptance evidence |
 | --- | --- | --- | --- |
-| P0-01 | Map-first entry | Open the personal map immediately; no account or download gate | Fresh install opens the map; clear Start walking and suggestion actions |
+| P0-01 | Map-first entry | Open the personal map immediately; no account or download gate (a one-time skippable intro is allowed, founder decision 2026-10-09) | Fresh install opens the map; clear Start walking and suggestion actions |
 | P0-02 | Explicit walk session | Start, pause, resume, finish; ask for location when needed | Real phone session changes state correctly; paused movement adds no trail |
 | P0-03 | Real GPS tracking | Accept reasonable fixes, reject stale/inaccurate jumps, break gaps | Short outdoor walk follows actual movement; denied permission shows a useful next step |
 | P0-04 | Fog of war | Reveal only a narrow traveled corridor; keep unexplored detail covered | New movement reveals local geometry; stationary GPS drift does not reveal a large area |

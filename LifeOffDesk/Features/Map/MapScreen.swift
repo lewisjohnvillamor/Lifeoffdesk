@@ -10,6 +10,7 @@ struct MapScreen: View {
     @State private var showHistory = false
     @State private var showSettings = false
     @State private var cardSession: WalkSession?
+    @State private var showCamera = false
     @State private var followUser = true
     @State private var tilted = true
     @State private var launchScale: CGFloat?
@@ -19,7 +20,10 @@ struct MapScreen: View {
             Theme.canvas.ignoresSafeArea()
             if let geometry {
                 FogMapView(geometry: geometry, exploration: model.displayExploration,
-                           activeSegments: model.displayedTrail,
+                           trailRuns: model.displayedTrailRuns,
+                           pins: model.mapMoments.compactMap { m in
+                               m.coordinate.map { (coordinate: $0, image: model.thumbnail(for: m)) }
+                           },
                            position: model.mapPosition, destination: model.destination,
                            camera: $camera, tilted: tilted)
                     .ignoresSafeArea()
@@ -60,6 +64,9 @@ struct MapScreen: View {
         .sheet(isPresented: $showPlanner) { PlannerSheet().environmentObject(model) }
         .sheet(isPresented: $showHistory) { HistoryView().environmentObject(model) }
         .sheet(isPresented: $showSettings) { SettingsView().environmentObject(model) }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { model.captureMoment($0) }.ignoresSafeArea()
+        }
         .sheet(item: $model.presentedRecap) { session in
             RecapView(session: session).environmentObject(model)
         }
@@ -89,6 +96,7 @@ struct MapScreen: View {
             camera.pointsPerMeter = CGFloat(scale)
         }
         if arguments.contains("--flat") { tilted = false }
+        if arguments.contains("--start-walk") { model.startWalking() } // simulator GPS route is supplied by simctl
         // More screenshot helpers (simulator only).
         if arguments.contains("--open-planner") {
             showPlanner = true
@@ -188,36 +196,40 @@ struct MapScreen: View {
             if let destination = model.destination { destinationRow(destination) }
             switch model.phase {
             case .idle where model.demoMode:
-                Text("A well-explored map")
-                    .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
-                Button(model.replay == nil ? "Replay a sample walk" : "Replay another sample walk") { model.startReplay() }
-                    .buttonStyle(PrimaryButtonStyle())
-                Button("Back to my map") { model.setDemoMode(false) }
-                    .buttonStyle(SecondaryButtonStyle())
-            case .idle, .requestingPermission:
-                Text("A little walk can open up your world.")
-                    .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
-                Button("Start walking") { model.startWalking() }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .disabled(model.phase == .requestingPermission)
-                Button("Help me choose somewhere") { showPlanner = true }
-                    .buttonStyle(SecondaryButtonStyle())
-                Button("Preview demo map") { model.setDemoMode(true) }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.primary)
-                    .frame(maxWidth: .infinity, minHeight: Theme.minTarget)
-            case .acquiringFix, .walking:
-                walkStats
                 HStack(spacing: 12) {
-                    Button("Pause") { model.pause() }.buttonStyle(SecondaryButtonStyle())
-                    Button("Finish") { model.finish() }.buttonStyle(PrimaryButtonStyle())
+                    Button { model.startReplay() } label: {
+                        Label(model.replay == nil ? "Replay a sample walk" : "Replay another", systemImage: "play.fill")
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityLabel("Replay a sample walk")
+                    roundButton("xmark", label: "Back to my map", style: .secondary) { model.setDemoMode(false) }
+                }
+            case .idle, .requestingPermission:
+                HStack(spacing: 12) {
+                    Button { model.startWalking() } label: { Label("Start walking", systemImage: "figure.walk") }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .disabled(model.phase == .requestingPermission)
+                        .accessibilityLabel("Start walking")
+                    roundButton("sparkles", label: "Help me choose somewhere", style: .secondary) { showPlanner = true }
+                }
+                Button("Preview demo map") { model.setDemoMode(true) }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.primary)
+                    .frame(maxWidth: .infinity, minHeight: 32)
+            case .acquiringFix, .walking:
+                HStack(spacing: 10) {
+                    walkStats
+                    Spacer(minLength: 4)
+                    roundButton("camera.fill", label: "Take a photo", style: .secondary) { showCamera = true }
+                    roundButton("pause.fill", label: "Pause", style: .secondary) { model.pause() }
+                    roundButton("stop.fill", label: "Finish", style: .primary) { model.finish() }
                 }
             case .paused:
-                Text("Walk paused").font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
-                walkStats
-                HStack(spacing: 12) {
-                    Button("Finish") { model.finish() }.buttonStyle(SecondaryButtonStyle())
-                    Button("Resume walking") { model.resume() }.buttonStyle(PrimaryButtonStyle())
+                HStack(spacing: 10) {
+                    walkStats.opacity(0.6)
+                    Spacer(minLength: 4)
+                    roundButton("stop.fill", label: "Finish", style: .secondary) { model.finish() }
+                    roundButton("play.fill", label: "Resume walking", style: .primary) { model.resume() }
                 }
             }
         }
@@ -227,19 +239,29 @@ struct MapScreen: View {
     private var walkStats: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let session = model.activeSession
-            HStack(spacing: 24) {
-                stat("Distance", Format.distance(session?.distanceMeters ?? 0))
-                stat("Active time", Format.duration(session?.activeDuration(at: context.date) ?? 0))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(Format.distance(session?.distanceMeters ?? 0))
+                    .font(.title2.monospacedDigit().weight(.bold)).foregroundStyle(Theme.ink)
+                Text(model.phase == .paused ? "Paused · \(Format.duration(session?.activeDuration(at: context.date) ?? 0))"
+                                            : Format.duration(session?.activeDuration(at: context.date) ?? 0))
+                    .font(.footnote.monospacedDigit()).foregroundStyle(Theme.secondaryInk)
             }
+            .accessibilityElement(children: .combine)
         }
     }
 
-    private func stat(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.footnote).foregroundStyle(Theme.secondaryInk)
-            Text(value).font(.title2.monospacedDigit().weight(.semibold)).foregroundStyle(Theme.ink)
+    private enum RoundStyle { case primary, secondary }
+
+    private func roundButton(_ symbol: String, label: String, style: RoundStyle, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(style == .primary ? Theme.canvas : Theme.ink)
+                .frame(width: 52, height: 52)
+                .background(style == .primary ? Theme.primary : Theme.surface, in: Circle())
+                .overlay(Circle().stroke(style == .primary ? Color.clear : Theme.border))
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityLabel(label)
     }
 
     private func destinationRow(_ place: Place) -> some View {

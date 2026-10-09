@@ -7,6 +7,7 @@ struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var confirmErase = false
+    @AppStorage("hasSeenIntro") private var hasSeenIntro = false
 
     var body: some View {
         NavigationStack {
@@ -38,6 +39,10 @@ struct SettingsView: View {
                         .font(.footnote)
                 }
                 Section("Presentation") {
+                    Button("Show intro again") {
+                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { hasSeenIntro = false }
+                    }
                     Toggle("Demo map (sample walks)", isOn: Binding(get: { model.demoMode },
                                                                     set: { model.setDemoMode($0) }))
                         .disabled(model.activeSession != nil)

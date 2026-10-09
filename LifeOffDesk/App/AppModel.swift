@@ -104,6 +104,7 @@ final class AppModel: ObservableObject {
         guard let store else { return }
         exploration = store.loadExploration() ?? Exploration()
         finishedWalks = store.loadFinishedWalks()
+        moments = store.loadMoments()
         if let active = store.loadActiveSession() {
             if finishedWalks.contains(where: { $0.id == active.id }) {
                 // Crashed between saving the finished walk and clearing the active file.
@@ -142,6 +143,11 @@ final class AppModel: ObservableObject {
     }
 
     /// Trail drawn on top of the fog: the live walk, or the replay in Demo mode.
+    /// Trail split into new ground (drawn dotted) and revisits (drawn solid grey).
+    var displayedTrailRuns: [TrailRun] {
+        grid.trailRuns(for: displayedTrail, prior: priorCells)
+    }
+
     var displayedTrail: [[TrackSample]] {
         demoMode ? (replay?.partialSession.segments ?? []) : (recorder?.session.segments ?? [])
     }
@@ -216,6 +222,8 @@ final class AppModel: ObservableObject {
         recorder = new
         lastFix = nil
         lastFixReceivedAt = nil
+        priorCells = []
+        priorCellsReady = false
         phase = .acquiringFix
         persistActive(force: true)
         location.start()
@@ -270,22 +278,74 @@ final class AppModel: ObservableObject {
         return WalkRecap.compute(session: session, exploration: base, grid: grid, now: session.endedAt ?? Date())
     }
 
-    // MARK: Memory photos
+    // MARK: New-ground classification
 
-    private var samplePhotos: [UUID: UIImage] = [:]
+    /// Explored cells from earlier walks near the current walk (or replay), for dotted/solid trail.
+    private var priorCells: Set<GridCell> = []
+    private var priorCellsReady = false
 
-    func memoryPhoto(for session: WalkSession) -> UIImage? {
-        if isDemo(session) { return samplePhotos[session.id] }
-        return store?.loadMemoryPhoto(for: session.id).flatMap(UIImage.init(data:))
+    private func preparePriorCells(around coordinate: Coordinate, from base: Exploration) {
+        let center = grid.projection.project(coordinate)
+        let region = MeterRect(minX: center.x - 3000, minY: center.y - 3000, maxX: center.x + 3000, maxY: center.y + 3000)
+        priorCells = grid.cells(for: base, region: region)
+        priorCellsReady = true
     }
 
-    /// Real walks keep their photo on device (erased with personal data); sample walks only in memory.
-    func saveMemoryPhoto(_ image: UIImage, for session: WalkSession) {
-        if isDemo(session) { samplePhotos[session.id] = image; return }
+    // MARK: Captured moments
+
+    @Published private(set) var moments: [WalkMemory] = []
+    private var sampleMoments: [WalkMemory] = []
+    private var sampleMomentPhotos: [UUID: UIImage] = [:]
+
+    /// Moments pinned on the map: personal ones, or only sample ones in Demo mode.
+    var mapMoments: [WalkMemory] { demoMode ? sampleMoments : moments }
+
+    func moments(for session: WalkSession) -> [WalkMemory] {
+        (isDemo(session) ? sampleMoments : moments).filter { $0.sessionID == session.id }.sorted { $0.takenAt < $1.takenAt }
+    }
+
+    func photo(for memory: WalkMemory) -> UIImage? {
+        if let sample = sampleMomentPhotos[memory.id] { return sample }
+        return store?.momentPhoto(memory).flatMap(UIImage.init(data:))
+    }
+
+    /// Captures a moment on the active walk at the latest accepted position (none if no recent fix).
+    func captureMoment(_ image: UIImage) {
+        guard let session = recorder?.session else { return }
+        addMoment(image, to: session, at: currentPosition)
+    }
+
+    /// Adds a photo to a walk (e.g. a final photo on the recap). Location only if it is the live fix.
+    func addMoment(_ image: UIImage, to session: WalkSession, at coordinate: Coordinate?) {
+        let memory = WalkMemory(sessionID: session.id, takenAt: Date(), coordinate: coordinate)
+        if isDemo(session) {
+            sampleMoments.append(memory)
+            sampleMomentPhotos[memory.id] = image
+            return
+        }
         guard let data = image.jpegData(compressionQuality: 0.85) else { return }
-        do { try store?.saveMemoryPhoto(data, for: session.id) } catch {
+        do {
+            try store?.addMoment(memory, jpeg: data)
+            moments.append(memory)
+        } catch {
             storeProblem = "Could not save the photo: \(error.localizedDescription)"
         }
+    }
+
+    private var thumbnails: [UUID: UIImage] = [:]
+
+    /// Small cached thumbnail for map pins (decoded once).
+    func thumbnail(for memory: WalkMemory) -> UIImage? {
+        if let cached = thumbnails[memory.id] { return cached }
+        guard let full = photo(for: memory) else { return nil }
+        let side: CGFloat = 96
+        let thumb = UIGraphicsImageRenderer(size: CGSize(width: side, height: side)).image { _ in
+            let scale = max(side / full.size.width, side / full.size.height)
+            let size = CGSize(width: full.size.width * scale, height: full.size.height * scale)
+            full.draw(in: CGRect(x: (side - size.width) / 2, y: (side - size.height) / 2, width: size.width, height: size.height))
+        }
+        thumbnails[memory.id] = thumb
+        return thumb
     }
 
     // MARK: Demo mode
@@ -323,6 +383,9 @@ final class AppModel: ObservableObject {
         let source = walks[replayIndex % walks.count]
         replayIndex += 1
         replay = WalkReplay(source: source)
+        if let start = source.segments.first?.first?.coordinate {
+            preparePriorCells(around: start, from: demoExploration.excluding(sessionID: source.id))
+        }
         let step = max(1, source.acceptedSampleCount / 400)
         replayTask = Task { [weak self] in
             while let self, var current = self.replay, !current.isFinished, !Task.isCancelled {
@@ -350,6 +413,7 @@ final class AppModel: ObservableObject {
             switch decision {
             case .accepted:
                 acceptedAny = true
+                if !priorCellsReady { preparePriorCells(around: sample.coordinate, from: exploration) }
                 lastFix = sample
                 lastFixReceivedAt = now
                 lastRejection = nil
@@ -449,6 +513,7 @@ final class AppModel: ObservableObject {
             destination = nil
             lastFix = nil
             lastFixReceivedAt = nil
+            moments = []
             storeProblem = nil
         } catch {
             storeProblem = "Erase failed: \(error.localizedDescription)"
