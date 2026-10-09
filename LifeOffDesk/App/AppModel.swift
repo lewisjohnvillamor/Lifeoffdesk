@@ -563,6 +563,9 @@ final class AppModel: ObservableObject {
     // MARK: Next adventure
 
     @Published private(set) var adventureIdeas: [AdventureIdea] = []
+    /// "Para sa'yo" recommendation on the Adventures tab (see AppModel+Recommend).
+    @Published var recommendation: RecommendationState = .idle
+    @Published var savedPlaces: [Place] = AppModel.loadSavedPlaces()
     /// "Your world" coach card on the map (see AppModel+Coach).
     @Published var coach: CoachCard?
     var coachKey: String?
@@ -1043,6 +1046,7 @@ final class AppModel: ObservableObject {
             preferencesLocked = nil
             narrations = [:]
             clearHistorySearch()
+            clearRecommendations()
             storeProblem = nil
         } catch {
             storeProblem = "Erase failed: \(error.localizedDescription)"

@@ -14,7 +14,9 @@ struct WalksView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                // Lazy: adventure rows are only built as they scroll into view (84 sample walks was slow).
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    recommendationCard
                     searchCard
                     if model.historyQuery != nil || model.historyState != .idle {
                         searchResults
@@ -46,6 +48,80 @@ struct WalksView: View {
             .navigationTitle("Adventures")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selected) { RecapView(session: $0).environmentObject(model) }
+        }
+    }
+
+    // MARK: Para sa'yo (on-device AI picks from your own taste; app code finds and ranks real places)
+
+    @ViewBuilder private var recommendationCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                MascotView(pose: .discovering, size: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Para sa'yo").font(.headline).foregroundStyle(Theme.ink)
+                    Text("Based on the places your adventures passed").font(.caption).foregroundStyle(Theme.secondaryInk)
+                }
+                Spacer()
+            }
+            switch model.recommendation {
+            case .idle:
+                ChoiceButton(title: "Find me a place", systemImage: "wand.and.stars") { model.recommendPlace() }
+            case .working:
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Nag-iisip ng swak sa'yo…").font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                }
+            case let .empty(message):
+                Text(message).font(.subheadline).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                ChoiceButton(title: "Subukan ulit", systemImage: "arrow.clockwise", prominent: false) { model.recommendPlace() }
+            case let .shown(card):
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: PlaceIcon.symbol(card.candidate.place))
+                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.canvas)
+                        .frame(width: 40, height: 40).background(PlaceIcon.tint(card.candidate.place), in: Circle())
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(card.candidate.place.name).font(.headline).foregroundStyle(Theme.ink)
+                        Text(card.text).font(.subheadline).foregroundStyle(Theme.ink).fixedSize(horizontal: false, vertical: true)
+                        Text(card.computedReason.map { "Computed pick · \($0)" }
+                             ?? "On-device AI picked this from \(card.alternatives) nearby matches · facts computed")
+                            .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                        Text("OpenStreetMap · hours & access unverified").font(.caption2).foregroundStyle(Theme.secondaryInk)
+                    }
+                }
+                HStack(spacing: 8) {
+                    ChoiceButton(title: "Save", systemImage: "bookmark.fill") { model.saveRecommendation() }
+                    ChoiceButton(title: "Go", systemImage: "figure.walk", prominent: false) { model.goToRecommendation() }
+                }
+                ChoiceButton(title: "Hindi ito · ibang lugar", systemImage: "hand.thumbsdown", prominent: false) {
+                    model.dismissRecommendation()
+                }
+            }
+            if !model.savedPlaces.isEmpty { savedPlacesRow }
+        }
+        .padding(16)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Theme.border))
+    }
+
+    private var savedPlacesRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("SAVED").font(.caption.weight(.semibold)).foregroundStyle(Theme.secondaryInk)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(model.savedPlaces) { place in
+                        Menu {
+                            Button("Go", systemImage: "figure.walk") { model.choose(place); model.selectedTab = .map }
+                            Button("Remove", systemImage: "trash", role: .destructive) { model.removeSavedPlace(place) }
+                        } label: {
+                            Label(place.name, systemImage: PlaceIcon.symbol(place))
+                                .font(.footnote.weight(.semibold)).foregroundStyle(Theme.ink).lineLimit(1)
+                                .padding(.horizontal, 12).frame(minHeight: 36)
+                                .background(Theme.revealedGround, in: Capsule())
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -267,38 +343,37 @@ struct WalksView: View {
 
     // MARK: By month
 
-    private var months: some View {
+    /// Emits the month headers and rows straight into the parent LazyVStack, so rows load lazily.
+    @ViewBuilder private var months: some View {
         let shown = selectedDay.map { day in model.historyWalks.filter { calendar.isDate($0.startedAt, inSameDayAs: day) } }
             ?? model.historyWalks
         let groups = Dictionary(grouping: shown) { calendar.dateInterval(of: .month, for: $0.startedAt)?.start ?? $0.startedAt }
-        return VStack(alignment: .leading, spacing: 12) {
-            if let day = selectedDay {
-                HStack {
-                    Text(day.formatted(date: .complete, time: .omitted)).font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Button("Show all") { selectedDay = nil }.font(.subheadline).foregroundStyle(Theme.primary)
-                }
+        if let day = selectedDay {
+            HStack {
+                Text(day.formatted(date: .complete, time: .omitted)).font(.subheadline.weight(.semibold))
+                Spacer()
+                Button("Show all") { selectedDay = nil }.font(.subheadline).foregroundStyle(Theme.primary)
             }
-            if model.historyWalks.isEmpty {
-                VStack(spacing: 8) {
-                    MascotView(pose: .walking, size: 96)
-                    Text("Your adventures will appear here.").font(.subheadline).foregroundStyle(Theme.secondaryInk)
-                }
-                .frame(maxWidth: .infinity).padding(.top, 24)
+        }
+        if model.historyWalks.isEmpty {
+            VStack(spacing: 8) {
+                MascotView(pose: .walking, size: 96)
+                Text("Your adventures will appear here.").font(.subheadline).foregroundStyle(Theme.secondaryInk)
             }
-            ForEach(groups.keys.sorted(by: >), id: \.self) { month in
-                let walks = (groups[month] ?? []).sorted { $0.startedAt > $1.startedAt }
-                let newKm = walks.compactMap { model.stats.recaps[$0.id]?.newDistanceMeters }.reduce(0, +)
-                HStack {
-                    Text(month.formatted(.dateTime.month(.wide).year()).uppercased())
-                        .font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryInk)
-                    Spacer()
-                    Text("\(Self.km(newKm)) new").font(.footnote).foregroundStyle(Theme.secondaryInk)
-                }
-                .padding(.top, 8)
-                ForEach(walks) { walk in
-                    Button { selected = walk } label: { row(walk) }.buttonStyle(.plain)
-                }
+            .frame(maxWidth: .infinity).padding(.top, 24)
+        }
+        ForEach(groups.keys.sorted(by: >), id: \.self) { month in
+            let walks = (groups[month] ?? []).sorted { $0.startedAt > $1.startedAt }
+            let newKm = walks.compactMap { model.stats.recaps[$0.id]?.newDistanceMeters }.reduce(0, +)
+            HStack {
+                Text(month.formatted(.dateTime.month(.wide).year()).uppercased())
+                    .font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryInk)
+                Spacer()
+                Text("\(Self.km(newKm)) new").font(.footnote).foregroundStyle(Theme.secondaryInk)
+            }
+            .padding(.top, 8)
+            ForEach(walks) { walk in
+                Button { selected = walk } label: { row(walk) }.buttonStyle(.plain)
             }
         }
     }
@@ -311,7 +386,7 @@ struct WalksView: View {
                 if let photo {
                     Image(uiImage: photo).resizable().scaledToFill()
                 } else {
-                    RoutePreview(segments: walk.segments).padding(6).background(PaperStyle.paper)
+                    RoutePreview(segments: walk.segments, maxPointsPerSegment: 60).padding(6).background(PaperStyle.paper)
                 }
             }
             .frame(width: 64, height: 64)

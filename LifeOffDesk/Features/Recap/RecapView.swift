@@ -102,13 +102,22 @@ struct RecapView: View {
 /// Small fitted drawing of the accepted segments.
 struct RoutePreview: View {
     let segments: [[TrackSample]]
+    /// Thumbnails (e.g. Adventures rows) only need the shape: keep about this many points per segment.
+    var maxPointsPerSegment: Int? = nil
 
     var body: some View {
         Canvas { context, size in
             let all = segments.flatMap { $0 }
             guard let first = all.first else { return }
             let projection = LocalProjection(origin: first.coordinate)
-            let points = segments.map { $0.map { projection.project($0.coordinate) } }
+            let points = segments.map { segment -> [MeterPoint] in
+                var samples = segment
+                if let limit = maxPointsPerSegment, segment.count > limit {
+                    let stride = Double(segment.count - 1) / Double(limit - 1)
+                    samples = (0..<limit).map { segment[min(segment.count - 1, Int((Double($0) * stride).rounded()))] }
+                }
+                return samples.map { projection.project($0.coordinate) }
+            }
             let xs = points.flatMap { $0.map { CGFloat($0.x) } }, ys = points.flatMap { $0.map { CGFloat($0.y) } }
             let minX: CGFloat = xs.min() ?? 0, maxX: CGFloat = xs.max() ?? 0
             let minY: CGFloat = ys.min() ?? 0, maxY: CGFloat = ys.max() ?? 0
