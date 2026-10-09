@@ -22,3 +22,5 @@ private/
 Tools/**/.build/
 LifeOffDesk/LifeOffDesk.xcodeproj/
 LifeOffDesk/Info.plist
+LifeOffDesk/LifeOffDeskSimulator.xcodeproj/
+LifeOffDesk/Info-Simulator.plist

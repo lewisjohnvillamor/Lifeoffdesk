@@ -126,6 +126,7 @@ struct FogMapView: View {
             let ppm = camera.pointsPerMeter
 
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.canvas))
+            drawClouds(in: &context, size: size)
 
             // Revealed layer: ground + roads, kept only where the corridor was walked. Only tiles that are
             // both on screen and under explored paths are drawn, so city-scale packs stay cheap.
@@ -137,6 +138,12 @@ struct FogMapView: View {
             }
             let screenExplored = explored.applying(transform)
             context.drawLayer { layer in
+                // Clip before painting. A destinationIn stroke does not clear pixels
+                // outside its bounds, and an empty stroke leaves the whole ground visible.
+                let corridor = screenExplored.strokedPath(StrokeStyle(
+                    lineWidth: max(2, CGFloat(exploration.revealWidthMeters) * ppm),
+                    lineCap: .round, lineJoin: .round))
+                layer.clip(to: corridor)
                 layer.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.revealedGround))
                 if !areas.isEmpty {
                     for tile in geometry.tiles where areas.contains(where: tile.bounds.intersects) {
@@ -150,10 +157,6 @@ struct FogMapView: View {
                                      style: StrokeStyle(lineWidth: max(0.5, 2 * ppm), dash: [2, 4]))
                     }
                 }
-                layer.blendMode = .destinationIn
-                layer.stroke(screenExplored, with: .color(.black),
-                             style: StrokeStyle(lineWidth: max(2, CGFloat(exploration.revealWidthMeters) * ppm),
-                                                lineCap: .round, lineJoin: .round))
             }
 
             // Region outlines so coverage limits are visible.
@@ -189,6 +192,30 @@ struct FogMapView: View {
         .gesture(dragGesture.simultaneously(with: zoomGesture))
         .accessibilityElement()
         .accessibilityLabel(accessibilitySummary)
+    }
+
+    /// Static, soft cloud banks: no animation, so Reduce Motion is respected.
+    /// Decorative only; cloud shapes never add exploration or invented geography.
+    private func drawClouds(in context: inout GraphicsContext, size: CGSize) {
+        let spacing: CGFloat = 165
+        let offsetX = (-camera.center.x * camera.pointsPerMeter * 0.15).truncatingRemainder(dividingBy: spacing)
+        let offsetY = (camera.center.y * camera.pointsPerMeter * 0.15).truncatingRemainder(dividingBy: spacing)
+        for row in -2...Int(size.height / spacing) + 2 {
+            for column in -2...Int(size.width / spacing) + 2 {
+                let x = CGFloat(column) * spacing + (row.isMultiple(of: 2) ? 0 : 80) + offsetX
+                let y = CGFloat(row) * spacing + offsetY
+                let bank = CGRect(x: x - 110, y: y - 42, width: 225, height: 100)
+                var cloud = Path(ellipseIn: bank)
+                cloud.addEllipse(in: CGRect(x: x - 85, y: y - 80, width: 115, height: 115))
+                cloud.addEllipse(in: CGRect(x: x - 15, y: y - 66, width: 95, height: 100))
+                context.drawLayer { layer in
+                    layer.addFilter(.shadow(color: Theme.secondaryInk.opacity(0.09), radius: 14, y: 7))
+                    layer.fill(cloud, with: .linearGradient(
+                        Gradient(colors: [Theme.surface.opacity(0.9), Theme.canvas]),
+                        startPoint: CGPoint(x: x, y: y - 80), endPoint: CGPoint(x: x, y: y + 58)))
+                }
+            }
+        }
     }
 
     private var dragGesture: some Gesture {

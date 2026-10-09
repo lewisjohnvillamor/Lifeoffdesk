@@ -61,6 +61,22 @@ Then on the phone: Settings (gear) → On-device AI diagnostics → Verify SHA-2
 
 ## 5. Implementation agent notes
 
+### Simulator UI checks
+
+The separate simulator project runs the actual UI, catalog and walking logic. It excludes
+the model/runtime, reports AI as unavailable, and labels locations as simulated. It does
+not establish phone inference, outdoor GPS quality or phone performance.
+
+```bash
+xcodegen generate --spec LifeOffDesk/project-simulator.yml
+open LifeOffDesk/LifeOffDeskSimulator.xcodeproj
+```
+
+Select the `LifeOffDesk` scheme and an installed iPhone simulator, then Run. Product → Test
+runs the planner failure/input-preservation smoke test and three launch measurements.
+The normal `project.yml` and `setup_ios.sh` continue to build the physical-iPhone app.
+The overlay uses XcodeGen's documented [include and replacement behavior](https://github.com/yonaskolb/XcodeGen/blob/master/Docs/ProjectSpec.md#include).
+
 Read AGENTS.md and docs/IMPLEMENTATION-PLAN.md. Ask your agent to read these portable skill files directly:
 
 - skills/life-off-desk-ios/SKILL.md

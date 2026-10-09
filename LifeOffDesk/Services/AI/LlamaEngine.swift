@@ -1,6 +1,8 @@
 import Foundation
 import LifeOffDeskCore
+#if !targetEnvironment(simulator)
 import llama
+#endif
 
 // On-device inference through the pinned llama.cpp b11429 C API (llama.xcframework on iOS).
 // The same file is compiled by Tools/PlannerEval on a development machine for diagnostics;
@@ -48,6 +50,22 @@ struct LlamaGenerationStats: Sendable {
     var seconds: Double
 }
 
+#if targetEnvironment(simulator)
+/// The pinned runtime has no simulator slice. Never substitute canned AI output.
+actor LlamaEngine: IntentEngine {
+    let info: LlamaLoadInfo
+
+    private init(info: LlamaLoadInfo) { self.info = info }
+
+    static func load(path: String, contextLength: Int = 2048, gpuLayers: Int? = nil) throws -> LlamaEngine {
+        throw LlamaEngineError.loadFailed("AI is unavailable in Simulator. Run on a physical iPhone to use the pinned on-device runtime.")
+    }
+
+    func complete(prompt: String, grammar: String?, maxTokens: Int) async throws -> String {
+        throw LlamaEngineError.contextFailed
+    }
+}
+#else
 actor LlamaEngine: IntentEngine {
     private let model: OpaquePointer
     private let context: OpaquePointer
@@ -178,3 +196,4 @@ actor LlamaEngine: IntentEngine {
         return buffer.prefix(Int(max(0, length))).map { UInt8(bitPattern: $0) }
     }
 }
+#endif

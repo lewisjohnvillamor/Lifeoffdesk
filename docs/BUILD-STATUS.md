@@ -2,6 +2,53 @@
 
 Updated 2026-10-09, Asia/Manila. Implementation started at the hackathon kickoff.
 
+## Demo update and visible fog — local Mac verification, 2026-10-09
+
+Pulled `927f450` with `git pull --ff-only`, preserving local simulator work (backup
+stash retained). Ran `bash scripts/setup_ios.sh`: both cached model/runtime hashes
+verified and the physical-device Xcode project generated.
+
+Fixed the Canvas reveal mask to clip painting to the explored corridor rather than
+using a destination-in stroke that left ground outside the stroke visible. Added
+static cloud shapes and a fresh-map explanation; street detail remains hidden until
+explored. Added an idle-screen **Preview demo map** shortcut to the upstream labeled
+synthetic walks/replay, without writing demo data into personal exploration.
+
+Validation: 47 core tests and 11 Python tests passed. Simulator planner/input-retention
+and launch tests passed; launch averaged 1.982 s across three Debug measurements
+(Mac simulator only). The initial demo UI test exposed a shortcut hidden when saved
+exploration existed; moved the shortcut into idle controls and reran the demo test:
+preview, synthetic replay disclosure and exit back to personal map all passed.
+Final unsigned physical-iPhone build passed. Local result bundles:
+`build/demo-smoke.xcresult` (initial failure), `build/demo-smoke-fixed.xcresult` (fixed demo test).
+Phone AI, real GPS, outdoor/offline behavior and phone performance remain unverified.
+
+## Local Mac / Simulator verification — 2026-10-09
+
+Base commit `e012b4b`; `git pull --ff-only` reported already up to date. These results
+include the uncommitted simulator-support changes. Xcode 26.3 (17C529), Apple silicon,
+iPhone 12 Pro Max simulator with iOS 26.3. No physical device was connected;
+actual phone iOS, signing team and signed launch remain unverified.
+
+- Simulator Debug build and launch passed; app left open for manual exploration.
+  Separate `project-simulator.yml` excludes the model and llama framework, uses
+  `com.lifeoffdesk.simulator`, and displays a simulation banner. No generated AI answers.
+- 44 core XCTest cases passed on this Mac: GPS filtering, session transitions,
+  persistence/recovery, exploration, catalog search and structured-output validation.
+- 2 Simulator UI tests passed: planner reports AI unavailable, retains the entered
+  Taglish request, returns to walking entry and relaunches; launch metric collected.
+- XCTest app-launch duration: **1.958 seconds average** across 3 measured iterations
+  (1.868, 1.957, 2.049 s; relative standard deviation 3.787%). Debug build on a Mac
+  simulator, not an A14 benchmark; no performance baseline or regression claim.
+- Original physical-iPhone configuration also built successfully for generic iOS
+  with signing disabled. It still links the pinned runtime and bundles the model.
+- Local test artifact: `build/simulator-smoke.xcresult` (ignored). Logs:
+  `/tmp/lifeoffdesk-{core-tests,simulator-tests,device-build}.log`.
+
+Still untested: physical-phone inference/latency/memory, airplane-mode operation,
+outdoor GPS/fog, signed deployment, background tracking and real-device persistence.
+The UI smoke test confirms walking entry remains available, not a completed walk.
+
 ## What exists now
 
 | Part | Location | State |
@@ -78,7 +125,7 @@ The v2 prompt was adjusted after seeing v1 failures, so the 12 cases are no long
 
 ## Known limitations
 
-- Simulator builds are impossible with the pinned xcframework (ios-arm64 + macOS slices only); develop on the device.
+- The pinned xcframework has no simulator slice. `project-simulator.yml` now supports UI/walking checks with AI explicitly unavailable; real inference still requires the device.
 - The model file is bundled into the app (~429 MB) by default; it can instead be copied to the app's Documents folder via Finder.
 - Map rendering is a simple projected Canvas of OSM road lines; no labels, no routing, no tiles.
 - Distances are straight-line from the current fix, or from the starter-area reference point (labelled) when there is no fix.

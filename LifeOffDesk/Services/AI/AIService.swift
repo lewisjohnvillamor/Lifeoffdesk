@@ -37,6 +37,10 @@ final class AIService: ObservableObject {
     }
 
     func ensureLoaded() async -> LlamaEngine? {
+        #if targetEnvironment(simulator)
+        state = .failed("AI is unavailable in Simulator. Run on a physical iPhone to use on-device AI.")
+        return nil
+        #else
         if let engine { return engine }
         guard let url = Self.modelURL() else {
             state = .missing
@@ -55,6 +59,7 @@ final class AIService: ObservableObject {
             state = .failed("\(error)")
             return nil
         }
+        #endif
     }
 
     func unload() {

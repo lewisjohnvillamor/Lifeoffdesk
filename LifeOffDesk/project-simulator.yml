@@ -1,0 +1,47 @@
+# UI/walking checks only. The pinned AI runtime has no simulator slice.
+# xcodegen generate --spec LifeOffDesk/project-simulator.yml
+include: project.yml
+name: LifeOffDeskSimulator
+targets:
+  LifeOffDesk:
+    sources:REPLACE:
+      - path: App
+      - path: Features
+      - path: Services
+      - path: Resources/StarterData
+        type: folder
+        buildPhase: resources
+      - path: ../eval/taglish-cases.json
+        buildPhase: resources
+    dependencies:REPLACE:
+      - package: LifeOffDeskCore
+    info:
+      path: Info-Simulator.plist
+      properties:
+        CFBundleDisplayName: Life Off Desk Sim
+    settings:
+      base:
+        SUPPORTED_PLATFORMS: iphonesimulator
+        PRODUCT_BUNDLE_IDENTIFIER: com.lifeoffdesk.simulator
+        CODE_SIGNING_ALLOWED: NO
+  SimulatorSmokeTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SimulatorTests
+    dependencies:
+      - target: LifeOffDesk
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.lifeoffdesk.simulator.tests
+        CODE_SIGNING_ALLOWED: NO
+        TEST_TARGET_NAME: LifeOffDesk
+schemes:
+  LifeOffDesk:
+    build:
+      targets:
+        LifeOffDesk: all
+    test:
+      targets:
+        - SimulatorSmokeTests

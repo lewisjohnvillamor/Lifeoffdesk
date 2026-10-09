@@ -29,6 +29,18 @@ struct MapScreen: View {
                 topBar
                 statusBanners
                 Spacer()
+                if !model.demoMode && model.displayExploration.paths.isEmpty && model.phase == .idle {
+                    VStack(spacing: 10) {
+                        Image(systemName: "cloud.fill").font(.largeTitle)
+                        Text("Your world is waiting").font(.title2.weight(.semibold))
+                        Text("Streets appear as you walk. Start exploring to lift the fog.")
+                            .font(.subheadline).multilineTextAlignment(.center)
+                    }
+                    .foregroundStyle(Theme.ink)
+                    .padding(24)
+                    .background(Theme.canvas.opacity(0.94), in: RoundedRectangle(cornerRadius: 24))
+                    Spacer()
+                }
                 bottomCard
             }
             .padding(.horizontal, Theme.inset)
@@ -63,6 +75,12 @@ struct MapScreen: View {
         guard geometry == nil, let content = model.content else { return }
         geometry = MapGeometry(content: content)
         camera.center = .zero
+        #if targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--demo-map") {
+            model.setDemoMode(true)
+            camera = MapCamera(center: .zero, pointsPerMeter: 0.12)
+        }
+        #endif
     }
 
     // MARK: Top
@@ -103,6 +121,9 @@ struct MapScreen: View {
         if let problem = model.demoProblem {
             banner(icon: "exclamationmark.triangle", text: problem)
         }
+        #if targetEnvironment(simulator)
+        banner(icon: "desktopcomputer", text: "Simulator · AI unavailable · locations are simulated")
+        #endif
         if model.permissionDenied {
             banner(icon: "location.slash", text: "Location is off for Life Off Desk. Walks need it; past walks and planning still work.",
                    action: ("Open Settings", model.openSystemSettings))
@@ -163,6 +184,10 @@ struct MapScreen: View {
                     .disabled(model.phase == .requestingPermission)
                 Button("Help me choose somewhere") { showPlanner = true }
                     .buttonStyle(SecondaryButtonStyle())
+                Button("Preview demo map") { model.setDemoMode(true) }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.primary)
+                    .frame(maxWidth: .infinity, minHeight: Theme.minTarget)
             case .acquiringFix, .walking:
                 walkStats
                 HStack(spacing: 12) {
