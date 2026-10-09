@@ -123,6 +123,10 @@ struct FogMapView: View {
     var pins: [MapPin] = []
     /// Tapping a single photo pin; tapping a cluster zooms in instead.
     var onPinTap: (UUID) -> Void = { _ in }
+    /// Places found on earlier adventures: small category dots that stay on the map.
+    var foundPlaces: [Place] = []
+    /// Tapping a found place (when no photo pin is under the finger).
+    var onFoundTap: (Place) -> Void = { _ in }
     let position: Coordinate?
     let destination: Place?
     /// Suggested path along mapped streets to the destination (not navigation).
@@ -247,6 +251,23 @@ struct FogMapView: View {
                 }
             }
 
+            // Found places: small tinted dots; icons only when few are on screen (365 days of walks can find
+            // thousands of places, and resolving a symbol per place every frame would stutter).
+            let shownFound = foundPlaces.filter { $0.id != destination?.id && visible.contains(geometry.point($0.coordinate)) }
+            let withIcons = shownFound.count <= 60 && ppm >= 0.6
+            for place in shownFound {
+                let p = geometry.point(place.coordinate).applying(transform)
+                let r: CGFloat = withIcons ? 11 : 5
+                let dot = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
+                context.fill(dot, with: .color(PlaceIcon.tint(place)))
+                context.stroke(dot, with: .color(Theme.surface), lineWidth: withIcons ? 2 : 1.5)
+                if withIcons {
+                    var symbol = context.resolve(Image(systemName: PlaceIcon.symbol(place)))
+                    symbol.shading = .color(Theme.surface)
+                    context.draw(symbol, in: CGRect(x: p.x - 6.5, y: p.y - 6.5, width: 13, height: 13))
+                }
+            }
+
             // Photo pins for captured moments; pins closer than a thumb's width share one pin with a count.
             for cluster in PinClusters.make(pins, project: { geometry.point($0).applying(transform) }) {
                 let p = cluster.point
@@ -325,12 +346,18 @@ struct FogMapView: View {
 
     /// Single pin: open it. Cluster: zoom in around it until the photos separate.
     private func handleTap(at location: CGPoint) {
-        guard canvasSize != .zero, !pins.isEmpty else { return }
+        guard canvasSize != .zero else { return }
         let transform = camera.transform(in: canvasSize)
         let clusters = PinClusters.make(pins, project: { geometry.point($0).applying(transform) })
         // The pin image sits above its anchor point.
         guard let hit = clusters.min(by: { distance($0, location) < distance($1, location) }),
-              distance(hit, location) < 34 else { return }
+              distance(hit, location) < 34 else {
+            let nearest = foundPlaces.min { a, b in
+                tapDistance(a, location, transform) < tapDistance(b, location, transform)
+            }
+            if let nearest, tapDistance(nearest, location, transform) < 24 { onFoundTap(nearest) }
+            return
+        }
         if hit.ids.count == 1 {
             onPinTap(hit.ids[0])
         } else {
@@ -340,6 +367,11 @@ struct FogMapView: View {
                 camera.pointsPerMeter = min(MapCamera.maxScale, camera.pointsPerMeter * 2.5)
             }
         }
+    }
+
+    private func tapDistance(_ place: Place, _ location: CGPoint, _ transform: CGAffineTransform) -> CGFloat {
+        let p = geometry.point(place.coordinate).applying(transform)
+        return hypot(p.x - location.x, p.y - location.y)
     }
 
     private func distance(_ cluster: PinClusters.Cluster, _ location: CGPoint) -> CGFloat {

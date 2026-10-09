@@ -73,12 +73,13 @@ struct MemoryCardView: View {
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("+\(Self.km(recap.newDistanceMeters))")
+                            let new = Format.distanceParts(recap.newDistanceMeters)
+                            Text("+\(new.value)")
                                 .font(.system(size: 38, weight: .bold, design: .rounded))
-                            Text("km").font(.system(size: 15, weight: .semibold))
+                            Text(new.unit).font(.system(size: 15, weight: .semibold))
                             Text("New streets").font(.system(size: 13, weight: .medium)).padding(.leading, 6)
                         }
-                        Text("\(placesFound) place\(placesFound == 1 ? "" : "s") · \(Self.minutes(recap.activeDuration)) min")
+                        Text("Walked \(Format.distance(recap.distanceMeters)) · \(placesFound) place\(placesFound == 1 ? "" : "s") · \(Self.minutes(recap.activeDuration)) min")
                             .font(.system(size: 14, weight: .medium))
                         Text("There's more to life than your screen.")
                             .font(.system(size: 11)).opacity(0.85).padding(.top, 2)
@@ -160,7 +161,6 @@ struct MemoryCardView: View {
         return f.string(from: date)
     }
 
-    static func km(_ meters: Double) -> String { String(format: "%.2f", meters / 1000) }
     static func minutes(_ seconds: TimeInterval) -> Int { Int((seconds / 60).rounded()) }
 }
 

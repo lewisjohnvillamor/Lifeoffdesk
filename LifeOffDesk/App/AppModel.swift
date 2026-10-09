@@ -68,6 +68,9 @@ final class AppModel: ObservableObject {
 
     // Planner
     @Published var destination: Place? { didSet { refreshDestinationStreet(); updateChunks() } }
+    /// Set when the walk in progress reaches the chosen destination; the map says "you've arrived"
+    /// and the route clears (founder report: the route and pill stayed up after arriving).
+    @Published var arrived: Place?
     @Published var plannerText = ""
     @Published var plannerState: PlannerState = .idle
     @Published private(set) var lastTrace: PlannerTrace?
@@ -504,6 +507,9 @@ final class AppModel: ObservableObject {
             }
         }
         finishedWalks.insert(session, at: 0)
+        // A walk that reached the destination completes it, even if no live fix triggered arrival.
+        if let place = destination, Arrival.reached(by: session, place: place.coordinate) { destination = nil }
+        arrived = nil
         refreshStats()
         recorder = nil
         recoveredSession = nil
@@ -529,6 +535,9 @@ final class AppModel: ObservableObject {
 
     var discoveredPlaceIDs: Set<String> { Set(discoveries.values.flatMap { $0.map(\.id) }) }
 
+    /// Every place found on any adventure, once each (drawn as small dots on the map).
+    @Published private(set) var foundPlaces: [Place] = []
+
     /// Recomputes lifetime/per-adventure stats and discoveries off the main thread.
     func refreshStats() {
         statsTask?.cancel()
@@ -549,9 +558,18 @@ final class AppModel: ObservableObject {
             guard !Task.isCancelled else { return }
             self?.stats = computed
             self?.discoveries = found
+            var seen = Set<String>()
+            self?.foundPlaces = found.values.flatMap { $0 }.filter { seen.insert($0.id).inserted }
             self?.streetReveal = reveal
             self?.liveCache = nil
         }
+    }
+
+    /// The destination this adventure was started for, when its trail reached it.
+    func destinationReached(by session: WalkSession) -> Place? {
+        guard let id = session.destinationPlaceID, let place = content?.catalog.place(id: id),
+              Arrival.reached(by: session, place: place.coordinate) else { return nil }
+        return place
     }
 
     func discovered(in session: WalkSession) -> [Place] {
@@ -875,6 +893,12 @@ final class AppModel: ObservableObject {
         current.checkpoint(at: now)
         recorder = current
         if current.session.acceptedSampleCount > 0 { phase = .walking }
+        // After at least 20 m of walking, so choosing a place next door doesn't "arrive" on the first fix.
+        if acceptedAny, current.session.distanceMeters >= 20, let place = destination, let fix = lastFix,
+           Arrival.reached(fix.coordinate, accuracyMeters: fix.horizontalAccuracy, place: place.coordinate) {
+            arrived = place
+            destination = nil
+        }
         persistActive(force: acceptedAny && current.session.acceptedSampleCount == 1)
     }
 

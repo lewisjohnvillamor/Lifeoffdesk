@@ -15,6 +15,8 @@ struct MapScreen: View {
     @State private var simHelpQuestion: SimQuestion?
     /// Photo pin the user tapped on the map.
     @State private var openedMoment: WalkMemory?
+    /// A found place tapped on the map.
+    @State private var tappedPlace: Place?
     @State private var followUser = true
     @AppStorage("map.tilted") private var tilted = true
     @State private var launchScale: CGFloat?
@@ -31,6 +33,8 @@ struct MapScreen: View {
                                m.coordinate.map { MapPin(id: m.id, coordinate: $0, image: model.thumbnail(for: m)) }
                            },
                            onPinTap: { id in openedMoment = model.mapMoments.first { $0.id == id } },
+                           foundPlaces: model.foundPlaces,
+                           onFoundTap: { place in withAnimation(.easeOut(duration: 0.2)) { tappedPlace = place } },
                            position: model.mapPosition, destination: model.destination,
                            route: model.destinationRoute?.points,
                            camera: $camera, tilted: tilted)
@@ -232,6 +236,8 @@ struct MapScreen: View {
     }
 
     @ViewBuilder private var statusBanners: some View {
+        if let place = model.arrived { arrivedCard(place) }
+        if let place = tappedPlace, model.destination?.id != place.id { foundPill(place) }
         if let destination = model.destination {
             destinationPill(destination)
             if let route = model.destinationRoute {
@@ -318,6 +324,60 @@ struct MapScreen: View {
         return parts.joined(separator: " · ")
     }
 
+    /// Shown once when the walk reaches the chosen destination; the route has already cleared.
+    private func arrivedCard(_ place: Place) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: "flag.checkered").font(.title3).foregroundStyle(Theme.primary)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Nakarating ka na!").font(.headline).foregroundStyle(Theme.ink)
+                    Text("You've arrived at \(place.name).").font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                }
+            }
+            HStack(spacing: 10) {
+                Button { model.arrived = nil; model.finish() } label: {
+                    Text("End adventure").font(.subheadline.weight(.semibold)).padding(.horizontal, 14)
+                        .frame(minHeight: Theme.minTarget)
+                        .background(Theme.primary, in: Capsule()).foregroundStyle(Theme.canvas)
+                }
+                Button { model.arrived = nil } label: {
+                    Text("Keep exploring").font(.subheadline.weight(.semibold)).padding(.horizontal, 14)
+                        .frame(minHeight: Theme.minTarget)
+                        .background(Theme.revealedGround, in: Capsule()).foregroundStyle(Theme.ink)
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surface.opacity(0.97), in: RoundedRectangle(cornerRadius: Theme.corner))
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+        .accessibilityElement(children: .contain)
+        .onAppear { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+    }
+
+    /// A found place tapped on the map: its name, and a way to go there again.
+    private func foundPill(_ place: Place) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: PlaceIcon.symbol(place)).font(.caption).foregroundStyle(PlaceIcon.tint(place))
+                .accessibilityHidden(true)
+            Text(place.name).font(.footnote.weight(.semibold)).lineLimit(1)
+            Text("· found").font(.footnote).foregroundStyle(Theme.secondaryInk)
+            if model.phase == .idle {
+                Button("Go again") { model.choose(place); tappedPlace = nil }
+                    .font(.footnote.bold()).foregroundStyle(Theme.primary)
+            }
+            Button { tappedPlace = nil } label: { Image(systemName: "xmark").font(.caption.bold()) }
+                .frame(width: 28, height: 28)
+                .accessibilityLabel("Close")
+        }
+        .foregroundStyle(Theme.ink)
+        .padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 4)
+        .background(Theme.surface, in: Capsule())
+        .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+        .accessibilityElement(children: .contain)
+    }
+
     private func destinationPill(_ place: Place) -> some View {
         HStack(spacing: 6) {
             Image(systemName: PlaceIcon.symbol(place)).font(.caption).foregroundStyle(PlaceIcon.tint(place))
@@ -352,7 +412,8 @@ struct MapScreen: View {
                     statRow("timer", "This adventure", Format.duration(session.activeDuration(at: context.date)),
                             unit: Format.distance(session.distanceMeters))
                 }
-                statRow("pencil.line", "New streets today", Self.km(model.todayNewDistanceMeters), unit: "km")
+                let today = Format.distanceParts(model.todayNewDistanceMeters)
+                statRow("pencil.line", "New streets today", today.value, unit: today.unit)
                 statRow("sparkles", "Places found", "\(model.discoveredPlaceIDs.count)", unit: "")
             }
         }
@@ -449,8 +510,6 @@ struct MapScreen: View {
             .buttonStyle(.plain)
             .accessibilityLabel(label)
     }
-
-    private static func km(_ meters: Double) -> String { String(format: "%.2f", meters / 1000) }
 }
 
 /// Finish requires a short hold so a walk is never ended by accident. VoiceOver gets a direct action.

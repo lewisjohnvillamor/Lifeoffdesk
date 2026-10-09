@@ -19,7 +19,8 @@ final class SafetyChat: ObservableObject {
             /// `seen`: what Apple's on-device image recognition named in the photo, if any.
             /// `suggestions`: offered when no card matched, instead of a dead end.
             case answer(SafetyCard?, emergency: Bool, routedByAI: Bool, seen: [String], photoUnclear: Bool = false,
-                        continued: Bool = false, suggestions: [SafetyCard] = [], highlights: [String] = [])
+                        continued: Bool = false, suggestions: [SafetyCard] = [], highlights: [String] = [],
+                        alternatives: [SafetyCard] = [])
         }
         let id = UUID()
         let kind: Kind
@@ -84,9 +85,13 @@ final class SafetyChat: ObservableObject {
             let suggestions = card == nil ? SafetyKeywords.suggestions(for: routedText).compactMap { guide?.card($0) } : []
             // Point at the card steps that answer the question ("buhusan ng tubig?" -> the water steps).
             let highlights = card.flatMap { c in SafetyKeywords.lexicon?.relevantSteps(in: c, for: text) } ?? []
+            // A wrong route (model mistake or a steering message) is one tap from the right card.
+            let alternatives = SafetyPrompt.alternatives(model: routed, question: routedText, shown: card?.topic)
+                .compactMap { guide?.card($0) }
             messages.append(Message(kind: .answer(card, emergency: final.emergency, routedByAI: routed != nil, seen: labels,
                                                   photoUnclear: photo != nil && labels.isEmpty, continued: followUp != nil,
-                                                  suggestions: suggestions, highlights: highlights)))
+                                                  suggestions: suggestions, highlights: highlights,
+                                                  alternatives: alternatives)))
             if !text.isEmpty { lastQuestion = routedText }
             if card?.topic == .lost { startLostFlow(model: model) }
             thinking = false
@@ -253,7 +258,7 @@ struct SafetyChatView: View {
             }
             .padding(14).frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
-        case let .answer(card, emergency, routedByAI, seen, photoUnclear, continued, suggestions, highlights):
+        case let .answer(card, emergency, routedByAI, seen, photoUnclear, continued, suggestions, highlights, alternatives):
             VStack(alignment: .leading, spacing: 10) {
                 if continued {
                     Label("Tuloy sa huling tanong mo", systemImage: "arrow.turn.down.right")
@@ -304,6 +309,17 @@ struct SafetyChatView: View {
                     }
                     if let url = URL(string: card.sourceURL) {
                         Link("Source: \(card.sourceTitle)", destination: url).font(.caption).foregroundStyle(Theme.primary)
+                    }
+                    if !alternatives.isEmpty {
+                        Text("Hindi ito ang tanong mo? Subukan:").font(.footnote.bold()).foregroundStyle(Theme.ink)
+                        ForEach(alternatives) { other in
+                            Button { chat.show(other.topic, model: model) } label: {
+                                Label(other.title, systemImage: "arrow.right.circle")
+                                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.primary)
+                                    .frame(minHeight: Theme.minTarget)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 } else {
                     Text("Wala akong reviewed na gabay para diyan. Kung delikado o may nasaktan, tumawag sa 911.")

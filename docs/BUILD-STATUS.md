@@ -1,5 +1,24 @@
 # Life Off Desk — build status
 
+## AI security review: prompt injection and hallucination (2026-10-10, founder question)
+
+- **Audit result:** no AI task shows model-written text. All are grammar-constrained JSON choices, validated with one repair attempt, rendered by templates or sourced cards. Inputs are sanitised and quoted as data. Details are in `docs/SAFETY-GUIDE.md`.
+- **New:** the help chat offers one-tap alternative cards when the keywords and the model disagree, or when only the model routed.
+- **New red-team tests:**
+  - A hijacked model cannot lower a keyword emergency or override a keyword card.
+  - Prose and invented cards are rejected.
+  - Chat tokens cannot open a new turn.
+- **Not done:** a red-team run against the real model on the dev CPU or the phone.
+
+## Arrival, found places on the map, honest small distances (2026-10-10, founder phone test)
+
+The founder walked to a chosen Starbucks, stopped, and saw no arrival: the route and destination pill stayed, the place vanished from the map once the pill was closed, and the card said "+0.00 km" for 4 m of new street.
+
+- **Arrival** (`Arrival` in core): within 30 m of the place, plus up to 20 m of the fix's reported accuracy, after at least 20 m of walking. The live walk shows "Nakarating ka na!" with End adventure / Keep exploring, and the route clears. Ending a walk whose trail reached the destination also clears it. The recap says "You reached …".
+- **Found places stay on the map:** every place passed on any adventure is a small category dot. Icons are drawn only when 60 or fewer are on screen, so a year of walks stays smooth. Tapping a dot shows its name and "Go again".
+- **Distances:** under 1 km shows metres everywhere (card, map, Adventures, Me). The card and recap also show the total walked. When most of a route was already explored, the recap explains why new streets are small.
+- **Tests:** arrival radius and accuracy cap, walk-level arrival, metre formatting (154 core tests pass on Linux). The iOS UI compiles in CI; the arrival flow has not been re-tested outdoors on the phone yet.
+
 ## SOS help assistant: offline first-aid and safety chat (2026-10-09, founder request)
 
 - **Vehicles and photos (later the same night):**
