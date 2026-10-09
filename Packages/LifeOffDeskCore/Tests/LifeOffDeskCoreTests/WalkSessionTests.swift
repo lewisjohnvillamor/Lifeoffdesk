@@ -77,7 +77,7 @@ final class WalkSessionTests: XCTestCase {
         for step in 0..<10 { ingest(&recorder, east: Double(step) * 7, at: Double(step) * 5 + 1) }
         recorder.finish(at: Fixture.time(60))
         let grid = ExplorationGrid(origin: Fixture.origin)
-        let recap = WalkRecap.compute(session: recorder.session, exploration: Exploration(), grid: grid, now: Fixture.time(60))
+        let recap = WalkRecap.compute(session: recorder.session, exploration: Exploration(revealWidthMeters: 25), grid: grid, now: Fixture.time(60))
         XCTAssertEqual(recap.distanceMeters, 63, accuracy: 0.1)
         XCTAssertEqual(recap.activeDuration, 60, accuracy: 0.001)
         XCTAssertEqual(recap.acceptedSamples, 10)

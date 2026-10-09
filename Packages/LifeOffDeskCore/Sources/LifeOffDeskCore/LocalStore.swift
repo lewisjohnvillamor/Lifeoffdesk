@@ -30,6 +30,18 @@ public final class LocalStore: @unchecked Sendable {
     private var activeSessionURL: URL { directory.appendingPathComponent("active-session.json") }
     private var explorationURL: URL { directory.appendingPathComponent("exploration.json") }
     private var walksDirectory: URL { directory.appendingPathComponent("walks", isDirectory: true) }
+    private var memoriesDirectory: URL { directory.appendingPathComponent("memories", isDirectory: true) }
+
+    // MARK: Memory photos (P1): one user-chosen photo per walk, stored only on device.
+
+    public func saveMemoryPhoto(_ data: Data, for sessionID: UUID) throws {
+        try fileManager.createDirectory(at: memoriesDirectory, withIntermediateDirectories: true)
+        try data.write(to: memoriesDirectory.appendingPathComponent("\(sessionID.uuidString).jpg"), options: .atomic)
+    }
+
+    public func loadMemoryPhoto(for sessionID: UUID) -> Data? {
+        try? Data(contentsOf: memoriesDirectory.appendingPathComponent("\(sessionID.uuidString).jpg"))
+    }
 
     // MARK: Active session
 
@@ -81,8 +93,8 @@ public final class LocalStore: @unchecked Sendable {
                 try fileManager.removeItem(at: candidate)
             }
         }
-        if fileManager.fileExists(atPath: walksDirectory.path) {
-            try fileManager.removeItem(at: walksDirectory)
+        for personal in [walksDirectory, memoriesDirectory] where fileManager.fileExists(atPath: personal.path) {
+            try fileManager.removeItem(at: personal)
         }
         let leftovers = (try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
         for url in leftovers where url.lastPathComponent.contains(".corrupt-") {

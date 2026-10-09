@@ -13,7 +13,7 @@ final class ExplorationTests: XCTestCase {
     func testMergeIsIdempotentAndRevisitsAddNoArea() {
         let grid = ExplorationGrid(origin: Fixture.origin)
         let first = session([[0, 50, 100]])
-        var exploration = Exploration()
+        var exploration = Exploration(revealWidthMeters: 25)
         exploration.merge(first)
         exploration.merge(first)
         XCTAssertEqual(exploration.paths.count, 1)
@@ -22,13 +22,18 @@ final class ExplorationTests: XCTestCase {
         let revisit = session([[100, 50, 0]])
         let recap = WalkRecap.compute(session: revisit, exploration: exploration, grid: grid, now: Fixture.time(10))
         XCTAssertEqual(recap.newlyRevealedSquareMeters, 0)
+        XCTAssertEqual(recap.newDistanceMeters, 0, "Revisited streets are not new")
+        let extended = session([[100, 200, 300]])
+        let extendedRecap = WalkRecap.compute(session: extended, exploration: exploration, grid: grid, now: Fixture.time(10))
+        XCTAssertEqual(extendedRecap.distanceMeters, 200, accuracy: 0.5)
+        XCTAssertEqual(extendedRecap.newDistanceMeters, 187.5, accuracy: 5, "Only the part beyond the old corridor counts")
         exploration.merge(revisit)
         XCTAssertEqual(grid.areaSquareMeters(grid.cells(for: exploration)), area)
     }
 
     func testGapBetweenSegmentsIsNotRevealed() {
         let grid = ExplorationGrid(origin: Fixture.origin)
-        var exploration = Exploration()
+        var exploration = Exploration(revealWidthMeters: 25)
         exploration.merge(session([[0], [500]]))
         let cells = grid.cells(for: exploration)
         let midpoint = GridCell(x: Int((250 / grid.cellSize).rounded(.down)), y: 0)
@@ -39,7 +44,7 @@ final class ExplorationTests: XCTestCase {
 
     func testCorridorIsNarrow() {
         let grid = ExplorationGrid(origin: Fixture.origin)
-        var exploration = Exploration()
+        var exploration = Exploration(revealWidthMeters: 25)
         exploration.merge(session([[0, 100]]))
         let cells = grid.cells(for: exploration)
         func cell(east: Double, north: Double) -> GridCell {
@@ -106,7 +111,10 @@ final class LocalStoreTests: XCTestCase {
         session.state = .finished
         try store.commitFinished(session)
         try store.saveExploration(Exploration())
+        try store.saveMemoryPhoto(Data("jpeg".utf8), for: session.id)
+        XCTAssertEqual(store.loadMemoryPhoto(for: session.id), Data("jpeg".utf8))
         try store.erasePersonalData()
+        XCTAssertNil(store.loadMemoryPhoto(for: session.id), "Erase removes memory photos")
         XCTAssertNil(store.loadActiveSession())
         XCTAssertNil(store.loadExploration())
         XCTAssertTrue(store.loadFinishedWalks().isEmpty)

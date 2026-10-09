@@ -6,46 +6,43 @@ struct RecapView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     let session: WalkSession
+    @State private var showCard = false
 
     var body: some View {
         let recap = model.recap(for: session)
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(spacing: 20) {
+                    Text("You made room for a little adventure.")
+                        .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
                     if model.isDemo(session) {
-                        Label("Synthetic demo walk: generated along real streets, not real GPS.", systemImage: "sparkles")
+                        Label("Sample walk · not real GPS", systemImage: "sparkles")
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
                     }
-                    Text("You made room for a little adventure.")
-                        .font(.title2.weight(.semibold)).foregroundStyle(Theme.ink)
-                    RoutePreview(segments: session.segments)
-                        .frame(height: 220)
-                        .background(Theme.revealedGround, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .accessibilityLabel("Route preview with \(recap.segmentCount) tracked sections")
-                    Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 12) {
-                        GridRow {
-                            stat("Distance", Format.distance(recap.distanceMeters))
-                            stat("Active time", Format.duration(recap.activeDuration))
-                        }
-                        GridRow {
-                            stat("Newly revealed", Format.area(recap.newlyRevealedSquareMeters))
-                            stat("GPS points kept", "\(recap.acceptedSamples)")
-                        }
+                    Button { showCard = true } label: {
+                        MemoryCardView(session: session, recap: recap, photo: model.memoryPhoto(for: session),
+                                       isSample: model.isDemo(session))
+                            .scaleEffect(0.78)
+                            .frame(width: MemoryCardView.size.width * 0.78, height: MemoryCardView.size.height * 0.78)
+                            .shadow(color: .black.opacity(0.15), radius: 14, y: 8)
                     }
-                    if let destination = recap.destinationName {
-                        Label("Destination chosen: \(destination)", systemImage: "mappin.circle")
-                            .foregroundStyle(Theme.ink)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Walk memory card. Add a photo and share.")
+                    HStack(spacing: 0) {
+                        stat("Distance", Format.distance(recap.distanceMeters))
+                        stat("Time", Format.duration(recap.activeDuration))
+                        stat("New streets", Format.distance(recap.newDistanceMeters))
                     }
+                    Button { showCard = true } label: { Label("Add photo & share", systemImage: "camera") }
+                        .buttonStyle(PrimaryButtonStyle())
                     if recap.wasRecovered {
-                        Label("The app closed during this walk; time while closed is not counted.", systemImage: "info.circle")
+                        Label("App closed mid-walk; that time isn't counted.", systemImage: "info.circle")
                             .font(.footnote).foregroundStyle(Theme.secondaryInk)
                     }
                     if recap.acceptedSamples == 0 {
-                        Text("No GPS points were accepted, so nothing was revealed.")
+                        Text("No GPS points kept, so nothing was revealed.")
                             .font(.footnote).foregroundStyle(Theme.secondaryInk)
                     }
-                    Text("Distance counts only accepted GPS points; gaps and paused time add nothing.")
-                        .font(.footnote).foregroundStyle(Theme.secondaryInk)
                 }
                 .padding(Theme.inset)
             }
@@ -53,14 +50,16 @@ struct RecapView: View {
             .navigationTitle(session.startedAt.formatted(date: .abbreviated, time: .shortened))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .sheet(isPresented: $showCard) { MemoryCardSheet(session: session).environmentObject(model) }
         }
     }
 
     private func stat(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.footnote).foregroundStyle(Theme.secondaryInk)
+        VStack(spacing: 2) {
             Text(value).font(.title3.monospacedDigit().weight(.semibold)).foregroundStyle(Theme.ink)
+            Text(title).font(.footnote).foregroundStyle(Theme.secondaryInk)
         }
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
     }
 }

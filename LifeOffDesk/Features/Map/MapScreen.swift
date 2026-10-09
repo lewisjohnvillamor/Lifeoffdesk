@@ -31,18 +31,6 @@ struct MapScreen: View {
                 topBar
                 statusBanners
                 Spacer()
-                if !model.demoMode && model.displayExploration.paths.isEmpty && model.phase == .idle {
-                    VStack(spacing: 10) {
-                        Image(systemName: "map").font(.largeTitle)
-                        Text("Your world is waiting").font(.title2.weight(.semibold))
-                        Text("Streets appear as you walk. Start exploring to lift the fog.")
-                            .font(.subheadline).multilineTextAlignment(.center)
-                    }
-                    .foregroundStyle(Theme.ink)
-                    .padding(24)
-                    .background(Theme.canvas.opacity(0.94), in: RoundedRectangle(cornerRadius: 24))
-                    Spacer()
-                }
                 bottomCard
             }
             .padding(.horizontal, Theme.inset)
@@ -89,6 +77,15 @@ struct MapScreen: View {
             camera.pointsPerMeter = CGFloat(scale)
         }
         if arguments.contains("--flat") { tilted = false }
+        // More screenshot helpers (simulator only).
+        if arguments.contains("--open-planner") {
+            showPlanner = true
+            if let i = arguments.firstIndex(of: "--planner-filter"), i + 1 < arguments.count,
+               let category = PlaceCategory(rawValue: arguments[i + 1]) { model.manualSearch(category: category) }
+        }
+        if arguments.contains("--open-recap"), model.demoMode, let walk = model.historyWalks.first {
+            model.presentedRecap = walk
+        }
         #endif
     }
 
@@ -126,18 +123,18 @@ struct MapScreen: View {
     @ViewBuilder private var statusBanners: some View {
         if model.demoMode {
             banner(icon: "sparkles", text: model.replay == nil
-                   ? "DEMO MAP: synthetic sample walks along real streets. Not real GPS or anyone's walks."
-                   : "REPLAY of a synthetic sample walk. Not real GPS.",
+                   ? "Sample walks · not real GPS"
+                   : "Replay · sample walk, not real GPS",
                    action: ("Exit demo", { model.setDemoMode(false) }))
         }
         if let problem = model.demoProblem {
             banner(icon: "exclamationmark.triangle", text: problem)
         }
         #if targetEnvironment(simulator)
-        banner(icon: "desktopcomputer", text: "Simulator · AI unavailable · locations are simulated")
+        banner(icon: "desktopcomputer", text: "Simulator · no AI · simulated GPS")
         #endif
         if model.permissionDenied {
-            banner(icon: "location.slash", text: "Location is off for Life Off Desk. Walks need it; past walks and planning still work.",
+            banner(icon: "location.slash", text: "Location is off. Turn it on to record walks.",
                    action: ("Open Settings", model.openSystemSettings))
         }
         if model.phase == .acquiringFix {
@@ -145,9 +142,9 @@ struct MapScreen: View {
         }
         switch model.coverageHere {
         case .outside?:
-            banner(icon: "map", text: "Map detail unavailable here. Your trail is still recorded.")
+            banner(icon: "map", text: "No map detail here · still recording")
         case let .mainRoadsOnly(name)?:
-            banner(icon: "map", text: "Only main roads are mapped here (\(name)). Your trail is still recorded.")
+            banner(icon: "map", text: "Main roads only (\(name)) · still recording")
         case .detailed?, nil:
             EmptyView()
         }
@@ -182,7 +179,7 @@ struct MapScreen: View {
             if let destination = model.destination { destinationRow(destination) }
             switch model.phase {
             case .idle where model.demoMode:
-                Text("This is how a well-explored map looks.")
+                Text("A well-explored map")
                     .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
                 Button(model.replay == nil ? "Replay a sample walk" : "Replay another sample walk") { model.startReplay() }
                     .buttonStyle(PrimaryButtonStyle())

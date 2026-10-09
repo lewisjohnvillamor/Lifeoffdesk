@@ -37,25 +37,42 @@ public enum PlannerCopy {
         }
     }
 
+    /// One short line above the results, e.g. "3 park malapit sa'yo · straight-line".
     public static func intro(prefs: OutingPreferences, count: Int, origin: DistanceOrigin, radiusMeters: Double) -> String {
         let what = prefs.categories.isEmpty ? "lugar" : prefs.categories.map(categoryWord).joined(separator: "/")
-        let from: String
+        var parts: [String]
         switch origin {
-        case .currentLocation: from = "mula sa location mo"
-        case .areaCenter: from = "mula sa gitna ng starter area (wala pang GPS fix)"
+        case .currentLocation: parts = ["\(count) \(what) malapit sa'yo"]
+        case .areaCenter: parts = ["\(count) \(what) sa starter area", "wala pang GPS fix"]
         }
-        var line = "Heto ang \(count) na \(what) within \(Format.distance(radiusMeters)) \(from)."
-        if let minutes = prefs.durationMinutes { line += " May \(minutes) minutes ka." }
-        if let budget = prefs.budgetPHP { line += " Budget: ₱\(budget)." }
-        return line + " Straight-line distance lang ito, hindi walking route."
+        if let minutes = prefs.durationMinutes { parts.append("\(minutes) min") }
+        if let budget = prefs.budgetPHP { parts.append("₱\(budget)") }
+        parts.append("straight-line")
+        return parts.joined(separator: " · ")
     }
 
+    /// Compact subtitle: "Park · 850 m", plus verified matches only.
     public static func reason(_ suggestion: Suggestion) -> String {
-        var parts: [String] = []
-        if let category = suggestion.matchedCategory { parts.append("Tugma sa \(categoryWord(category)) preference mo") }
-        for mood in suggestion.matchedMoods { parts.append("verified na \(moodWord(mood))") }
+        var parts = [categoryWord(suggestion.place.category).capitalized, Format.distance(suggestion.straightLineMeters)]
+        for mood in suggestion.matchedMoods { parts.append("\(moodWord(mood)) ✓") }
         if suggestion.withinKnownBudget { parts.append("pasok sa budget") }
-        parts.append("\(Format.distance(suggestion.straightLineMeters)) straight-line")
+        return parts.joined(separator: " · ")
+    }
+
+    /// One caveat line summarising every uncertainty; full labels stay available on tap.
+    public static func caveat(_ suggestion: Suggestion) -> String {
+        var parts: [String] = []
+        let hours = suggestion.uncertainties.contains { if case .hoursUnverified = $0 { return true }; return false }
+        let access = suggestion.uncertainties.contains(.accessUnverified)
+        if hours && access { parts.append("Hours & access unverified") }
+        else if hours { parts.append("Hours unverified") }
+        else if access { parts.append("Access unverified") }
+        if suggestion.uncertainties.contains(where: { if case .priceUnknown = $0 { return true }; return false }) {
+            parts.append("price unknown")
+        }
+        if suggestion.uncertainties.contains(where: { if case .mayExceedTime = $0 { return true }; return false }) {
+            parts.append("baka kulang ang oras")
+        }
         return parts.joined(separator: " · ")
     }
 

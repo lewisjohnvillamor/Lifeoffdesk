@@ -14,13 +14,15 @@ public struct ExploredPath: Codable, Hashable, Sendable {
 /// depend on any basemap version. Render caches are rebuilt from these paths.
 public struct Exploration: Codable, Hashable, Sendable {
     public static let currentSchemaVersion = 1
+    /// Provisional total corridor width (25 m each side of the path); tune outdoors.
+    public static let defaultRevealWidthMeters: Double = 50
 
     public var schemaVersion: Int
     /// Total corridor width; half of it is revealed on each side of the path.
     public var revealWidthMeters: Double
     public var paths: [ExploredPath]
 
-    public init(revealWidthMeters: Double = 25, paths: [ExploredPath] = []) {
+    public init(revealWidthMeters: Double = Exploration.defaultRevealWidthMeters, paths: [ExploredPath] = []) {
         schemaVersion = Self.currentSchemaVersion
         self.revealWidthMeters = revealWidthMeters
         self.paths = paths
@@ -75,6 +77,11 @@ public struct ExplorationGrid: Sendable {
             }
         }
         return cells
+    }
+
+    public func cell(containing coordinate: Coordinate) -> GridCell {
+        let p = projection.project(coordinate)
+        return GridCell(x: Int((p.x / cellSize).rounded(.down)), y: Int((p.y / cellSize).rounded(.down)))
     }
 
     public func areaSquareMeters(_ cells: Set<GridCell>) -> Double {

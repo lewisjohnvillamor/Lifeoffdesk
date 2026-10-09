@@ -11,7 +11,7 @@ enum PaperStyle {
     static let island = Color(hex: 0xFFFEFB)         // explored paper
     static let edge = Color(hex: 0xCBC6B8)           // visible paper thickness under the island
     static let ink = Color(hex: 0x1F2A24)            // road ink (near-black brand ink)
-    static let ghostInk = Color(hex: 0x283A31).opacity(0.16)
+    static let ghostInk = Color(hex: 0x283A31).opacity(0.22)
     static let grid = Color(hex: 0x283A31).opacity(0.05)
     static let fogOpacity: Double = 0.72
     static let gridMeters: CGFloat = 60

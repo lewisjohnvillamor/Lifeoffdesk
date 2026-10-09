@@ -136,20 +136,9 @@ struct FogMapView: View {
                 context.stroke(gridPath.applying(transform), with: .color(PaperStyle.grid), lineWidth: 0.6)
             }
 
-            // 2. Ghost streets: visible but faint beneath the fog.
             let visibleTiles = geometry.tiles.filter { $0.bounds.intersects(visible) }
-            if ppm >= 0.03 {
-                for tile in visibleTiles {
-                    context.stroke(tile.major.applying(transform), with: .color(PaperStyle.ghostInk), lineWidth: 1.2)
-                    context.stroke(tile.minor.applying(transform), with: .color(PaperStyle.ghostInk.opacity(0.7)), lineWidth: 0.7)
-                }
-            } else {
-                for tile in visibleTiles {
-                    context.stroke(tile.major.applying(transform), with: .color(PaperStyle.ghostInk), lineWidth: 0.8)
-                }
-            }
 
-            // 3. Island geometry for what was actually walked (only pieces near the screen).
+            // 2. Island geometry for what was actually walked (only pieces near the screen).
             var island = Path()
             for piece in islands.islands(for: exploration, geometry: geometry) where piece.bounds.intersects(visible) {
                 island.addPath(piece.path)
@@ -157,12 +146,26 @@ struct FogMapView: View {
             let screenIsland = island.applying(transform)
             let lift = max(2, min(7, 9 * ppm))
 
-            // 4. Fibrous paper fog everywhere except the island.
+            // 3. Fibrous paper fog everywhere except the island.
             context.drawLayer { fog in
                 fog.clip(to: screenIsland, options: .inverse)
                 fog.fill(Path(screen), with: .color(PaperStyle.paper.opacity(reduceTransparency ? 0.92 : PaperStyle.fogOpacity)))
                 let anchor = CGPoint(x: 0, y: 0).applying(transform)
                 fog.fill(Path(screen), with: .tiledImage(PaperStyle.fiberTile, origin: anchor, scale: 0.5))
+            }
+
+            // Ghost streets: faint ink over the fog, so the city is hinted but not revealed.
+            context.drawLayer { ghostLayer in
+                ghostLayer.clip(to: screenIsland, options: .inverse)
+                let detailed = ppm >= 0.03
+                for tile in visibleTiles {
+                    ghostLayer.stroke(tile.major.applying(transform), with: .color(PaperStyle.ghostInk),
+                                      lineWidth: detailed ? 0.9 : 0.6)
+                    if detailed {
+                        ghostLayer.stroke(tile.minor.applying(transform), with: .color(PaperStyle.ghostInk.opacity(0.7)),
+                                          lineWidth: 0.5)
+                    }
+                }
             }
 
             // Region outlines so coverage limits stay visible through the fog.
@@ -172,7 +175,7 @@ struct FogMapView: View {
                            style: StrokeStyle(lineWidth: 1, dash: [2, 6]))
 
             if !island.isEmpty {
-                // 5. Raised paper: soft shadow, visible thickness, then the white sheet.
+                // 4. Raised paper: soft shadow, visible thickness, then the white sheet.
                 context.drawLayer { shadow in
                     shadow.addFilter(.shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: lift + 4))
                     shadow.fill(screenIsland.offsetBy(dx: 0, dy: lift), with: .color(PaperStyle.edge))
@@ -180,7 +183,7 @@ struct FogMapView: View {
                 context.fill(screenIsland.offsetBy(dx: 0, dy: lift), with: .color(PaperStyle.edge))
                 context.fill(screenIsland, with: .color(PaperStyle.island))
 
-                // 6. Ink roads and grid on the island only.
+                // 5. Ink roads and grid on the island only.
                 context.drawLayer { sheet in
                     sheet.clip(to: screenIsland)
                     if PaperStyle.gridMeters * ppm >= 12 {
@@ -189,20 +192,18 @@ struct FogMapView: View {
                     let islandBounds = island.boundingRect
                     for tile in visibleTiles where tile.bounds.intersects(islandBounds) {
                         sheet.stroke(tile.restricted.applying(transform), with: .color(PaperStyle.ink.opacity(0.35)),
-                                     style: StrokeStyle(lineWidth: max(0.6, 2 * ppm), lineCap: .round, dash: [2, 3]))
+                                     style: StrokeStyle(lineWidth: max(0.4, 1.5 * ppm), lineCap: .round, dash: [2, 3]))
                         sheet.stroke(tile.footways.applying(transform), with: .color(PaperStyle.ink.opacity(0.8)),
-                                     style: StrokeStyle(lineWidth: max(0.8, 2.2 * ppm), lineCap: .round, lineJoin: .round))
+                                     style: StrokeStyle(lineWidth: max(0.5, 1.6 * ppm), lineCap: .round, lineJoin: .round))
                         sheet.stroke(tile.minor.applying(transform), with: .color(PaperStyle.ink),
-                                     style: StrokeStyle(lineWidth: max(1.3, 5 * ppm), lineCap: .round, lineJoin: .round))
+                                     style: StrokeStyle(lineWidth: max(0.8, 3.5 * ppm), lineCap: .round, lineJoin: .round))
                         sheet.stroke(tile.major.applying(transform), with: .color(PaperStyle.ink),
-                                     style: StrokeStyle(lineWidth: max(2.4, 10 * ppm), lineCap: .round, lineJoin: .round))
+                                     style: StrokeStyle(lineWidth: max(1.4, 7 * ppm), lineCap: .round, lineJoin: .round))
                     }
                 }
-                // Torn edge line.
-                context.stroke(screenIsland, with: .color(PaperStyle.ink.opacity(0.35)), lineWidth: 0.7)
             }
 
-            // 7. Current walk trail, segment by segment (never joined across gaps).
+            // 6. Current walk trail, segment by segment (never joined across gaps).
             var trail = Path()
             for segment in activeSegments {
                 guard let first = segment.first else { continue }
