@@ -227,7 +227,9 @@ struct MapScreen: View {
         }
         if let problem = model.demoProblem { banner(icon: "exclamationmark.triangle", text: problem) }
         #if targetEnvironment(simulator)
-        banner(icon: "desktopcomputer", text: "Simulator · no AI · simulated GPS")
+        if !ProcessInfo.processInfo.arguments.contains("--marketing") {
+            banner(icon: "desktopcomputer", text: "Simulator · no AI · simulated GPS")
+        }
         #endif
         if model.permissionDenied {
             banner(icon: "location.slash", text: "Location is off. Turn it on to record walks.",

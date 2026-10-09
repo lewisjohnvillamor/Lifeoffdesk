@@ -1,5 +1,18 @@
 # Life Off Desk — build status
 
+## Adventures: faster loading and "Para sa'yo" recommendations (2026-10-09, founder request)
+
+- **Faster Adventures tab:** the page is now a LazyVStack, so adventure rows are built only as they scroll into view; before, all 84 sample rows were built up front. Route thumbnails draw at most 60 points per segment instead of every GPS fix.
+- **"Para sa'yo" (Find me a place)** at the top of Adventures:
+  - **Taste (computed):** categories and cuisine words of the places your adventures passed (within 40 m).
+  - **Candidates (deterministic, `PlaceRecommender`):** catalogue places within 2.5 km, in a category you like (any category before you have history). Excluded: places already passed, saved, dismissed, or shown in the last 14 days, and help places. Ranked by taste share, cuisine match and distance, with a penalty for repeating the category of the last three suggestions so they rotate. The top few get street distances.
+  - **On-device AI (`RecommendationPrompt` v1):** gets the top three candidates and their computed reasons. It returns grammar-constrained JSON with the pick and one or two reasons; the validator rejects unlisted picks and reasons, with one repair attempt. The Taglish line is rendered from the computed values, e.g. "Subukan mo ang …! Mukhang mahilig ka sa kape: 3 sa 4 na lugar na nadaanan mo ay kape. 400 m lang ang layo. Hindi mo pa ito napupuntahan."
+  - **Actions:** Save (kept in a Saved row with Go and Remove), Go (sets the destination and route on the map), "Hindi ito · ibang lugar" (never suggested again; shows the next one).
+  - **Labels:** "On-device AI picked this from N nearby matches · facts computed", or "Computed pick · <reason>" when the model is unavailable; "OpenStreetMap · hours & access unverified".
+  - History and saved places live on the device (UserDefaults) and are cleared by Erase personal data.
+- **AI judge double-check (founder request):** after the pick, a second on-device pass (`JudgePrompt` v1) sees the computed taste summary, the categories of recent suggestions and the candidate's computed facts. It returns good/weak with a reason that must agree with the verdict (taste/cuisine/close vs off-taste/too far/same as recent). A weak verdict moves to the next candidate; if every candidate is weak, the pick is shown with its warning. The card shows "AI check: swak sa hilig mo" (or the warning). The judge can only veto and never adds facts, and it is the same 1.7B model, so it is a sanity check, not ground truth. It adds roughly one short generation per checked candidate. 1 test.
+- **Anti-repeat rules (tested):** 14-day cooldown per place, dismissed places never again, already-visited places excluded, category rotation. 4 new core tests; 141 Swift tests pass. **Not yet on the phone; no model eval of this prompt yet.**
+
 ## Demo map lag fix, play button, follow during replay (2026-10-09, founder report)
 
 - **Lag on the demo world:** the revealed "island" was built from a 14-sided torn-paper disc every ~8 m of walked line. With 84 sample walks (217 km) that was ~400k vertices, clipped and shadowed several times per frame, so it lagged while panning and replaying. Now each walk is a Douglas–Peucker-simplified line stroked once with round caps and joins (cached per walk as before): a few thousand elements. The edge is smooth now (no torn jitter). City-pack chunking was not the cause; demo mode keeps the two cities its sample walks touch loaded on purpose, so totals are right.

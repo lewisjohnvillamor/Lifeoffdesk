@@ -29,6 +29,10 @@ extension AppModel {
     /// Computes the exploring trend and asks the on-device model what to say, at most once per
     /// distinct set of facts per day. Dismissing hides it until tomorrow.
     func refreshCoach() {
+        #if targetEnvironment(simulator)
+        // Marketing captures: the Simulator has no AI, so its coach card would only show the computed fallback.
+        if ProcessInfo.processInfo.arguments.contains("--marketing") { return }
+        #endif
         guard activeSession == nil, UserDefaults.standard.string(forKey: Self.dismissedDayKey) != Self.today() else {
             return
         }
