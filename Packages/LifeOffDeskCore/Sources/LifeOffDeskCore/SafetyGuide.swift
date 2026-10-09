@@ -87,7 +87,7 @@ public struct SafetyLexicon: Sendable {
         return folded.split { !($0.isLetter || $0.isNumber || $0 == "*") }.map(String.init).filter { !particles.contains($0) }
     }
 
-    static func matches(_ term: [String], in words: [String]) -> Bool {
+    public static func matches(_ term: [String], in words: [String]) -> Bool {
         matches(term, in: words, roots: words.map(roots(of:)))
     }
 

@@ -129,7 +129,7 @@ final class SafetyChat: ObservableObject {
             (HelpKind.police, ["pulis", "police", "presinto", "istasyon ng pulis", "highway patrol", "hpg"]),
             (.hospital, ["ospital", "hospital", "clinic", "klinika", "ambulansya", "ambulance"]),
             (.fireStation, ["bumbero", "fire", "sunog"]),
-        ].filter { $0.1.contains { SafetyLexicon.matches(SafetyLexicon.normalize($0), in: words) } }.map(\.0)
+        ].filter { $0.1.contains { SafetyLexicon.matches(SafetyLexicon.normalize($0), in: words) } }.map { $0.0 }
         guard !wanted.isEmpty else { return }
         Task {
             let snapshot = await model.nearbyHelp()
