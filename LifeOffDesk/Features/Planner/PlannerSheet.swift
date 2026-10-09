@@ -35,7 +35,9 @@ struct PlannerSheet: View {
             }
             .safeAreaInset(edge: .bottom) {
                 Text("Places © OpenStreetMap · not verified")
-                    .font(.caption2).foregroundStyle(Theme.secondaryInk).padding(.bottom, 4)
+                    .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                    .frame(maxWidth: .infinity).padding(.vertical, 6)
+                    .background(Theme.canvas)
             }
             .onAppear { if model.plannerText.isEmpty { inputFocused = true } }
         }

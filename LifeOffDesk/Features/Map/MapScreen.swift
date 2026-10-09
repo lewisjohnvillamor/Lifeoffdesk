@@ -84,7 +84,7 @@ struct MapScreen: View {
                let category = PlaceCategory(rawValue: arguments[i + 1]) { model.manualSearch(category: category) }
         }
         if arguments.contains("--open-recap"), model.demoMode, let walk = model.historyWalks.first {
-            model.presentedRecap = walk
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { model.presentedRecap = walk }
         }
         #endif
     }
