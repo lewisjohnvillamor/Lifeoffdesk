@@ -57,9 +57,11 @@ Phone in **Airplane Mode** the whole time, mirrored over HDMI/USB-C.
 1. (0:00–0:30) Problem and user: desk workers who never leave the building; one line on why local (offline, private).
 2. (0:30–1:45) Map tab: show the explored paper map (Settings → Demo map, labelled sample data) vs a blank map. Tap ✨, type *"tahimik na park, 30 mins lang"*, get real places with "km by streets" and honest caveats. Point at the Airplane Mode icon.
 3. (1:45–2:45) Start exploring: short walk or a recorded adventure. Show the inked trail, new streets, recap, Taglish recap ("AI-selected highlights · values computed"), make a card.
-4. (2:45–3:45) Adventures tab: search *"mga short walks ko last week na may photos"* → filter chips → results. Settings → preferences.
+4. (2:45–3:45) Adventures tab (searches your **real** saved adventures, not sample data, so record a couple of adventures first): search *"adventures this week"* or *"mga lakad ko ngayong araw"* → filter chips → results. Avoid "last week" if all your walks are this week, and avoid "short walks … last week" (it asked for clarification in the dev test). Settings → preferences.
 5. (3:45–4:30) Honesty and safety: ask for a wheelchair-accessible museum → honest "no reviewed record" state. Settings → AI diagnostics: model, hash, load time, offline network path.
 6. (4:30–5:00) Why local AI wins, and what's next (more city packs, reviewed accessibility facts).
+
+Rehearse every typed phrase on the phone first. Known weak phrasings (dev tests): "hindi ko pa napupuntahan" may not be read as "somewhere new"; "long walks" may become a sort; "first ever adventure" asks for a date. Time two or three requests in rehearsal; no phone latency has been recorded yet.
 
 Backups: a pre-recorded 1-minute video on the laptop, demo mode for a populated map, and the model loaded once before going on stage (Settings → AI diagnostics → Load model now).
 
