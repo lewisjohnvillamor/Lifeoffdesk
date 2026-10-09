@@ -27,6 +27,10 @@ SHOTS = {
               'iOS Simulator · sample adventure'),
     'card': ('m7-card-sticker.png', 'Make it a memory', 'Turn an adventure into a card to share.',
              'iOS Simulator · sample adventure'),
+    'help': ('m9-help-chat-emergency.png', 'Help, even offline', 'Ask in Taglish. The AI finds the right first-aid card; 911 comes first.',
+             'iOS Simulator · keyword routing (no AI in Simulator) · cards from NHS, St John Ambulance, WHO, The AA'),
+    'help-tire': ('m10-help-chat-tire.png', 'Stuck on the road?', 'Flat tire, overheating, dead battery: sourced steps, offline.',
+                  'iOS Simulator · keyword routing (no AI in Simulator) · card from The AA'),
     'coach': ('iphone-coach.png', 'An AI that notices', 'On-device AI nudges you when your world gets smaller.',
               'Real iPhone 12 Pro Max capture · Demo world · on-device AI'),
 }
@@ -194,6 +198,7 @@ STORE = [  # (kind, screens, title, subtitle)
     ('feature', ['m6-route.png'], 'Go somewhere new', 'Real places, offline routes\non mapped streets'),
     ('feature', ['m1-demo-tilted.png'], 'Fog becomes paper', 'Every street you explore\nis inked in'),
     ('feature', ['m8-recap.png'], 'Every adventure, counted', 'New streets and places,\ncomputed on your phone'),
+    ('feature', ['m9-help-chat-emergency.png'], 'Help, even offline', 'First aid and road trouble,\n911 first when it matters'),
     ('feature', ['m7-card-sticker.png'], 'Keep the memory', 'Turn an adventure\ninto a card'),
 ]
 

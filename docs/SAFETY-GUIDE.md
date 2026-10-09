@@ -23,6 +23,16 @@ Mayo Clinic, American Red Cross and the Philippine DOH sites refused automated f
 ## Life Off Desk app guidance (not medical)
 The cards **unsafe**, **lost** and **noGPS** describe only what the app can do: call 911, copy or text your location, route to the nearest police station, and work offline. They are written by the project, not taken from a third-party source.
 
+## Vehicles (added 2026-10-09)
+- **Cards:** breakdown safety (GOV.UK Highway Code); flat tire, engine overheating, jump-starting a dead battery, car won't start, and dashboard warning lights (The AA).
+- **Adapted for the Philippines:** 911 instead of 999, and UK motorway and hard-shoulder specifics are left out.
+- **Not covered:** no motorcycle-specific page was found; the breakdown safety card applies to all vehicles.
+
+## Photos
+- In the chat you can attach a photo. Apple's on-device image classifier (Vision, offline) names the objects in it, e.g. "tire, wheel, car".
+- Those names are passed to the router as context ("Photo shows: …"), and the chat shows what was seen.
+- It **cannot** tell whether a tire is flat, how bad a wound is, or whether a plant is safe; the chat says so.
+
 ## Deliberate limits
 - **No plant or mushroom identification.** A description is not enough, and a wrong identification can kill. The card says so and gives the poisoning steps.
 - **No free-form medical chat.** A 1.7B model can make things up, so it only picks cards.

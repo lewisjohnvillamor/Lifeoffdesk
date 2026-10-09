@@ -10,6 +10,11 @@ final class SafetyGuideTests: XCTestCase {
         XCTAssertEqual(SafetyKeywords.topic(in: "napaso ang kamay ko"), .burn)
         XCTAssertEqual(SafetyKeywords.topic(in: "pwede bang kainin itong kabute?"), .wildPlants)
         XCTAssertNil(SafetyKeywords.topic(in: "what is the capital of France"))
+        XCTAssertEqual(SafetyKeywords.topic(in: "nasira gulong ko"), .flatTire)
+        XCTAssertEqual(SafetyKeywords.topic(in: "tumirik ang kotse sa EDSA"), .breakdown)
+        XCTAssertEqual(SafetyKeywords.topic(in: "ayaw mag-start ng kotse"), .wontStart)
+        XCTAssertEqual(SafetyKeywords.topic(in: "kailangan ng jump start, battery ng kotse"), .carBattery)
+        XCTAssertEqual(SafetyKeywords.topic(in: "lowbat na phone ko"), .phoneBattery)
         XCTAssertTrue(SafetyKeywords.emergency(in: "Walang malay ang kasama ko"))
         XCTAssertFalse(SafetyKeywords.emergency(in: "natapilok ako"))
     }
@@ -23,6 +28,15 @@ final class SafetyGuideTests: XCTestCase {
         XCTAssertTrue(final.emergency, "keyword net raises the emergency flag the model missed")
         XCTAssertEqual(final.topic, .fainting)
         XCTAssertEqual(SafetyPrompt.combine(model: nil, question: "nabulunan ang anak ko").topic, .choking)
+    }
+
+    func testPhotoLabelsAddContextButNeverDiagnose() async {
+        XCTAssertEqual(PhotoHints.topic(for: ["Tire", "Car"]), .flatTire)
+        XCTAssertEqual(PhotoHints.describe(["tire", "asphalt"]), "gulong (tire), asphalt")
+        XCTAssertEqual(SafetyPrompt.combine(model: nil, question: "help", photoLabels: ["mushroom"]).topic, .wildPlants)
+        let engine = ScriptedEngine(replies: [#"{"topic":"flatTire","emergency":false}"#])
+        _ = await SafetyPrompt.classify("nasira ito", photoLabels: ["tire", "wheel"], engine: engine)
+        XCTAssertTrue(engine.counter.prompts[0].contains("Photo shows: tire, wheel"))
     }
 
     func testBundledGuideHasACardWithASourceForEveryTopic() throws {

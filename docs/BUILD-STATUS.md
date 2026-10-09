@@ -2,6 +2,10 @@
 
 ## SOS help assistant: offline first-aid and safety chat (2026-10-09, founder request)
 
+- **Vehicles and photos (later the same night):**
+  - Six car cards: breakdown safety (GOV.UK), flat tire, overheating, jump start, won't start, warning lights (The AA). They are adapted to 911 and right-hand traffic: UK motorway specifics are dropped.
+  - Attach a photo: Apple Vision's on-device classifier names the objects (e.g. tire, wheel), which become context for the router. It never diagnoses damage or edibility.
+  - 25 cards total; 146 Swift tests pass.
 - **Where:** SOS → "Ask the help assistant". Type or speak (on-device speech) in Taglish or English. Quick chips cover common cases (sugat, natapilok, sobrang init, nahimatay, kagat ng aso, baha, lowbat, naligaw).
 - **How it answers:** the on-device model (`SafetyPrompt` v1) **only routes** the question to one of 19 bundled cards and flags emergencies, as grammar-constrained, validated JSON. A deterministic keyword check can raise the emergency flag and covers the model being unavailable. Emergencies show "Call 911 now" first.
 - **The cards** (`StarterData/safety-guide.json`) are short paraphrases of linked public sources: NHS, St John Ambulance, WHO, US NWS, Apple. The unsafe, lost and noGPS cards are app guidance only. See `docs/SAFETY-GUIDE.md`.
