@@ -7,6 +7,7 @@ struct PlannerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var inputFocused: Bool
     @State private var savedPrefs = false
+    @StateObject private var speech = SpeechInput()
 
     /// Quick picks fill the request and still go through the on-device model.
     private let quickPicks: [(icon: String, text: String)] = [
@@ -22,6 +23,7 @@ struct PlannerSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     inputBar
+                    voiceStatus
                     if showQuickPicks {
                         HStack(spacing: 10) {
                             MascotView(pose: .thinking, size: 56)
@@ -49,6 +51,10 @@ struct PlannerSheet: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 6)
                     .background(Theme.canvas)
             }
+            .onChange(of: speech.transcript) { _, text in
+                if speech.state == .listening, !text.isEmpty { model.plannerText = text }
+            }
+            .onDisappear { speech.cancel() }
             .onAppear {
                 model.warmPlanner()
                 model.refreshAdventureIdeas()
@@ -73,6 +79,7 @@ struct PlannerSheet: View {
                 .onSubmit(send)
                 .padding(.vertical, 12).padding(.leading, 14)
                 .accessibilityLabel("Outing request")
+            if !isBusy { micButton }
             Group {
                 if isBusy {
                     Button { model.cancelPlanning() } label: {
@@ -95,6 +102,45 @@ struct PlannerSheet: View {
         }
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Theme.border))
+    }
+
+    /// Push-to-talk: tap to speak, tap again (or pause) to send. On-device speech only.
+    private var micButton: some View {
+        let listening = speech.state == .listening
+        return Button {
+            if listening {
+                speech.stop()
+            } else {
+                inputFocused = false
+                speech.start { text in
+                    model.plannerText = text
+                    send()
+                }
+            }
+        } label: {
+            Image(systemName: listening ? "waveform" : "mic.fill")
+                .font(.system(size: 16, weight: .bold))
+                .symbolEffect(.variableColor.iterative, isActive: listening)
+                .foregroundStyle(listening ? Theme.canvas : Theme.primary)
+                .frame(width: 36, height: 36)
+                .background(listening ? Theme.danger : Theme.revealedGround, in: Circle())
+        }
+        .frame(width: Theme.minTarget, height: Theme.minTarget)
+        .padding(.bottom, 2)
+        .accessibilityLabel(listening ? "Stop and send" : "Speak your request")
+    }
+
+    @ViewBuilder private var voiceStatus: some View {
+        switch speech.state {
+        case .listening:
+            Label("Nakikinig… on-device\(speech.languageName.map { " (\($0))" } ?? "") · tap ulit para i-send",
+                  systemImage: "mic.fill")
+                .font(.footnote).foregroundStyle(Theme.danger)
+        case let .unavailable(message):
+            Label(message, systemImage: "mic.slash").font(.footnote).foregroundStyle(Theme.secondaryInk)
+        case .idle:
+            EmptyView()
+        }
     }
 
     private func send() {

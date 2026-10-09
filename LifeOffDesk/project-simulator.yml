@@ -32,6 +32,8 @@ targets:
           UIImageRespectsSafeAreaInsets: true
         NSLocationWhenInUseUsageDescription: Life Off Desk uses your location only during a walk you start.
         UIBackgroundModes: [location]
+        NSMicrophoneUsageDescription: Speak your outing request. Audio is processed on this iPhone and never sent anywhere.
+        NSSpeechRecognitionUsageDescription: Turns your spoken request into text on this iPhone only (on-device recognition, nothing sent online).
         NSCameraUsageDescription: Take photos of moments on your walk. Photos stay on this iPhone.
         NSPhotoLibraryAddUsageDescription: Save your walk card to Photos.
     settings:
