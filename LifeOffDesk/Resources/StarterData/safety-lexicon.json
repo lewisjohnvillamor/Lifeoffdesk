@@ -1,0 +1,981 @@
+{
+ "schemaVersion": 1,
+ "note": "Routing terms for the offline help assistant. Matching: whole words, '*' = word prefix, phrases in order, longer matches score more, body parts score half. Edit scripts/build_safety_lexicon.py.",
+ "emergency": [
+  "hindi humihinga",
+  "di humihinga",
+  "walang hininga",
+  "tumigil ang paghinga",
+  "not breathing",
+  "stopped breathing",
+  "walang malay",
+  "nawalan ng malay",
+  "hindi magising",
+  "di magising",
+  "ayaw magising",
+  "unconscious",
+  "unresponsive",
+  "won't wake up",
+  "wont wake up",
+  "hirap huminga",
+  "hindi makahinga",
+  "di makahinga",
+  "can't breathe",
+  "cant breathe",
+  "cannot breathe",
+  "trouble breathing",
+  "sakit sa dibdib",
+  "masakit ang dibdib",
+  "sumasakit ang dibdib",
+  "chest pain",
+  "inatake sa puso",
+  "atake sa puso",
+  "heart attack",
+  "stroke",
+  "na stroke",
+  "nangingisay",
+  "kinukumbulsyon",
+  "kombulsyon",
+  "seizure",
+  "seizing",
+  "dugo nang dugo",
+  "dugo ng dugo",
+  "hindi tumitigil ang dugo",
+  "ayaw tumigil ang dugo",
+  "sumisirit ang dugo",
+  "maraming dugo",
+  "heavy bleeding",
+  "bleeding heavily",
+  "won't stop bleeding",
+  "wont stop bleeding",
+  "nasaksak",
+  "sinaksak",
+  "stabbed",
+  "binaril",
+  "nabaril",
+  "tinamaan ng bala",
+  "gunshot",
+  "nasagasaan",
+  "run over",
+  "lumabas ang buto",
+  "lumalabas ang buto",
+  "labas ang buto",
+  "lalabas ang buto",
+  "nakausli ang buto",
+  "kita ang buto",
+  "bone sticking out",
+  "open fracture",
+  "tinuklaw",
+  "natuklaw",
+  "kagat ng ahas",
+  "nakagat ng ahas",
+  "kinagat ng ahas",
+  "snake bite",
+  "snakebite",
+  "anaphylaxis",
+  "namamaga ang lalamunan",
+  "sumisikip ang lalamunan",
+  "swollen throat",
+  "throat closing",
+  "walang pulso",
+  "no pulse",
+  "cardiac arrest",
+  "heatstroke",
+  "heat stroke",
+  "hindi pinapawisan",
+  "hindi pinagpapawisan",
+  "not sweating",
+  "nalunod",
+  "nalulunod",
+  "drowning",
+  "nakuryente",
+  "electrocuted",
+  "may baril",
+  "tinutukan",
+  "nalason",
+  "poisoned"
+ ],
+ "topics": {
+  "cpr": [
+   "cpr",
+   "walang pulso",
+   "no pulse",
+   "cardiac arrest",
+   "hindi humihinga",
+   "di humihinga",
+   "walang hininga",
+   "not breathing",
+   "stopped breathing",
+   "chest compression*"
+  ],
+  "choking": [
+   "nabulunan",
+   "nabubulunan",
+   "bulunan",
+   "nabilaukan",
+   "nabibilaukan",
+   "nasamid",
+   "choking",
+   "choke*",
+   "may bara sa lalamunan",
+   "naipit sa lalamunan",
+   "stuck in throat",
+   "stuck in my throat"
+  ],
+  "bleeding": [
+   "dugo",
+   "dumudugo",
+   "nagdurugo",
+   "duguan",
+   "sugat",
+   "nasugatan",
+   "sugatan",
+   "hiwa",
+   "nahiwa",
+   "nahiwaan",
+   "gasgas",
+   "nagasgas",
+   "galos",
+   "nagalusan",
+   "natusok",
+   "tusok",
+   "nasaksak",
+   "bleed*",
+   "blood",
+   "cut",
+   "cuts",
+   "wound",
+   "laceration",
+   "graze",
+   "scrape",
+   "scraped",
+   "puncture"
+  ],
+  "burn": [
+   "napaso",
+   "napapaso",
+   "nasunog",
+   "sunog ang balat",
+   "nalapnos",
+   "lapnos",
+   "paltos",
+   "napaltos",
+   "kumukulong tubig",
+   "mainit na tubig",
+   "mantika",
+   "natalsikan",
+   "natapunan ng mainit",
+   "hot coffee",
+   "hot water",
+   "hot oil",
+   "hot drink",
+   "spilled hot",
+   "burn*",
+   "scald*",
+   "blister*"
+  ],
+  "sprain": [
+   "pilay",
+   "napilay",
+   "natapilok",
+   "tapilok",
+   "napilipit",
+   "pilipit",
+   "nabalian",
+   "nabali",
+   "bali",
+   "baling buto",
+   "lumabas ang buto",
+   "lumalabas ang buto",
+   "labas ang buto",
+   "kita ang buto",
+   "nakausli ang buto",
+   "nadulas",
+   "nadapa",
+   "natisod",
+   "nahulog",
+   "bumagsak",
+   "sprain*",
+   "strain*",
+   "twisted",
+   "twist",
+   "fracture*",
+   "broken bone",
+   "broke my",
+   "dislocat*",
+   "manhid",
+   "namamanhid",
+   "numb*",
+   "tingling",
+   "namamaga ang paa",
+   "namamaga ang tuhod",
+   "namamaga ang bukung bukong",
+   "namamaga ang kamay",
+   "namamaga ang pulso",
+   "swollen ankle",
+   "swollen knee",
+   "swollen wrist",
+   "fell",
+   "tripped",
+   "slipped"
+  ],
+  "heat": [
+   "init",
+   "mainit",
+   "ang init",
+   "grabe ang init",
+   "sobrang init",
+   "napakainit",
+   "nainitan",
+   "naiinitan",
+   "init ng araw",
+   "tirik ang araw",
+   "hilo sa init",
+   "heatstroke",
+   "heat stroke",
+   "heat exhaustion",
+   "sunstroke",
+   "too hot",
+   "heat"
+  ],
+  "fainting": [
+   "nawalan ng malay",
+   "nawawalan ng malay",
+   "nahimatay",
+   "himatay",
+   "hihimatayin",
+   "hinimatay",
+   "nahihilo",
+   "nahilo",
+   "hilo",
+   "umiikot ang paningin",
+   "nandidilim ang paningin",
+   "faint*",
+   "passed out",
+   "pass out",
+   "dizzy",
+   "dizziness",
+   "lightheaded",
+   "light headed"
+  ],
+  "allergy": [
+   "allergy",
+   "allergic",
+   "allerg*",
+   "anaphyla*",
+   "pantal*",
+   "pinantal",
+   "namamantal",
+   "namantal",
+   "nagkapantal",
+   "pinapantal",
+   "minamantal",
+   "hives",
+   "rash",
+   "sumisikip ang lalamunan",
+   "hirap lumunok",
+   "nangangati ang lalamunan",
+   "rashes",
+   "namamaga ang labi",
+   "namamaga ang mukha",
+   "namamaga ang mata",
+   "namamaga ang lalamunan",
+   "swollen lips",
+   "swollen face",
+   "swollen tongue",
+   "epipen",
+   "epi pen"
+  ],
+  "animalBite": [
+   "kagat ng aso",
+   "nakagat ng aso",
+   "kinagat ng aso",
+   "kagat ng pusa",
+   "nakagat ng pusa",
+   "kinagat ng pusa",
+   "kalmot",
+   "kinalmot",
+   "nakalmot",
+   "kalmot ng pusa",
+   "aso",
+   "pusa",
+   "askal",
+   "tuta",
+   "kuting",
+   "unggoy",
+   "paniki",
+   "rabies",
+   "anti rabies",
+   "dog",
+   "dogs",
+   "cat",
+   "puppy",
+   "dog bite",
+   "cat bite",
+   "bitten by a dog",
+   "scratched by a cat",
+   "bat bite",
+   "monkey bite"
+  ],
+  "snakeBite": [
+   "ahas",
+   "tinuklaw",
+   "natuklaw",
+   "kagat ng ahas",
+   "nakagat ng ahas",
+   "ulupong",
+   "cobra",
+   "snake*"
+  ],
+  "sting": [
+   "bubuyog",
+   "putakti",
+   "pukyutan",
+   "laywan",
+   "langgam",
+   "lamok",
+   "kagat ng insekto",
+   "kinagat ng insekto",
+   "kagat ng lamok",
+   "kagat ng langgam",
+   "insekto",
+   "bee",
+   "bees",
+   "wasp*",
+   "hornet*",
+   "sting*",
+   "stung",
+   "insect*",
+   "bug bite",
+   "ant bite",
+   "mosquito bite"
+  ],
+  "dehydration": [
+   "uhaw",
+   "nauuhaw",
+   "sobrang uhaw",
+   "tuyo ang labi",
+   "tuyo ang bibig",
+   "madilim ang ihi",
+   "dilaw na dilaw ang ihi",
+   "hindi naiihi",
+   "nagtatae",
+   "pagtatae",
+   "tae nang tae",
+   "nagsusuka",
+   "sumusuka",
+   "dehydrat*",
+   "thirsty",
+   "dry mouth",
+   "dark urine",
+   "dark pee",
+   "diarrhea",
+   "diarrhoea",
+   "vomit*",
+   "oresol",
+   "ors"
+  ],
+  "wildPlants": [
+   "halaman",
+   "kabute",
+   "berry",
+   "berries",
+   "prutas sa gubat",
+   "ligaw na prutas",
+   "ligaw na halaman",
+   "nakakain ba",
+   "pwede bang kainin",
+   "puwede bang kainin",
+   "pwedeng kainin",
+   "kinain ko",
+   "nakain ko",
+   "nakakalason",
+   "lason",
+   "mushroom*",
+   "edible",
+   "wild fruit",
+   "wild plant*",
+   "poison*",
+   "toxic",
+   "can i eat"
+  ],
+  "flood": [
+   "baha",
+   "bumabaha",
+   "binaha",
+   "binabaha",
+   "lumusong",
+   "lumulusong",
+   "lusong",
+   "tubig baha",
+   "hanggang tuhod ang baha",
+   "flood*",
+   "floodwater",
+   "high water"
+  ],
+  "lightning": [
+   "kidlat",
+   "kumikidlat",
+   "tinamaan ng kidlat",
+   "kulog",
+   "kumukulog",
+   "bagyo",
+   "may bagyo",
+   "thunder*",
+   "lightning",
+   "storm",
+   "typhoon"
+  ],
+  "unsafe": [
+   "sinusundan",
+   "may sumusunod",
+   "sumusunod sa akin",
+   "hinoholdap",
+   "holdap",
+   "naholdap",
+   "ninakawan",
+   "nanakawan",
+   "nadukutan",
+   "dinukutan",
+   "snatcher",
+   "na snatch",
+   "binabastos",
+   "bastos",
+   "manyak",
+   "hinihipuan",
+   "tinutukan",
+   "may baril",
+   "may kutsilyo",
+   "natatakot ako",
+   "takot ako",
+   "delikado dito",
+   "harass*",
+   "followed",
+   "following me",
+   "following",
+   "being followed",
+   "robbed",
+   "mugged",
+   "stalker",
+   "threat*",
+   "unsafe",
+   "scared"
+  ],
+  "lost": [
+   "naligaw",
+   "ligaw ako",
+   "nawawala ako",
+   "nawala ako",
+   "hindi ko alam kung nasaan",
+   "di ko alam kung nasaan",
+   "nasaan ako",
+   "hindi ko alam ang daan",
+   "paano umuwi",
+   "paano ako uuwi",
+   "lost",
+   "i'm lost",
+   "where am i",
+   "dont know where",
+   "don't know where"
+  ],
+  "phoneBattery": [
+   "lowbat",
+   "low bat",
+   "low batt",
+   "low battery",
+   "mamamatay na ang phone",
+   "mamamatay na phone",
+   "battery ng phone",
+   "baterya ng phone",
+   "battery ng cellphone",
+   "nauubos ang battery",
+   "walang charger",
+   "powerbank",
+   "power bank",
+   "phone dying",
+   "phone is dying",
+   "dead phone",
+   "battery drain*",
+   "low power mode",
+   "phone battery",
+   "battery is almost dead",
+   "battery almost dead",
+   "low on battery",
+   "phone is about to die",
+   "phone about to die",
+   "save battery",
+   "battery",
+   "baterya"
+  ],
+  "noGPS": [
+   "gps",
+   "location",
+   "lokasyon",
+   "walang signal",
+   "no signal",
+   "mahina ang signal",
+   "hindi gumagana ang mapa",
+   "ayaw gumana ang mapa",
+   "map not working",
+   "hindi gumagalaw",
+   "finding your location"
+  ],
+  "breakdown": [
+   "tumirik",
+   "natirik",
+   "nasiraan",
+   "nasira ang kotse",
+   "nasira ang sasakyan",
+   "nasira ang motor",
+   "sira ang kotse",
+   "sira ang sasakyan",
+   "sira ang motor",
+   "na stranded",
+   "stranded",
+   "breakdown",
+   "broke down",
+   "broken down",
+   "hazard*",
+   "naubusan ng gas",
+   "naubusan ng gasolina",
+   "walang gas",
+   "naubusan",
+   "gasolina",
+   "krudo",
+   "diesel",
+   "out of gas",
+   "out of fuel",
+   "ran out of gas",
+   "no fuel",
+   "car stopped",
+   "engine died",
+   "namatay ang makina",
+   "huminto ang sasakyan",
+   "tumigil ang sasakyan",
+   "nabangga",
+   "aksidente",
+   "car accident",
+   "crash*",
+   "towing",
+   "tow truck"
+  ],
+  "flatTire": [
+   "flat",
+   "flat tire",
+   "flat tyre",
+   "flat na gulong",
+   "naflat",
+   "na flat",
+   "naplat",
+   "na plat",
+   "plat ang gulong",
+   "butas ang gulong",
+   "nabutas ang gulong",
+   "butas na gulong",
+   "pumutok ang gulong",
+   "sumabog ang gulong",
+   "gulong",
+   "palit gulong",
+   "magpalit ng gulong",
+   "reserba",
+   "spare tire",
+   "spare tyre",
+   "vulcanizing",
+   "vulcanize",
+   "tire",
+   "tires",
+   "tyre",
+   "tyres",
+   "blowout"
+  ],
+  "overheating": [
+   "overheat*",
+   "nag overheat",
+   "umuusok ang makina",
+   "umuusok ang hood",
+   "usok sa makina",
+   "mainit ang makina",
+   "kumukulo ang radiator",
+   "radiator",
+   "coolant",
+   "temperature gauge",
+   "temp gauge",
+   "temperature needle",
+   "needle in the red"
+  ],
+  "carBattery": [
+   "jump start",
+   "jumpstart",
+   "jump start*",
+   "jumper cable*",
+   "jumper",
+   "battery ng kotse",
+   "battery ng sasakyan",
+   "battery ng motor",
+   "baterya ng kotse",
+   "baterya ng sasakyan",
+   "patay ang battery ng kotse",
+   "car battery",
+   "dead battery",
+   "flat battery",
+   "drained battery"
+  ],
+  "wontStart": [
+   "ayaw mag start",
+   "ayaw magstart",
+   "hindi mag start",
+   "di mag start",
+   "hindi umaandar",
+   "ayaw umandar",
+   "hindi umandar",
+   "won't start",
+   "wont start",
+   "not starting",
+   "doesn't start",
+   "clicking",
+   "click lang",
+   "nag click lang",
+   "pinihit ang susi",
+   "pinihit ko ang susi",
+   "pihit ang susi",
+   "turn the key",
+   "key wont turn"
+  ],
+  "warningLights": [
+   "warning light*",
+   "check engine",
+   "ilaw sa dashboard",
+   "umilaw sa dashboard",
+   "nag ilaw sa dashboard",
+   "dashboard light*",
+   "oil light",
+   "brake light",
+   "abs light",
+   "battery light",
+   "temperature light"
+  ]
+ },
+ "body": {
+  "allergy": [
+   "labi",
+   "lips",
+   "mukha",
+   "face",
+   "dila",
+   "tongue",
+   "lalamunan",
+   "throat"
+  ],
+  "sprain": [
+   "paa",
+   "binti",
+   "tuhod",
+   "bukung bukong",
+   "braso",
+   "kamay",
+   "pulso",
+   "daliri",
+   "balikat",
+   "buto",
+   "foot",
+   "feet",
+   "leg",
+   "legs",
+   "knee",
+   "ankle",
+   "arm",
+   "hand",
+   "wrist",
+   "finger",
+   "toe",
+   "shoulder",
+   "bone"
+  ]
+ },
+ "suggestions": [
+  {
+   "when": [
+    "kotse",
+    "car",
+    "sasakyan",
+    "motor",
+    "makina",
+    "engine",
+    "drive",
+    "driving",
+    "jeep",
+    "tricycle"
+   ],
+   "topics": [
+    "breakdown",
+    "flatTire",
+    "wontStart",
+    "overheating"
+   ]
+  },
+  {
+   "when": [
+    "katawan",
+    "body",
+    "masakit",
+    "sakit",
+    "pain",
+    "ulo",
+    "head",
+    "likod",
+    "back",
+    "sumasakit",
+    "hurt",
+    "hurts"
+   ],
+   "topics": [
+    "sprain",
+    "bleeding",
+    "fainting",
+    "heat"
+   ]
+  },
+  {
+   "when": [],
+   "topics": [
+    "bleeding",
+    "sprain",
+    "heat",
+    "fainting",
+    "breakdown",
+    "lost"
+   ]
+  }
+ ],
+ "glossary": {
+  "tubig": [
+   "water"
+  ],
+  "buhusan": [
+   "water",
+   "pour"
+  ],
+  "buhos": [
+   "water",
+   "pour"
+  ],
+  "binuhusan": [
+   "water"
+  ],
+  "basain": [
+   "water"
+  ],
+  "yelo": [
+   "ice"
+  ],
+  "malamig": [
+   "cold",
+   "cool"
+  ],
+  "lamig": [
+   "cold",
+   "cool"
+  ],
+  "mainit": [
+   "hot",
+   "heat"
+  ],
+  "init": [
+   "hot",
+   "heat"
+  ],
+  "takip": [
+   "cap"
+  ],
+  "radiator": [
+   "radiator",
+   "coolant"
+  ],
+  "makina": [
+   "engine"
+  ],
+  "kotse": [
+   "car"
+  ],
+  "sasakyan": [
+   "car",
+   "vehicle"
+  ],
+  "gulong": [
+   "tire",
+   "wheel"
+  ],
+  "turnilyo": [
+   "nuts"
+  ],
+  "tuerka": [
+   "nuts"
+  ],
+  "susi": [
+   "key"
+  ],
+  "ilaw": [
+   "light"
+  ],
+  "langis": [
+   "oil"
+  ],
+  "preno": [
+   "brake"
+  ],
+  "dugo": [
+   "blood",
+   "bleeding"
+  ],
+  "sugat": [
+   "wound",
+   "cut"
+  ],
+  "bendahe": [
+   "bandage"
+  ],
+  "tela": [
+   "cloth"
+  ],
+  "gamot": [
+   "medicine",
+   "antiseptic"
+  ],
+  "sabon": [
+   "soap"
+  ],
+  "hugasan": [
+   "wash"
+  ],
+  "hugas": [
+   "wash"
+  ],
+  "takpan": [
+   "cover"
+  ],
+  "itaas": [
+   "raise",
+   "elevate"
+  ],
+  "ipahinga": [
+   "rest"
+  ],
+  "pahinga": [
+   "rest"
+  ],
+  "inumin": [
+   "drink",
+   "fluids"
+  ],
+  "uminom": [
+   "drink"
+  ],
+  "lilim": [
+   "shade",
+   "cool"
+  ],
+  "kumot": [
+   "sheet"
+  ],
+  "ospital": [
+   "hospital"
+  ],
+  "doktor": [
+   "doctor"
+  ],
+  "tawag": [
+   "call"
+  ],
+  "kainin": [
+   "eat",
+   "eaten"
+  ],
+  "kinain": [
+   "eaten"
+  ],
+  "suka": [
+   "vomit"
+  ],
+  "isuka": [
+   "vomit"
+  ],
+  "sisilong": [
+   "indoors",
+   "building"
+  ],
+  "silong": [
+   "indoors",
+   "building"
+  ],
+  "puno": [
+   "tree",
+   "trees"
+  ],
+  "lusong": [
+   "walk",
+   "floodwater"
+  ],
+  "baha": [
+   "flood",
+   "floodwater"
+  ],
+  "sigarilyo": [
+   "smoking"
+  ],
+  "usok": [
+   "smoke",
+   "steam"
+  ],
+  "jack": [
+   "jack"
+  ],
+  "reserba": [
+   "spare"
+  ],
+  "battery": [
+   "battery"
+  ],
+  "baterya": [
+   "battery"
+  ],
+  "kable": [
+   "leads"
+  ],
+  "pulso": [
+   "pulse"
+  ],
+  "dibdib": [
+   "chest"
+  ],
+  "hininga": [
+   "breathing"
+  ]
+ },
+ "order": [
+  "cpr",
+  "choking",
+  "bleeding",
+  "burn",
+  "sprain",
+  "heat",
+  "fainting",
+  "allergy",
+  "animalBite",
+  "snakeBite",
+  "sting",
+  "dehydration",
+  "wildPlants",
+  "flood",
+  "lightning",
+  "unsafe",
+  "lost",
+  "phoneBattery",
+  "noGPS",
+  "breakdown",
+  "flatTire",
+  "overheating",
+  "carBattery",
+  "wontStart",
+  "warningLights"
+ ]
+}

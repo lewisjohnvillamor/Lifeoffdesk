@@ -48,7 +48,8 @@ final class WorldCoachTests: XCTestCase {
         let (outcome, _) = await CoachPrompt.choose(facts: f, engine: engine)
         guard case let .valid(choice) = outcome else { return XCTFail("expected valid") }
         let text = CoachRenderer.render(choice, facts: f)
-        XCTAssertEqual(text, "Uy, lumiliit ang mundo mo! 600 m lang ang pinakamalayo mo nitong 2 linggo, at 2.40 km ang pinakamalayo mo noong nakaraang 2 linggo. Game? May new streets pa-hilaga (450 m).")
+        XCTAssertEqual(text, "Uy, lumiliit ang mundo mo! Pinakamalayo mo: 2.40 km → 600 m. Game? May new streets pa-hilaga (450 m).")
+        XCTAssertLessThanOrEqual(text?.count ?? 0, 110, "one glanceable line")
         XCTAssertTrue(engine.counter.prompts[0].contains("Trend: shrinking"))
     }
 
@@ -61,13 +62,13 @@ final class WorldCoachTests: XCTestCase {
         guard case let .valid(choice) = outcome else { return XCTFail("expected repaired") }
         XCTAssertEqual(attempts.count, 2)
         XCTAssertEqual(CoachRenderer.render(choice, facts: f),
-                       "Matagal-tagal ka nang hindi lumalabas. 5 araw mula sa huling adventure mo. Tara? Hindi mo pa napupuntahan ang Salcedo Park.")
+                       "Tagal mo nang di lumalabas. Huling adventure: 5 araw na. Tara sa Salcedo Park?")
         XCTAssertFalse(CoachPrompt.grammar(for: f).contains("frontier"), "the grammar only offers available quests")
     }
 
     func testComputedFallbackNeedsNoAI() {
         let f = facts([walk(daysAgo: 20, reach: 2400), walk(daysAgo: 2, reach: 600)])
-        XCTAssertEqual(CoachRenderer.computed(f)?.hasPrefix("Napansin ko, mas maliit ang mundo mo lately."), true)
+        XCTAssertEqual(CoachRenderer.computed(f)?.hasPrefix("Lumiliit ang mundo mo."), true)
         let none = WorldFacts.compute(walks: [], newMeters: [:], home: nil, now: now, frontier: nil, newPlace: nil)
         XCTAssertNil(CoachRenderer.computed(none), "no quest, no coach")
     }

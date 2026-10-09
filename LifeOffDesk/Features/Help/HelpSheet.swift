@@ -16,7 +16,7 @@ struct HelpSheet: View {
                 VStack(alignment: .leading, spacing: 18) {
                     emergencyCard
                     NavigationLink {
-                        SafetyChatView().environmentObject(model)
+                        SafetyChatView(onRoute: { dismiss() }).environmentObject(model)
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "cross.case.fill").font(.title3).foregroundStyle(Theme.canvas)

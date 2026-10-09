@@ -6,6 +6,22 @@
   - Six car cards: breakdown safety (GOV.UK), flat tire, overheating, jump start, won't start, warning lights (The AA). They are adapted to 911 and right-hand traffic: UK motorway specifics are dropped.
   - Attach a photo: Apple Vision's on-device classifier names the objects (e.g. tire, wheel), which become context for the router. It never diagnoses damage or edibility.
   - 25 cards total; 146 Swift tests pass.
+- **Answers the actual question and handles 'lost' as a conversation:** the matching card steps are highlighted (Tagalog→English glossary; extractive quotes only). Lost shows your offline location, asks where to go, searches the offline map by name and offers Route. 2 new tests; 152 Swift tests pass.
+- **Lexicon rebuild (founder: "don't just capture my examples"):**
+  - About 510 routing terms plus 92 emergency phrases per category, in Tagalog, Taglish and English (`scripts/build_safety_lexicon.py` → `StarterData/safety-lexicon.json`).
+  - Whole-word and phrase matching that ignores Tagalog particles, with scoring and a body-part fallback.
+  - **Keywords-only results:** held-out v1 first run 119/126 with 2 missed emergencies; fresh v2 first run 51/60 with 2 missed emergencies; after general fixes 126/126 and 60/60 with 0 missed emergencies and 0 false alarms. Both sets have now been seen; details in `docs/SAFETY-GUIDE.md`.
+  - 150 Swift tests pass.
+- **Fine-tuning from founder phone tests (same night):**
+  - "lumabas ang buto" (bone sticking out) is now an emergency (Call 911) and shows the sprain/broken-bone card. That card is retitled "Sprains, twisted ankles and possible broken bones".
+  - Short follow-ups ("paano na?") continue the previous question, marked "Tuloy sa huling tanong mo".
+  - Numbness words (manhid, numb, tingling) and body parts route to the injury card. Body parts match whole words only ("paano" ≠ "paa") and rank below specific topics, so "nakagat ng ahas sa paa" stays a snake bite.
+  - "namamaga" alone no longer means allergy.
+  - Generic Vision labels ("structure", "wood processed") are dropped. A photo with nothing useful says so; foot, leg and hand labels point to the injury card.
+  - The user's own Taglish keywords now outrank the model's topic.
+  - No match shows "Baka ito ang hinahanap mo" buttons instead of a dead end. The caption no longer claims a card was chosen when none was.
+  - The card generator is now in the repo: `scripts/build_safety_guide.py`.
+  - 147 Swift tests pass.
 - **Where:** SOS → "Ask the help assistant". Type or speak (on-device speech) in Taglish or English. Quick chips cover common cases (sugat, natapilok, sobrang init, nahimatay, kagat ng aso, baha, lowbat, naligaw).
 - **How it answers:** the on-device model (`SafetyPrompt` v1) **only routes** the question to one of 19 bundled cards and flags emergencies, as grammar-constrained, validated JSON. A deterministic keyword check can raise the emergency flag and covers the model being unavailable. Emergencies show "Call 911 now" first.
 - **The cards** (`StarterData/safety-guide.json`) are short paraphrases of linked public sources: NHS, St John Ambulance, WHO, US NWS, Apple. The unsafe, lost and noGPS cards are app guidance only. See `docs/SAFETY-GUIDE.md`.
@@ -85,7 +101,7 @@
 
 - Problem: the AI only answered when asked (planner, history search, recap). Now it also speaks first.
 - **Trigger** (computed, `WorldFacts`): when the street graph and next-adventure ideas are ready (app open, planner open), the app compares your saved adventures over the last 14 days with the 14 before. It measures how far you got from home (first adventure's start), new-street length, and days since the last adventure. Signals: `quiet` (4+ days without an adventure), `shrinking` (reach or new streets down 40%+), `growing`, `steady`, `start` (none yet).
-- **AI** (`CoachPrompt` v1, Qwen3-1.7B on the phone): receives the signal, the computed facts and up to two real quests (the nearest unexplored-street frontier, an undiscovered catalogue place matching your taste). It returns grammar-constrained JSON choosing 1–2 facts, a tone and the quest. The validator rejects invented facts or quests (one repair attempt). The Taglish line is rendered from the computed values, e.g. "Uy, lumiliit ang mundo mo! 600 m lang ang pinakamalayo mo nitong 2 linggo, at 2.40 km ang pinakamalayo mo noong nakaraang 2 linggo. Game? May 450 m ng bagong kalye pa-north."
+- **AI** (`CoachPrompt` v1, Qwen3-1.7B on the phone): receives the signal, the computed facts and up to two real quests (the nearest unexplored-street frontier, an undiscovered catalogue place matching your taste). It returns grammar-constrained JSON choosing 1–2 facts, a tone and the quest. The validator rejects invented facts or quests (one repair attempt). The Taglish line is rendered from the computed values, kept to one glanceable line, e.g. "Uy, lumiliit ang mundo mo! Pinakamalayo mo: 2.40 km → 600 m. Game? May new streets pa-hilaga (450 m)."
 - **Map card:** mascot plus the line plus "Tara!" (sets the destination and draws the street route) or "Mamaya na" (hidden until tomorrow). Captions: "On-device AI picked this · numbers computed from your adventures", or "Computed suggestion · <why no AI>" when the model is unavailable (Simulator), and "SAMPLE DATA" on the demo map. At most one AI run per distinct set of facts per day; never during an adventure.
 - Not built: a background push reminder (iOS cannot run the model in the background; would need a template notification).
 - Tested here: 5 core tests (shrinking by reach and by new streets, quiet/growing/steady/start, exact rendered Taglish from an AI choice, invented fact/quest rejected then repaired, grammar offers only available quests, computed fallback). 135 Swift tests pass. **No model eval of the coach prompt and not yet run on the phone.**

@@ -51,3 +51,18 @@ final class HelpPlacesTests: XCTestCase {
         XCTAssertTrue(help("f", "fire_station", east: 0, north: 0).searchableTerms.contains("bumbero"))
     }
 }
+
+final class PlaceNameSearchTests: XCTestCase {
+    func testFindsNamedPlacesNearestFirstAndIgnoresFillerWords() {
+        func named(_ id: String, _ name: String, east: Double) -> Place {
+            var p = Fixture.place(id, .cafe, east: east, north: 0); p.name = name; return p
+        }
+        let catalog = Fixture.catalog([named("far", "Starbucks Ayala Triangle", east: 900), named("near", "Starbucks Salcedo", east: 200),
+                                       named("other", "Salcedo Park", east: 100)])
+        let origin = Fixture.projection.unproject(MeterPoint(x: 0, y: 0))
+        XCTAssertEqual(PlaceNameSearch.find("may nakita akong starbucks", in: catalog, from: origin).map(\.id), ["near", "far"])
+        XCTAssertEqual(PlaceNameSearch.find("gusto kong pumunta sa Starbucks Ayala", in: catalog, from: origin).map(\.id), ["far"])
+        XCTAssertEqual(PlaceNameSearch.find("salcedo", in: catalog, from: origin).first?.id, "other")
+        XCTAssertTrue(PlaceNameSearch.find("gusto kong pumunta", in: catalog, from: origin).isEmpty)
+    }
+}
