@@ -30,3 +30,48 @@ jobs:
             -destination 'generic/platform=iOS' -configuration Debug \
             CODE_SIGNING_ALLOWED=NO build | tail -200
           exit ${PIPESTATUS[0]}
+
+  # Visual check of the real SwiftUI map in the iOS Simulator (AI excluded there).
+  # Screenshots are uploaded as an artifact; demo views show labelled synthetic data.
+  simulator-screenshots:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Build simulator app
+        run: |
+          xcodegen generate --spec LifeOffDesk/project-simulator.yml
+          xcodebuild -project LifeOffDesk/LifeOffDeskSimulator.xcodeproj -scheme LifeOffDesk \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim -configuration Debug build | tail -40
+          exit ${PIPESTATUS[0]}
+      - name: Capture screenshots
+        run: |
+          set -euo pipefail
+          TYPE=$(xcrun simctl list devicetypes | grep -o "com.apple.CoreSimulator.SimDeviceType.iPhone-1[0-9]-Pro-Max" | tail -1)
+          UDID=$(xcrun simctl create shots "$TYPE")
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 || true
+          APP=$(find build/sim/Build/Products -name "LifeOffDesk.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$UDID" "$APP"
+          mkdir -p screenshots
+          shoot() {
+            name=$1; shift
+            xcrun simctl terminate "$UDID" com.lifeoffdesk.simulator 2>/dev/null || true
+            xcrun simctl launch "$UDID" com.lifeoffdesk.simulator "$@"
+            sleep 8
+            xcrun simctl io "$UDID" screenshot "screenshots/$name.png"
+          }
+          shoot 01-blank
+          shoot 02-demo-tilted --demo-map
+          shoot 03-demo-closeup --demo-map --map-scale 0.6
+          shoot 04-demo-flat --demo-map --flat --map-scale 0.2
+          shoot 05-blank-closeup --map-scale 0.6
+          ls -la screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simulator-screenshots
+          path: screenshots/*.png

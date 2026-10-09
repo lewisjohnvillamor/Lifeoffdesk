@@ -10,6 +10,8 @@ struct MapScreen: View {
     @State private var showHistory = false
     @State private var showSettings = false
     @State private var followUser = true
+    @State private var tilted = true
+    @State private var launchScale: CGFloat?
 
     var body: some View {
         ZStack {
@@ -18,7 +20,7 @@ struct MapScreen: View {
                 FogMapView(geometry: geometry, exploration: model.displayExploration,
                            activeSegments: model.displayedTrail,
                            position: model.mapPosition, destination: model.destination,
-                           camera: $camera)
+                           camera: $camera, tilted: tilted)
                     .ignoresSafeArea()
                     .simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { _ in followUser = false })
             } else if let error = model.contentError {
@@ -31,7 +33,7 @@ struct MapScreen: View {
                 Spacer()
                 if !model.demoMode && model.displayExploration.paths.isEmpty && model.phase == .idle {
                     VStack(spacing: 10) {
-                        Image(systemName: "cloud.fill").font(.largeTitle)
+                        Image(systemName: "map").font(.largeTitle)
                         Text("Your world is waiting").font(.title2.weight(.semibold))
                         Text("Streets appear as you walk. Start exploring to lift the fog.")
                             .font(.subheadline).multilineTextAlignment(.center)
@@ -49,7 +51,7 @@ struct MapScreen: View {
         .onAppear(perform: setUp)
         .onChange(of: model.demoMode) { _, on in
             // Frame the sample area when entering Demo mode.
-            if on { camera = MapCamera(center: .zero, pointsPerMeter: 0.12) }
+            if on { camera = MapCamera(center: .zero, pointsPerMeter: launchScale ?? 0.12) }
         }
         .onChange(of: model.mapPosition) { _, position in
             guard followUser, let position, let geometry else { return }
@@ -76,10 +78,17 @@ struct MapScreen: View {
         geometry = MapGeometry(content: content)
         camera.center = .zero
         #if targetEnvironment(simulator)
-        if ProcessInfo.processInfo.arguments.contains("--demo-map") {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--demo-map") {
             model.setDemoMode(true)
             camera = MapCamera(center: .zero, pointsPerMeter: 0.12)
         }
+        // Screenshot helpers for CI: --map-scale <points per metre>, --flat.
+        if let i = arguments.firstIndex(of: "--map-scale"), i + 1 < arguments.count, let scale = Double(arguments[i + 1]) {
+            launchScale = CGFloat(scale)
+            camera.pointsPerMeter = CGFloat(scale)
+        }
+        if arguments.contains("--flat") { tilted = false }
         #endif
     }
 
@@ -89,6 +98,9 @@ struct MapScreen: View {
         HStack {
             iconButton("clock.arrow.circlepath", label: "Past walks") { showHistory = true }
             Spacer()
+            iconButton(tilted ? "view.2d" : "view.3d", label: tilted ? "Show flat map" : "Show tilted map") {
+                tilted.toggle()
+            }
             iconButton("location", label: "Center on my location") {
                 followUser = true
                 if let position = model.currentPosition, let geometry { camera.center = geometry.point(position) }
