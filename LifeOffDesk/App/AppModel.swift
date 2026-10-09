@@ -747,22 +747,25 @@ final class AppModel: ObservableObject {
                 }
             }
             guard let origin = self.distanceOrigin else { return }
-            self.plannerState = .loadingModel
-            guard let engine = await self.ai.ensureLoaded() else {
+            self.plannerState = self.ai.state == .ready ? .thinking : .loadingModel
+            let catalog = content.catalog, graph = self.walkingGraph
+            do {
+                let (response, trace) = try await self.ai.run { engine in
+                    await Planner(engine: engine).plan(request, catalog: catalog, origin: origin,
+                                                       options: options, graph: graph)
+                }
+                guard !Task.isCancelled else { return }
+                self.lastTrace = trace
+                self.plannerState = .answered(response, usedAI: true)
+            } catch InferenceError.stale, InferenceError.cancelled {
+                if !Task.isCancelled { self.plannerState = .idle }
+            } catch {
                 switch self.ai.state {
                 case .missing: self.plannerState = .modelUnavailable(PlannerCopy.modelMissing)
                 case let .failed(message): self.plannerState = .modelUnavailable("\(PlannerCopy.modelFailure) (\(message))")
-                default: self.plannerState = .idle
+                default: self.plannerState = .modelUnavailable("\(PlannerCopy.modelFailure) (\(error))")
                 }
-                return
             }
-            self.plannerState = .thinking
-            let (response, trace) = await Planner(engine: engine).plan(request, catalog: content.catalog,
-                                                                       origin: origin, options: options,
-                                                                       graph: self.walkingGraph)
-            guard !Task.isCancelled else { return }
-            self.lastTrace = trace
-            self.plannerState = .answered(response, usedAI: true)
         }
     }
 
@@ -826,6 +829,7 @@ final class AppModel: ObservableObject {
     func erasePersonalData() {
         guard canErase, let store else { return }
         do {
+            ai.unload() // cancels in-flight AI so nothing regenerates from erased data
             try store.erasePersonalData()
             exploration = Exploration()
             finishedWalks = []

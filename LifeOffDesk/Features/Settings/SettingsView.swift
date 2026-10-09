@@ -78,6 +78,7 @@ struct AIDiagnosticsView: View {
     @State private var runSeconds: Double?
     @State private var firstRequestSeconds: Double?
     @State private var copied = false
+    @State private var runError: String?
 
     var body: some View {
         List {
@@ -106,6 +107,7 @@ struct AIDiagnosticsView: View {
                     .disabled(running)
                 Button("Run 60 held-out cases") { Task { await runEvaluation("taglish-heldout") } }
                     .disabled(running)
+                if let runError { Text(runError).font(.footnote).foregroundStyle(Theme.danger) }
                 if let first = firstRequestSeconds { row("First request after load", String(format: "%.2f s", first)) }
                 if !results.isEmpty {
                     row("Schema-valid", "\(results.filter(\.schemaValid).count)/\(results.count)")
@@ -143,16 +145,21 @@ struct AIDiagnosticsView: View {
               let cases = try? JSONDecoder().decode(PlannerEvaluation.CaseFile.self, from: data).cases else { return }
         running = true
         defer { running = false }
-        guard let engine = await ai.ensureLoaded() else { return }
-        let planner = Planner(engine: engine)
-        let warm = Date()
-        _ = await planner.extract("Warm-up: gusto ko ng park.")
-        firstRequestSeconds = Date().timeIntervalSince(warm)
-        let start = Date()
-        // Same origin as the development run so results are comparable.
-        results = await PlannerEvaluation.run(cases: cases, planner: planner, catalog: content.catalog,
-                                              origin: .areaCenter(content.region.center))
-        runSeconds = Date().timeIntervalSince(start)
+        let catalog = content.catalog, center = content.region.center
+        do {
+            let warm = Date()
+            _ = try await ai.run { await Planner(engine: $0).extract("Warm-up: gusto ko ng park.") }
+            firstRequestSeconds = Date().timeIntervalSince(warm)
+            let start = Date()
+            // Same origin as the development run so results are comparable.
+            results = try await ai.run { engine in
+                await PlannerEvaluation.run(cases: cases, planner: Planner(engine: engine), catalog: catalog,
+                                            origin: .areaCenter(center))
+            }
+            runSeconds = Date().timeIntervalSince(start)
+        } catch {
+            runError = "\(error)"
+        }
     }
 
     private func copyReport() {

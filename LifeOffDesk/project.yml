@@ -25,7 +25,7 @@ targets:
         buildPhase: resources
       # Pinned model, provisioned by scripts/download_materials.py (not in Git).
       # Alternatively copy it into the app's Documents folder with Finder file sharing.
-      - path: ../downloads/model/Qwen3-0.6B-Q4_0.gguf
+      - path: ../downloads/model/Qwen3-1.7B-Q4_K_M.gguf
         buildPhase: resources
         optional: true
     dependencies:
