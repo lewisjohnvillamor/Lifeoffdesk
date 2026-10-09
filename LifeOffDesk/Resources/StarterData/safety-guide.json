@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "note": "Steps are short paraphrases of the linked public sources (fetched 2026-10-09), not medical advice. UK sources say 999; the app shows 911, the Philippine emergency hotline. 'Life Off Desk app guidance' cards describe app features only. Founder review recommended before release.",
+ "note": "Steps are short paraphrases of the linked public sources (fetched 2026-10-09), not medical advice. UK sources say 999 (and assume driving on the left); the app shows 911, the Philippine emergency hotline, and UK motorway-specific advice is left out, the Philippine emergency hotline. 'Life Off Desk app guidance' cards describe app features only. Founder review recommended before release.",
  "cards": [
   {
    "topic": "bleeding",
@@ -331,6 +331,114 @@
    "callNow": [],
    "sourceTitle": "Life Off Desk app guidance (not medical)",
    "sourceURL": "https://github.com/lewisjohnvillamor/Lifeoffdesk/blob/main/docs/SAFETY-GUIDE.md"
+  },
+  {
+   "topic": "breakdown",
+   "title": "Vehicle breakdown: stay safe first",
+   "steps": [
+    "Get the vehicle off the road if you can, ideally a parking area or lay-by.",
+    "Turn on hazard lights if the vehicle is blocking traffic.",
+    "Wear light or reflective clothing; keep sidelights on if it's dark.",
+    "Place a warning triangle at least 45 m behind the vehicle, on the same side.",
+    "Passengers should keep well away from the vehicle and moving traffic.",
+    "Never stand between your vehicle and oncoming traffic."
+   ],
+   "callNow": [
+    "You can't get out safely: stay inside with seat belts and hazards on, and call 911",
+    "On a high-speed road: don't attempt repairs; get behind a barrier"
+   ],
+   "sourceTitle": "The Highway Code: Breakdowns and incidents - GOV.UK",
+   "sourceURL": "https://www.gov.uk/guidance/the-highway-code/breakdowns-and-incidents-274-to-287"
+  },
+  {
+   "topic": "flatTire",
+   "title": "Flat tire (gulong): changing to the spare",
+   "steps": [
+    "Park somewhere safe away from traffic: engine off, hazards on, handbrake on, in park or first gear.",
+    "Loosen the wheel nuts slightly before jacking the car up.",
+    "Jack at the marked jacking point (see the handbook) on level ground until the wheel is off the ground.",
+    "Remove the nuts and wheel, fit the spare, hand-tighten the nuts in a diagonal pattern.",
+    "Lower the car, tighten the nuts firmly, then check the tire pressure.",
+    "Go to a vulcanizing or tire shop soon; space-saver spares are usually limited to about 80 km/h."
+   ],
+   "callNow": [
+    "Never change a tire on an expressway shoulder or next to fast traffic",
+    "If the wheel won't come off easily, refit the nuts and call for help",
+    "If a tire bursts while driving: grip the wheel, slow gently, avoid harsh braking"
+   ],
+   "sourceTitle": "How to change a tyre - The AA",
+   "sourceURL": "https://www.theaa.com/breakdown-cover/advice/change-a-flat-tyre"
+  },
+  {
+   "topic": "overheating",
+   "title": "Engine overheating",
+   "steps": [
+    "If the temperature gauge rises, turn the heater up full as a temporary fix.",
+    "A red temperature light means pull over somewhere safe.",
+    "Switch off and let the engine cool for at least 30 minutes, longer if it overheated.",
+    "Don't remove the radiator or coolant cap unless the engine is cold: pressurised hot water can scald.",
+    "When cold, check the coolant tank is between min and max; water only as an emergency top-up.",
+    "Have the car checked at a garage: coolant should not drop."
+   ],
+   "callNow": [
+    "Steam or smoke from the engine: keep away from the bonnet; cooling fans can start even with the key out"
+   ],
+   "sourceTitle": "How to check your engine coolant - The AA",
+   "sourceURL": "https://www.theaa.com/breakdown-cover/advice/how-to-check-your-engine-coolant"
+  },
+  {
+   "topic": "carBattery",
+   "title": "Dead car battery: jump-starting",
+   "steps": [
+    "Park the cars close without touching; handbrakes on, ignitions off.",
+    "Red lead: good battery positive (+) to flat battery positive (+).",
+    "Black lead: good battery negative (-) to bare metal on your car, away from the battery and fuel system.",
+    "Wait 3 minutes, run the donor car for 1 minute, then start your car.",
+    "Let both idle about 10 minutes, switch off, remove the leads in reverse order.",
+    "Still won't start? Call for professional help. Otherwise drive at least 30 minutes to recharge."
+   ],
+   "callNow": [
+    "Never jump a damaged or leaking battery; stop if the leads get hot",
+    "No smoking or flames near batteries; keep rings, watches and tools away",
+    "Never let the lead ends touch each other"
+   ],
+   "sourceTitle": "How to jump start a car - The AA",
+   "sourceURL": "https://www.theaa.com/breakdown-cover/advice/using-jump-leads"
+  },
+  {
+   "topic": "wontStart",
+   "title": "Car won't start: basic checks",
+   "steps": [
+    "Rapid clicking usually means a flat battery: try a jump start.",
+    "A single click suggests a starter motor or relay problem: you'll need a mechanic.",
+    "Cranks but won't start? Check fuel; the engine may be flooded or the tank empty.",
+    "Flashing key symbol: hold the key fob against the start button, or try the spare key.",
+    "Key won't turn: rock the steering wheel to free the lock; don't force it.",
+    "Press the clutch or brake pedal fully down."
+   ],
+   "callNow": [
+    "Smoke from under the bonnet: stop trying and get a mechanic",
+    "Don't keep turning the key for a long time; it can cause damage"
+   ],
+   "sourceTitle": "Car won't start - The AA",
+   "sourceURL": "https://www.theaa.com/breakdown-cover/advice/starting-a-car"
+  },
+  {
+   "topic": "warningLights",
+   "title": "Dashboard warning lights",
+   "steps": [
+    "Red means act now; amber means get it checked at a garage; green is OK.",
+    "Oil pressure light: stop as soon as possible and check the oil; if it stays on, engine off and get help.",
+    "Red temperature light: pull over safely and check the coolant (only when the engine is cold).",
+    "Brake light: check the handbrake is off; if the pedal goes further than usual, pull over and get help.",
+    "Red battery light: stop safely, switch off, and don't restart.",
+    "Flashing engine light: avoid hard acceleration, stop safely; if still flashing after a restart, get help."
+   ],
+   "callNow": [
+    "Brake and ABS lights on together: slow gradually, stop, and don't drive until it's fixed"
+   ],
+   "sourceTitle": "Dashboard warning lights and what they mean - The AA",
+   "sourceURL": "https://www.theaa.com/breakdown-cover/advice/dashboard-warning-lights"
   }
  ]
 }

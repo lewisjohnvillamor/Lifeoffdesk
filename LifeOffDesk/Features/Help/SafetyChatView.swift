@@ -1,4 +1,5 @@
 import LifeOffDeskCore
+import PhotosUI
 import SwiftUI
 
 /// Offline help assistant in the SOS sheet. Ask in Taglish or English (typed or spoken); the
@@ -8,8 +9,9 @@ import SwiftUI
 final class SafetyChat: ObservableObject {
     struct Message: Identifiable, Equatable {
         enum Kind: Equatable {
-            case question(String)
-            case answer(SafetyCard?, emergency: Bool, routedByAI: Bool)
+            case question(String, photo: UIImage?)
+            /// `seen`: what Apple's on-device image recognition named in the photo, if any.
+            case answer(SafetyCard?, emergency: Bool, routedByAI: Bool, seen: [String])
         }
         let id = UUID()
         let kind: Kind
@@ -32,28 +34,30 @@ final class SafetyChat: ObservableObject {
         }
     }
 
-    func ask(_ question: String, ai: AIService) {
+    func ask(_ question: String, photo: UIImage? = nil, ai: AIService) {
         let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !thinking else { return }
-        messages.append(Message(kind: .question(text)))
-        // An emergency is shown at once, before the model answers.
-        let quick = SafetyPrompt.combine(model: nil, question: text)
+        guard !text.isEmpty || photo != nil, !thinking else { return }
+        messages.append(Message(kind: .question(text.isEmpty ? "(photo)" : text, photo: photo)))
         thinking = true
         Task {
+            // Apple's on-device image recognition names what is in the photo; the model reads those
+            // names as context. Nothing is diagnosed from the image.
+            var labels: [String] = []
+            if let photo { labels = await PhotoClassifier.labels(for: photo) }
             var routed: SafetyAnswer?
-            if let result = try? await ai.run({ await SafetyPrompt.classify(text, engine: $0) }),
+            if let result = try? await ai.run({ await SafetyPrompt.classify(text, photoLabels: labels, engine: $0) }),
                case let .valid(answer) = result.0 {
                 routed = answer
             }
-            let final = routed.map { SafetyPrompt.combine(model: $0, question: text) } ?? quick
+            let final = SafetyPrompt.combine(model: routed, question: text, photoLabels: labels)
             messages.append(Message(kind: .answer(final.topic.flatMap { guide?.card($0) }, emergency: final.emergency,
-                                                  routedByAI: routed != nil)))
+                                                  routedByAI: routed != nil, seen: labels)))
             thinking = false
         }
     }
 
     func show(_ topic: SafetyTopic) {
-        messages.append(Message(kind: .answer(guide?.card(topic), emergency: false, routedByAI: false)))
+        messages.append(Message(kind: .answer(guide?.card(topic), emergency: false, routedByAI: false, seen: [])))
     }
 }
 
@@ -62,10 +66,14 @@ struct SafetyChatView: View {
     @StateObject private var chat = SafetyChat()
     @StateObject private var speech = SpeechInput()
     @State private var text = ""
+    @State private var photo: UIImage?
+    @State private var photoItem: PhotosPickerItem?
+    @State private var showCamera = false
 
     private let quickTopics: [(String, SafetyTopic)] = [
         ("Sugat / dugo", .bleeding), ("Natapilok", .sprain), ("Sobrang init", .heat), ("Nahimatay", .fainting),
-        ("Kagat ng aso", .animalBite), ("Baha", .flood), ("Lowbat", .phoneBattery), ("Naligaw", .lost),
+        ("Kagat ng aso", .animalBite), ("Baha", .flood), ("Flat na gulong", .flatTire), ("Tumirik", .breakdown),
+        ("Overheat", .overheating), ("Lowbat", .phoneBattery), ("Naligaw", .lost),
     ]
 
     var body: some View {
@@ -117,13 +125,25 @@ struct SafetyChatView: View {
 
     @ViewBuilder private func bubble(_ message: SafetyChat.Message) -> some View {
         switch message.kind {
-        case let .question(q):
+        case let .question(q, photo):
             HStack { Spacer(minLength: 40)
-                Text(q).font(.subheadline).foregroundStyle(Theme.canvas)
-                    .padding(12).background(Theme.primary, in: RoundedRectangle(cornerRadius: 16))
+                VStack(alignment: .trailing, spacing: 6) {
+                    if let photo {
+                        Image(uiImage: photo).resizable().scaledToFill().frame(width: 140, height: 140)
+                            .clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityLabel("Attached photo")
+                    }
+                    Text(q).font(.subheadline).foregroundStyle(Theme.canvas)
+                        .padding(12).background(Theme.primary, in: RoundedRectangle(cornerRadius: 16))
+                }
             }
-        case let .answer(card, emergency, routedByAI):
+        case let .answer(card, emergency, routedByAI, seen):
             VStack(alignment: .leading, spacing: 10) {
+                if !seen.isEmpty {
+                    Label("Nakikita sa photo: \(PhotoHints.describe(seen))", systemImage: "eye")
+                        .font(.caption).foregroundStyle(Theme.secondaryInk)
+                    Text("Apple on-device image recognition names objects only; hindi nito masasabi kung sira, sugatan o ligtas kainin.")
+                        .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                }
                 if emergency {
                     Link(destination: URL(string: "tel:911")!) {
                         Label("Mukhang emergency ito. Call 911 now", systemImage: "phone.fill")
@@ -163,7 +183,28 @@ struct SafetyChatView: View {
     }
 
     private var inputBar: some View {
+        VStack(spacing: 6) {
+            if let photo {
+                HStack {
+                    Image(uiImage: photo).resizable().scaledToFill().frame(width: 56, height: 56)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    Text("Photo attached").font(.caption).foregroundStyle(Theme.secondaryInk)
+                    Spacer()
+                    Button { self.photo = nil } label: { Image(systemName: "xmark.circle.fill") }
+                        .foregroundStyle(Theme.secondaryInk).accessibilityLabel("Remove photo")
+                }
+                .padding(.horizontal, 12).padding(.top, 6)
+            }
         HStack(spacing: 8) {
+            Menu {
+                Button("Take photo", systemImage: "camera") { showCamera = true }
+                PhotosPicker(selection: $photoItem, matching: .images) { Label("Choose photo", systemImage: "photo") }
+            } label: {
+                Image(systemName: "camera.fill").foregroundStyle(Theme.primary)
+                    .frame(width: 36, height: 36).background(Theme.revealedGround, in: Circle())
+            }
+            .frame(width: Theme.minTarget, height: Theme.minTarget)
+            .accessibilityLabel("Attach a photo")
             TextField("Ano ang nangyari?", text: $text, axis: .vertical)
                 .lineLimit(1...3).submitLabel(.send).onSubmit(send)
                 .padding(.vertical, 10).padding(.leading, 12)
@@ -182,16 +223,26 @@ struct SafetyChatView: View {
                     .frame(width: 36, height: 36).background(Theme.primary, in: Circle())
             }
             .frame(width: Theme.minTarget, height: Theme.minTarget)
-            .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty || chat.thinking)
+            .disabled((text.trimmingCharacters(in: .whitespaces).isEmpty && photo == nil) || chat.thinking)
             .accessibilityLabel("Ask")
+        }
         }
         .padding(.horizontal, 8).padding(.vertical, 6)
         .background(Theme.surface)
         .overlay(alignment: .top) { Divider() }
+        .fullScreenCover(isPresented: $showCamera) { CameraPicker { photo = $0 }.ignoresSafeArea() }
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) { photo = image }
+                photoItem = nil
+            }
+        }
     }
 
     private func send() {
-        chat.ask(text, ai: model.ai)
+        chat.ask(text, photo: photo, ai: model.ai)
         text = ""
+        photo = nil
     }
 }
