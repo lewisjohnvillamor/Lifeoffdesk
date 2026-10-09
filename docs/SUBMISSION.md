@@ -16,7 +16,7 @@ Fields marked **FOUNDER** must be filled by the team; nothing here is invented o
 - **Demo video (~1 minute):** **FOUNDER** — record on the iPhone 12 Pro Max in Airplane Mode (suggested shot list below).
 - **X / LinkedIn video URL:** **FOUNDER** — post must tag Devin / Cognition and include **#AppBuildersPH**.
 - **What runs locally (on the iPhone, offline):**
-  - Qwen3-1.7B (Q4_K_M GGUF) through llama.cpp b11429 compiled into the app (Metal): Taglish planner intent extraction, history-search filter extraction and recap highlight selection, each grammar-constrained and validated.
+  - Qwen3-1.7B (Q4_K_M GGUF) through llama.cpp b11429 compiled into the app (Metal): Taglish planner intent extraction, history-search filter extraction, recap highlight selection and the "your world" coach (notices a shrinking or quiet exploring trend from computed facts and proposes a real quest), each grammar-constrained and validated.
   - Apple Vision `VNGenerateForegroundInstanceMaskRequest` for the photo-sticker cut-out.
   - Deterministic engines: place search and ranking, street-distance shortest paths over bundled OpenStreetMap streets, GPS filtering and street matching, fog-of-war exploration, history search, recap facts, accessibility eligibility.
   - All data: bundled OSM map/place packs (Makati CBD, Muntinlupa, Metro Manila main roads), walks, photos, preferences and AI caches, stored only on the device. No account.

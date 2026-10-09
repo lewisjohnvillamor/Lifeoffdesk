@@ -1,5 +1,14 @@
 # Life Off Desk — build status
 
+## "Your world" AI coach on the map (2026-10-09, founder request)
+
+- Problem: the AI only answered when asked (planner, history search, recap). Now it also speaks first.
+- **Trigger** (computed, `WorldFacts`): when the street graph and next-adventure ideas are ready (app open, planner open), the app compares your saved adventures over the last 14 days with the 14 before. It measures how far you got from home (first adventure's start), new-street length, and days since the last adventure. Signals: `quiet` (4+ days without an adventure), `shrinking` (reach or new streets down 40%+), `growing`, `steady`, `start` (none yet).
+- **AI** (`CoachPrompt` v1, Qwen3-1.7B on the phone): receives the signal, the computed facts and up to two real quests (the nearest unexplored-street frontier, an undiscovered catalogue place matching your taste). It returns grammar-constrained JSON choosing 1–2 facts, a tone and the quest. The validator rejects invented facts or quests (one repair attempt). The Taglish line is rendered from the computed values, e.g. "Uy, lumiliit ang mundo mo! 600 m lang ang pinakamalayo mo nitong 2 linggo, at 2.40 km ang pinakamalayo mo noong nakaraang 2 linggo. Game? May 450 m ng bagong kalye pa-north."
+- **Map card:** mascot plus the line plus "Tara!" (sets the destination and draws the street route) or "Mamaya na" (hidden until tomorrow). Captions: "On-device AI picked this · numbers computed from your adventures", or "Computed suggestion · <why no AI>" when the model is unavailable (Simulator), and "SAMPLE DATA" on the demo map. At most one AI run per distinct set of facts per day; never during an adventure.
+- Not built: a background push reminder (iOS cannot run the model in the background; would need a template notification).
+- Tested here: 5 core tests (shrinking by reach and by new streets, quiet/growing/steady/start, exact rendered Taglish from an AI choice, invented fact/quest rejected then repaired, grammar offers only available quests, computed fallback). 135 Swift tests pass. **No model eval of the coach prompt and not yet run on the phone.**
+
 ## Get help: 911, your location, nearest police / hospitals / fire stations (2026-10-09, founder request)
 
 - Map → **Help** (shield) opens a safety sheet, fully offline:

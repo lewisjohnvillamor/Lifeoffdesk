@@ -563,6 +563,9 @@ final class AppModel: ObservableObject {
     // MARK: Next adventure
 
     @Published private(set) var adventureIdeas: [AdventureIdea] = []
+    /// "Your world" coach card on the map (see AppModel+Coach).
+    @Published var coach: CoachCard?
+    var coachKey: String?
 
     /// Real targets only: undiscovered catalogue places matching the user's taste, and computed
     /// street frontiers (unexplored street length near them). Distances follow streets once the graph is ready.
@@ -604,6 +607,7 @@ final class AppModel: ObservableObject {
                 return ideas
             }.value
             self?.adventureIdeas = ideas
+            self?.refreshCoach()
         }
     }
 

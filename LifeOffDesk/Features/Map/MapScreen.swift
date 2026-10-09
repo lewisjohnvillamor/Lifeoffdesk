@@ -38,6 +38,7 @@ struct MapScreen: View {
             VStack(spacing: 8) {
                 header
                 statusBanners
+                if model.phase == .idle, let coach = model.coach { coachCard(coach) }
                 Spacer()
                 HStack(alignment: .bottom) {
                     statsStack
@@ -250,6 +251,46 @@ struct MapScreen: View {
         .background(Theme.surface.opacity(0.95), in: Capsule())
         .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
         .accessibilityElement(children: .combine)
+    }
+
+    /// "Your world" coach: the on-device AI picks what to say about your computed exploring trend
+    /// and which real next step to offer; values and places come from app code.
+    private func coachCard(_ card: CoachCard) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                MascotView(pose: card.signal == .growing ? .celebrating : .encouragement, size: 52)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(card.text).font(.subheadline).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(coachCaption(card)).font(.caption2).foregroundStyle(Theme.secondaryInk)
+                }
+            }
+            HStack(spacing: 10) {
+                Button("Tara!") { model.acceptCoach() }
+                    .buttonStyle(.borderedProminent).tint(Theme.primary)
+                    .frame(minHeight: Theme.minTarget)
+                    .accessibilityLabel("Let's go: show the route")
+                Button("Mamaya na") { model.dismissCoach() }
+                    .buttonStyle(.bordered).tint(Theme.ink)
+                    .frame(minHeight: Theme.minTarget)
+                    .accessibilityLabel("Not today")
+            }
+        }
+        .padding(14)
+        .background(Theme.surface.opacity(0.97), in: RoundedRectangle(cornerRadius: Theme.corner))
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func coachCaption(_ card: CoachCard) -> String {
+        var parts: [String] = []
+        switch card.status {
+        case .working: parts.append("On-device AI is thinking… · computed for now")
+        case .ai: parts.append("On-device AI picked this · numbers computed from your adventures")
+        case let .computed(reason): parts.append("Computed suggestion" + (reason.isEmpty ? "" : " · \(reason)"))
+        }
+        if card.sample { parts.append("SAMPLE DATA") }
+        return parts.joined(separator: " · ")
     }
 
     private func destinationPill(_ place: Place) -> some View {
