@@ -20,7 +20,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.distanceFilter = kCLDistanceFilterNone
-        manager.activityType = .fitness
+        manager.activityType = .other // adventures can be on foot or riding; .fitness assumes walking
         manager.pausesLocationUpdatesAutomatically = false
     }
 

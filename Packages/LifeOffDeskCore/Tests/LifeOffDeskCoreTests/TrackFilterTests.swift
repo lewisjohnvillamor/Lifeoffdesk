@@ -108,3 +108,35 @@ struct SeededGenerator: RandomNumberGenerator {
         return state
     }
 }
+
+/// Adventures can be on foot or riding: driving is recorded and labelled, glitches still rejected.
+final class TravelModeTests: XCTestCase {
+    func testDrivingIsRecordedAndGlitchesAreStillRejected() {
+        var filter = TrackFilter()
+        let t0 = Fixture.t0
+        // 15 m/s (54 km/h) car on an expressway, one fix every 5 s.
+        for i in 0..<6 {
+            let decision = filter.evaluate(Fixture.sample(east: Double(i) * 75, north: 0, at: Double(i) * 5),
+                                           receivedAt: t0.addingTimeInterval(Double(i) * 5))
+            guard case .accepted = decision else { return XCTFail("fix \(i) at driving speed was \(decision)") }
+        }
+        // A 600 m jump in 5 s (120 m/s) is a GPS glitch, not a car.
+        let glitch = filter.evaluate(Fixture.sample(east: 975, north: 0, at: 30), receivedAt: t0.addingTimeInterval(30))
+        XCTAssertEqual(glitch, .rejected(.implausibleJump))
+    }
+
+    func testSplitSeparatesWalkingFromRiding() {
+        let walk = (0..<5).map { Fixture.sample(east: Double($0) * 7, north: 0, at: Double($0) * 5) }        // 1.4 m/s
+        let ride = (0..<5).map { Fixture.sample(east: 1000 + Double($0) * 60, north: 0, at: 100 + Double($0) * 5) } // 12 m/s
+        let split = TravelMode.split([walk, ride])
+        XCTAssertEqual(split.onFoot, 28, accuracy: 1)
+        XCTAssertEqual(split.riding, 240, accuracy: 1)
+    }
+
+    func testOSMeasuredSpeedWinsWhenAvailable() {
+        let a = TrackSample(latitude: 14.5, longitude: 121.0, timestamp: Fixture.t0, horizontalAccuracy: 5, speed: 10)
+        let b = TrackSample(latitude: 14.50001, longitude: 121.0, timestamp: Fixture.t0.addingTimeInterval(5),
+                            horizontalAccuracy: 5, speed: 10)
+        XCTAssertEqual(TravelMode.of(a, b), .riding)
+    }
+}

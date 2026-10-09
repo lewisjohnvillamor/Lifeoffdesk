@@ -13,6 +13,9 @@ public struct WalkRecap: Hashable, Sendable {
     public var newDistanceMeters: Double
     public var destinationName: String?
     public var wasRecovered: Bool
+    /// Distance split by how it was travelled (computed from sample speeds).
+    public var onFootMeters: Double = 0
+    public var ridingMeters: Double = 0
 
     public static func compute(session: WalkSession, exploration: Exploration, grid: ExplorationGrid,
                                now: Date) -> WalkRecap {
@@ -37,7 +40,8 @@ public struct WalkRecap: Hashable, Sendable {
                 }
             }
         }
-        return WalkRecap(sessionID: session.id,
+        let split = TravelMode.split(session.segments)
+        var recap = WalkRecap(sessionID: session.id,
                          distanceMeters: session.distanceMeters,
                          activeDuration: session.activeDuration(at: now),
                          acceptedSamples: session.acceptedSampleCount,
@@ -46,6 +50,9 @@ public struct WalkRecap: Hashable, Sendable {
                          newDistanceMeters: newDistance,
                          destinationName: session.destinationName,
                          wasRecovered: session.wasRecovered)
+        recap.onFootMeters = split.onFoot
+        recap.ridingMeters = split.riding
+        return recap
     }
 }
 

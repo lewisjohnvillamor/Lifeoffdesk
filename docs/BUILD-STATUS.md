@@ -1,5 +1,14 @@
 # Life Off Desk — build status
 
+## Adventures on foot or riding (2026-10-09, founder decision)
+
+Founder: adventures are not only walks; driving or riding can be the escape. The GPS filter used to reject anything faster than 4 m/s (~14 km/h), so a Sucat → Makati drive was dropped except for crawling traffic, which slipped through and was mislabelled as walking. Now:
+- The filter accepts up to 40 m/s (144 km/h) and still rejects physically implausible GPS jumps (existing glitch test unchanged and passing).
+- Each stretch is labelled **on foot** or **riding**, computed from consecutive accepted samples (OS-measured speed when available, else distance/time; threshold 3.5 m/s). Nothing new is stored; it is recomputed from the raw trail. The recap shows "On foot X · Riding Y" when riding ≥ 50 m. New streets, area and places count both modes as one adventure.
+- `CLLocationManager.activityType` changed from `.fitness` (pedestrian) to `.other`.
+- Cities outside the detailed packs (Parañaque, Taguig, Pasay, EDSA) are matched against the Metro Manila main-roads pack (including expressways); side streets there show as off-street distance; no place suggestions there yet.
+- 3 new tests (driving accepted, glitch rejected, mode split, OS speed). **Not yet tried in a real car**; the 3.5 m/s threshold labels cycling as riding.
+
 ## Broader place coverage: sports, shopping, landmarks and every named OSM place (2026-10-09)
 
 The catalog used to be built from a 5-kind whitelist (food, café, park, museum/library, viewpoint). It now supports everything OSM maps that someone can walk to:

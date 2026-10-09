@@ -26,7 +26,9 @@ public struct TrackFilterPolicy: Codable, Hashable, Sendable {
     public var maxSampleAge: TimeInterval = 10
     public var maxFutureTolerance: TimeInterval = 2
     public var segmentGap: TimeInterval = 15
-    public var maxPedestrianSpeed: Double = 4
+    /// Adventures can be on foot or riding (car, jeepney, bike): only physically implausible
+    /// jumps are rejected. 40 m/s = 144 km/h, above Metro Manila expressway limits.
+    public var maxSpeed: Double = 40
     public var minimumMovement: Double = 5
     /// Multiple of the mean accuracy of the anchor and new fix that a move must exceed.
     public var accuracyMovementFactor: Double = 1.0
@@ -101,7 +103,7 @@ public struct TrackFilter: Sendable {
         // Allow the uncertainty of the worse fix before judging speed.
         let uncertainty = max(anchor.horizontalAccuracy, accuracy)
         let explainedDistance = max(0, distance - uncertainty)
-        if elapsed > 0, explainedDistance / elapsed > policy.maxPedestrianSpeed {
+        if elapsed > 0, explainedDistance / elapsed > policy.maxSpeed {
             return .rejected(.implausibleJump)
         }
 
@@ -122,5 +124,34 @@ public struct TrackFilter: Sendable {
         anchor = sample
         lastValidFixTime = sample.timestamp
         forceNewSegment = false
+    }
+}
+
+/// How a stretch of an adventure was travelled, derived from accepted samples (never stored).
+public enum TravelMode: String, Codable, Sendable {
+    case onFoot, riding
+
+    /// Above this (m/s) a stretch counts as riding. 3.5 m/s = 12.6 km/h, beyond a brisk walk or jog.
+    public static let ridingThreshold = 3.5
+
+    /// Mode of the piece between two consecutive accepted samples: the OS-measured speed when
+    /// both report one, otherwise distance over time.
+    public static func of(_ a: TrackSample, _ b: TrackSample) -> TravelMode {
+        let elapsed = b.timestamp.timeIntervalSince(a.timestamp)
+        var speed = elapsed > 0 ? Geo.distanceMeters(a.coordinate, b.coordinate) / elapsed : 0
+        if let sa = a.speed, let sb = b.speed, sa >= 0, sb >= 0 { speed = (sa + sb) / 2 }
+        return speed > ridingThreshold ? .riding : .onFoot
+    }
+
+    /// Metres on foot and riding across a session's segments.
+    public static func split(_ segments: [[TrackSample]]) -> (onFoot: Double, riding: Double) {
+        var onFoot = 0.0, riding = 0.0
+        for segment in segments {
+            for (a, b) in zip(segment, segment.dropFirst()) {
+                let d = Geo.distanceMeters(a.coordinate, b.coordinate)
+                if of(a, b) == .riding { riding += d } else { onFoot += d }
+            }
+        }
+        return (onFoot, riding)
     }
 }

@@ -36,6 +36,11 @@ struct RecapView: View {
                         stat("Places found", "\(model.discovered(in: session).count)")
                         stat("Time", Format.duration(recap.activeDuration))
                     }
+                    if recap.ridingMeters >= 50 {
+                        Text("On foot \(Format.distance(recap.onFootMeters)) · Riding \(Format.distance(recap.ridingMeters))")
+                            .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                            .accessibilityLabel("On foot \(Format.distance(recap.onFootMeters)), riding \(Format.distance(recap.ridingMeters))")
+                    }
                     let found = model.discovered(in: session)
                     if !found.isEmpty {
                         Text("You passed " + found.prefix(4).map(\.name).joined(separator: ", ") + (found.count > 4 ? " and more" : ""))
