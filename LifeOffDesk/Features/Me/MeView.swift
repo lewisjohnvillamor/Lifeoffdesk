@@ -10,10 +10,6 @@ struct MeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    if model.demoMode {
-                        Label("Sample adventures · not real GPS", systemImage: "sparkles")
-                            .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
-                    }
                     totals
                     demoCard
                     Text("SPOTS").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryInk)

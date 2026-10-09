@@ -6,6 +6,7 @@
 - **Play button:** demo mode uses the same big walk button as "Start exploring" ("Play a sample adventure" / "Next sample adventure") instead of a small replay/retry arrow.
 - **Follow the pointer:** each replayed walk (including every walk in "Watch your world grow") recentres and follows the moving position; dragging the map still stops following.
 - Coach copy: "lang" (only) is used for reach only when the world is shrinking.
+- Founder request: the red "Sample adventures · not real GPS" banners on Map, Adventures and Me are removed as redundant. The demo stays labelled by the map header "Demo world" (with the back-to-my-map ×), the Me-tab demo card, the SAMPLE stamp on sample captures, "SAMPLE DATA" on the coach and memory cards, and the recap label.
 - Compile-checked in CI; **smoothness not yet confirmed on the phone**.
 
 ## Voice requests in the planner (2026-10-09, founder request)

@@ -199,9 +199,9 @@ struct MapScreen: View {
         HStack(alignment: .center) {
             roundIcon("sparkles", label: "Help me choose somewhere", size: 48) { showPlanner = true }
             Spacer()
-            Text(model.demoMode ? "Sample adventures · not real GPS" : "There's more to life than your screen.")
+            Text(model.demoMode ? "Demo world" : "There's more to life than your screen.")
                 .font(.footnote)
-                .foregroundStyle(model.demoMode ? Theme.danger : Theme.secondaryInk)
+                .foregroundStyle(Theme.secondaryInk)
                 .multilineTextAlignment(.center)
             Spacer()
             if model.demoMode {
