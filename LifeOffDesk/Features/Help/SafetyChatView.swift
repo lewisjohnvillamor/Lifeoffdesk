@@ -254,7 +254,7 @@ struct SafetyChatView: View {
                     }
                 }
                 if let url = URL(string: line.sourceURL) {
-                    Link("Source: \(line.sourceName) · checked \(line.retrieved)", destination: url)
+                    Link("Source: \(line.sourceName)\(line.confidence == "secondary" ? " (news report)" : "") · checked \(line.retrieved)", destination: url)
                         .font(.caption2).foregroundStyle(Theme.secondaryInk)
                 }
             }

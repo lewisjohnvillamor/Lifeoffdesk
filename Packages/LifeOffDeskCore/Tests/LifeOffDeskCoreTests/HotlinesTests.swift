@@ -33,4 +33,20 @@ final class HotlinesTests: XCTestCase {
     func testDialableKeepsDigitsOnly() {
         XCTAssertEqual(Hotline.dialable("(02) 8870-1000"), "0288701000")
     }
+
+    func testBundledDirectoryHasSourcesForEveryNumber() throws {
+        let url = Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/hotlines.json")
+        let bundled = try HotlineDirectory.decode(Data(contentsOf: url))
+        XCTAssertNotNil(bundled.entry("911"))
+        for entry in bundled.entries {
+            XCTAssertFalse(entry.numbers.isEmpty, entry.id)
+            XCTAssertTrue(entry.sourceURL.hasPrefix("https://"), entry.id)
+            XCTAssertFalse(entry.retrieved.isEmpty, entry.id)
+            XCTAssertTrue(["official", "secondary"].contains(entry.confidence), entry.id)
+        }
+        for (region, id) in bundled.regionLGU { XCTAssertNotNil(bundled.entry(id), region) }
+        XCTAssertEqual(bundled.answer(for: "Ano ang number ng highway patrol", regionID: nil).map(\.id), ["hpg"])
+        XCTAssertEqual(bundled.answer(for: "hotline ng NLEX", regionID: nil).map(\.id), ["mptc"])
+        XCTAssertEqual(bundled.forEmergency(regionID: "muntinlupa").first?.id, "muntinlupa")
+    }
 }

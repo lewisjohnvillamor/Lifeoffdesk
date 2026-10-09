@@ -1,0 +1,451 @@
+{
+ "note": "Offline hotline copy. Source and check date per entry; 'secondary' = news report quoting the operator. Re-check before release.",
+ "hotlines": [
+  {
+   "id": "911",
+   "group": "national",
+   "name": "Emergency 911 (police, fire, ambulance)",
+   "numbers": [
+    "911"
+   ],
+   "aliases": [
+    "911",
+    "pulis",
+    "police",
+    "ambulansya",
+    "ambulance"
+   ],
+   "sourceName": "DILG: Unified 911 nationwide",
+   "sourceURL": "https://calabarzon.dilg.gov.ph/one-number-for-all-emergencies-unified-911-to-launch-nationwide/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "redcross",
+   "group": "national",
+   "name": "Philippine Red Cross",
+   "numbers": [
+    "143",
+    "(02) 8790 2300"
+   ],
+   "aliases": [
+    "red cross",
+    "redcross",
+    "pula krus"
+   ],
+   "sourceName": "Philippine Red Cross",
+   "sourceURL": "https://redcross.org.ph/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "mmda",
+   "group": "national",
+   "name": "MMDA Metrobase (Metro Manila roads)",
+   "numbers": [
+    "136"
+   ],
+   "aliases": [
+    "mmda",
+    "metrobase",
+    "traffic",
+    "trapik",
+    "edsa"
+   ],
+   "sourceName": "MMDA",
+   "sourceURL": "https://mmda.gov.ph/20-faq/5482-8-things-that-drivers-should-know-updated-june-7-2022.html",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "hpg",
+   "group": "national",
+   "name": "PNP Highway Patrol Group",
+   "numbers": [
+    "0917 683 3333",
+    "(02) 723 0401"
+   ],
+   "aliases": [
+    "highway patrol",
+    "hpg",
+    "highway police"
+   ],
+   "sourceName": "PNP Highway Patrol Group",
+   "sourceURL": "https://hpg.pnp.gov.ph/contact-us/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "doh",
+   "group": "national",
+   "name": "DOH health hotline",
+   "numbers": [
+    "1555"
+   ],
+   "aliases": [
+    "doh",
+    "department of health"
+   ],
+   "sourceName": "Department of Health",
+   "sourceURL": "https://doh.gov.ph/contact-us/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "coastguard",
+   "group": "national",
+   "name": "Philippine Coast Guard",
+   "numbers": [
+    "(02) 8527 3877"
+   ],
+   "aliases": [
+    "coast guard",
+    "pcg",
+    "dagat",
+    "nalulunod sa dagat"
+   ],
+   "sourceName": "Philippine Coast Guard",
+   "sourceURL": "https://www.coastguard.gov.ph/index.php/contact-us",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "mptc",
+   "group": "expressway",
+   "name": "NLEX, SCTEX, CAVITEX, CALAX (MPTC)",
+   "numbers": [
+    "1-35000"
+   ],
+   "aliases": [
+    "nlex",
+    "sctex",
+    "cavitex",
+    "calax",
+    "mptc"
+   ],
+   "sourceName": "MPTC expressways advisory",
+   "sourceURL": "https://www.mptc.com.ph/mptc_expressways_on_full_alert_this_semana_santa",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "slex",
+   "group": "expressway",
+   "name": "SLEX",
+   "numbers": [
+    "(049) 508 7539",
+    "0917 687 7539"
+   ],
+   "aliases": [
+    "slex",
+    "south luzon expressway"
+   ],
+   "sourceName": "Philstar, quoting San Miguel tollways (Dec 2024)",
+   "sourceURL": "https://www.philstar.com/headlines/2024/12/20/2408773/expressway-toll-fees-be-waived-during-holidays",
+   "retrieved": "2026-10-09",
+   "confidence": "secondary"
+  },
+  {
+   "id": "skyway",
+   "group": "expressway",
+   "name": "Skyway and NAIAX",
+   "numbers": [
+    "(02) 5318 8655",
+    "0917 539 8762"
+   ],
+   "aliases": [
+    "skyway",
+    "naiax"
+   ],
+   "sourceName": "Philstar, quoting San Miguel tollways (Dec 2024)",
+   "sourceURL": "https://www.philstar.com/headlines/2024/12/20/2408773/expressway-toll-fees-be-waived-during-holidays",
+   "retrieved": "2026-10-09",
+   "confidence": "secondary"
+  },
+  {
+   "id": "star",
+   "group": "expressway",
+   "name": "STAR Tollway",
+   "numbers": [
+    "(043) 756 7870",
+    "0917 511 7827"
+   ],
+   "aliases": [
+    "star tollway",
+    "star expressway"
+   ],
+   "sourceName": "Philstar, quoting San Miguel tollways (Dec 2024)",
+   "sourceURL": "https://www.philstar.com/headlines/2024/12/20/2408773/expressway-toll-fees-be-waived-during-holidays",
+   "retrieved": "2026-10-09",
+   "confidence": "secondary"
+  },
+  {
+   "id": "tplex",
+   "group": "expressway",
+   "name": "TPLEX",
+   "numbers": [
+    "0917 888 0715"
+   ],
+   "aliases": [
+    "tplex"
+   ],
+   "sourceName": "Philstar, quoting San Miguel tollways (Dec 2024)",
+   "sourceURL": "https://www.philstar.com/headlines/2024/12/20/2408773/expressway-toll-fees-be-waived-during-holidays",
+   "retrieved": "2026-10-09",
+   "confidence": "secondary"
+  },
+  {
+   "id": "makati",
+   "group": "lgu",
+   "name": "Makati Rescue",
+   "numbers": [
+    "(02) 8895 8243",
+    "(02) 8899 8928",
+    "(02) 8870 1191"
+   ],
+   "aliases": [
+    "makati"
+   ],
+   "sourceName": "Makati city directory",
+   "sourceURL": "https://www.makati.gov.ph/assets/static/city-directory.json",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "muntinlupa",
+   "group": "lgu",
+   "name": "Muntinlupa Emergency (Command Center)",
+   "numbers": [
+    "137-175",
+    "(02) 8373 5165",
+    "0921 542 7123",
+    "0927 257 9322"
+   ],
+   "aliases": [
+    "muntinlupa",
+    "alabang"
+   ],
+   "sourceName": "Muntinlupa City emergency hotlines",
+   "sourceURL": "https://muntinlupacity.gov.ph/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "taguig",
+   "group": "lgu",
+   "name": "Taguig Command Center / Rescue",
+   "numbers": [
+    "(02) 8789 3200",
+    "0919 070 3112"
+   ],
+   "aliases": [
+    "taguig",
+    "bgc",
+    "bonifacio global city"
+   ],
+   "sourceName": "Taguig City peace and order",
+   "sourceURL": "https://www.taguig.gov.ph/peace-and-order/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "pasay",
+   "group": "lgu",
+   "name": "Pasay DRRMO C3",
+   "numbers": [
+    "0917 867 2263",
+    "(02) 7758 5746"
+   ],
+   "aliases": [
+    "pasay"
+   ],
+   "sourceName": "Pasay City emergency numbers",
+   "sourceURL": "https://www.pasay.gov.ph/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "paranaque",
+   "group": "lgu",
+   "name": "Parañaque emergency",
+   "numbers": [
+    "(02) 8820 7783",
+    "0961 096 6249"
+   ],
+   "aliases": [
+    "paranaque",
+    "parañaque"
+   ],
+   "sourceName": "Parañaque City hotlines",
+   "sourceURL": "https://paranaque.gov.ph/emergency-disaster-preparedness-hotlines/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "manila",
+   "group": "lgu",
+   "name": "Manila MDRRMO",
+   "numbers": [
+    "(02) 8463 3295",
+    "0950 700 3710"
+   ],
+   "aliases": [
+    "manila",
+    "maynila"
+   ],
+   "sourceName": "City of Manila MDRRMO",
+   "sourceURL": "https://manila.gov.ph/mdrrmo/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "quezoncity",
+   "group": "lgu",
+   "name": "QC Helpline",
+   "numbers": [
+    "122"
+   ],
+   "aliases": [
+    "quezon city",
+    "qc"
+   ],
+   "sourceName": "Quezon City",
+   "sourceURL": "https://quezoncity.gov.ph/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "mandaluyong",
+   "group": "lgu",
+   "name": "Mandaluyong CDRRMO",
+   "numbers": [
+    "(02) 8533 2225",
+    "0956 427 3727"
+   ],
+   "aliases": [
+    "mandaluyong"
+   ],
+   "sourceName": "Mandaluyong City",
+   "sourceURL": "https://mandaluyong.gov.ph/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "sanjuan",
+   "group": "lgu",
+   "name": "San Juan CDRRMO",
+   "numbers": [
+    "137-135"
+   ],
+   "aliases": [
+    "san juan"
+   ],
+   "sourceName": "San Juan City",
+   "sourceURL": "https://www.sanjuancity.gov.ph/SanJuanCity/Makabagong_SJ_Departments_Selected/45",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "marikina",
+   "group": "lgu",
+   "name": "Marikina Rescue 161",
+   "numbers": [
+    "161",
+    "(02) 161"
+   ],
+   "aliases": [
+    "marikina"
+   ],
+   "sourceName": "Marikina City",
+   "sourceURL": "https://www.marikina.gov.ph/contact-us",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "caloocan",
+   "group": "lgu",
+   "name": "Caloocan CDRRMO / Rescue",
+   "numbers": [
+    "(02) 5310 2700",
+    "(02) 5310 7536"
+   ],
+   "aliases": [
+    "caloocan"
+   ],
+   "sourceName": "Caloocan City directory",
+   "sourceURL": "https://caloocancity.gov.ph/about-us/directory/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "malabon",
+   "group": "lgu",
+   "name": "Malabon DRRMO",
+   "numbers": [
+    "281-4999 loc. 1017"
+   ],
+   "aliases": [
+    "malabon"
+   ],
+   "sourceName": "Malabon City emergency hotlines",
+   "sourceURL": "https://malabon.gov.ph/emergency-hotlines/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "valenzuela",
+   "group": "lgu",
+   "name": "Valenzuela CDRRMO",
+   "numbers": [
+    "(02) 8292 1405",
+    "(02) 8352 5000"
+   ],
+   "aliases": [
+    "valenzuela"
+   ],
+   "sourceName": "Valenzuela City",
+   "sourceURL": "https://www.valenzuela.gov.ph/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "laspinas",
+   "group": "lgu",
+   "name": "Las Piñas DRRM Office",
+   "numbers": [
+    "(02) 8871 4343",
+    "(02) 8873 0765"
+   ],
+   "aliases": [
+    "las pinas",
+    "las piñas"
+   ],
+   "sourceName": "Las Piñas City directory",
+   "sourceURL": "https://laspinascity.gov.ph/directory",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  },
+  {
+   "id": "pateros",
+   "group": "lgu",
+   "name": "Pateros Rescue",
+   "numbers": [
+    "(02) 8642 5159"
+   ],
+   "aliases": [
+    "pateros"
+   ],
+   "sourceName": "Municipality of Pateros",
+   "sourceURL": "https://pateros.gov.ph/",
+   "retrieved": "2026-10-09",
+   "confidence": "official"
+  }
+ ],
+ "regionLGU": {
+  "makati-cbd-starter": "makati",
+  "muntinlupa": "muntinlupa",
+  "taguig": "taguig",
+  "pasay": "pasay",
+  "paranaque": "paranaque"
+ }
+}
