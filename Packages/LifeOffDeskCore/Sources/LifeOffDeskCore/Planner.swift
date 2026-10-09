@@ -62,7 +62,8 @@ public struct Planner: Sendable {
     }
 
     public func plan(_ request: String, catalog: PlaceCatalog, origin: DistanceOrigin,
-                     options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil) async -> (PlannerResponse, PlannerTrace) {
+                     options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil,
+                     context: SearchContext = SearchContext(), saved: PreferenceProfile? = nil) async -> (PlannerResponse, PlannerTrace) {
         let (outcome, trace) = await extract(request)
         switch outcome {
         case nil, .invalid?:
@@ -70,14 +71,20 @@ public struct Planner: Sendable {
         case let .needsClarification(prefs, reason)?:
             return (.clarify(prefs, question: PlannerCopy.clarification(reason)), trace)
         case let .valid(prefs)?:
-            return (Self.respond(prefs, catalog: catalog, origin: origin, options: options, graph: graph), trace)
+            let resolved = PreferenceResolver.resolve(request: prefs, saved: saved, radiusMeters: options.radiusMeters)
+            return (Self.respond(resolved.prefs, catalog: catalog, origin: origin, options: options, graph: graph,
+                                 context: context), trace)
         }
     }
 
     /// Deterministic part, also used by manual filters (which are not Local AI evidence).
     public static func respond(_ prefs: OutingPreferences, catalog: PlaceCatalog, origin: DistanceOrigin,
-                               options: SearchOptions, graph: WalkingGraph? = nil) -> PlannerResponse {
-        let suggestions = PlaceSearch.suggest(prefs, catalog: catalog, origin: origin, options: options, graph: graph)
+                               options: SearchOptions, graph: WalkingGraph? = nil,
+                               context: SearchContext = SearchContext()) -> PlannerResponse {
+        // The path itself cannot be checked (no routing): explain, and let the user choose a venue-only filter.
+        if prefs.routeAccess { return .clarify(prefs, question: PlannerCopy.routeAccessUnsupported) }
+        let suggestions = PlaceSearch.suggest(prefs, catalog: catalog, origin: origin, options: options, graph: graph,
+                                              context: context)
         guard !suggestions.isEmpty else { return .noMatch(prefs) }
         return .suggestions(prefs, intro: PlannerCopy.intro(prefs: prefs, count: suggestions.count, origin: origin,
                                                             radiusMeters: options.radiusMeters,

@@ -11,9 +11,6 @@ public struct StreetDistance: Hashable, Sendable {
         self.meters = meters
         self.throughRestricted = throughRestricted
     }
-
-    /// Rough walking minutes at 4.5 km/h. An estimate, never a promise.
-    public var walkingMinutes: Int { max(1, Int((meters / 75).rounded())) }
 }
 
 /// On-device walking graph built from the bundled OSM street lines. It answers "how far is it

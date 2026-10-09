@@ -38,6 +38,11 @@ public enum PlannerCopy {
         }
     }
 
+    public static let routeAccessUnsupported =
+        "Hindi pa namin ma-check kung accessible ang daan mismo (walang routing at walang verified na sidewalk data). Puwede kong hanapin ang mga lugar na may recorded step-free entrance lang — gusto mo ba?"
+    public static let noEligibleAccess =
+        "Walang lugar sa malapit na may reviewed na record para sa hiningi mong access. Hindi namin ito hinulaan. Puwede mong alisin ang requirement para makita ang lahat (unverified)."
+
     /// One short line above the results, e.g. "3 park malapit sa'yo · by streets".
     public static func intro(prefs: OutingPreferences, count: Int, origin: DistanceOrigin, radiusMeters: Double,
                              byStreets: Bool = false) -> String {
@@ -53,19 +58,20 @@ public enum PlannerCopy {
         return parts.joined(separator: " · ")
     }
 
-    /// Compact subtitle: "Park · 3.5 km lakad · ~47 min", plus verified matches only.
+    /// Compact subtitle: "Park · 3.49 km by streets", plus verified matches only.
     public static func reason(_ suggestion: Suggestion) -> String {
         var parts = [categoryWord(suggestion.place.category).capitalized, distanceText(suggestion.street, straightLine: suggestion.straightLineMeters)]
         for word in suggestion.matchedKeywords { parts.append(word) }
+        if let passed = suggestion.passedBefore { parts.append(passed ? "nadaanan mo na" : "bago para sa'yo") }
         for mood in suggestion.matchedMoods { parts.append("\(moodWord(mood)) ✓") }
         if suggestion.withinKnownBudget { parts.append("pasok sa budget") }
         return parts.joined(separator: " · ")
     }
 
-    /// "3.5 km lakad · ~47 min" along mapped streets, or "1.5 km straight-line" when unknown.
+    /// "3.49 km by streets" along mapped streets (no walking ETA), or "1.5 km straight-line" when unknown.
     public static func distanceText(_ street: StreetDistance?, straightLine: Double) -> String {
         guard let street else { return "\(Format.distance(straightLine)) straight-line" }
-        return "\(Format.distance(street.meters)) lakad · ~\(street.walkingMinutes) min"
+        return "\(Format.distance(street.meters)) by streets"
     }
 
     /// One caveat line summarising every uncertainty; full labels stay available on tap.

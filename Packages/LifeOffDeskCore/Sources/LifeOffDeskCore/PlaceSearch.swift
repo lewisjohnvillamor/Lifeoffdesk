@@ -39,6 +39,10 @@ public struct Suggestion: Hashable, Identifiable, Sendable {
     public var uncertainties: [Uncertainty]
     /// Distance along bundled streets, when both ends are near a mapped street.
     public var street: StreetDistance? = nil
+    /// Whether an earlier adventure passed within 40 m (computed; not proof of a visit).
+    public var passedBefore: Bool? = nil
+    /// Evidence labels for requested access needs, e.g. "Step-free entrance: not verified".
+    public var accessLabels: [String] = []
 
     public var id: String { place.id }
     /// Street distance when known, otherwise straight-line.
@@ -70,10 +74,22 @@ public struct SearchOptions: Hashable, Sendable {
     }
 }
 
+/// Exploration and evidence used for adaptive ranking and hard eligibility (all computed).
+public struct SearchContext: Sendable {
+    public var passedPlaceIDs: Set<String>
+    public var evidence: [EvidenceFactV1]
+    public var now: Date
+
+    public init(passedPlaceIDs: Set<String> = [], evidence: [EvidenceFactV1] = [], now: Date = Date()) {
+        self.passedPlaceIDs = passedPlaceIDs; self.evidence = evidence; self.now = now
+    }
+}
+
 /// Deterministic catalog search. The model never sees or produces place records.
 public enum PlaceSearch {
     public static func suggest(_ prefs: OutingPreferences, catalog: PlaceCatalog, origin: DistanceOrigin,
-                               options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil) -> [Suggestion] {
+                               options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil,
+                               context: SearchContext = SearchContext()) -> [Suggestion] {
         let reach = prefs.durationMinutes.map(SearchOptions.approximateOneWayReachMeters)
         // Specific words ("pizza") narrow results to places whose name or OSM cuisine mentions them.
         let keywordMatches: (Place) -> [String] = { place in
@@ -92,6 +108,15 @@ public enum PlaceSearch {
             let distance = Geo.distanceMeters(origin.coordinate, place.coordinate)
             guard distance <= options.radiusMeters else { continue }
             if !useKeywords && !prefs.categories.isEmpty && !prefs.categories.contains(place.category) { continue }
+            // Hard access requirements: only evidence-backed eligible places, never relaxed to fill cards.
+            var accessLabels: [String] = []
+            if !prefs.accessNeeds.isEmpty {
+                guard EligibilityPolicy.evaluate(prefs.accessNeeds, place: place, facts: context.evidence,
+                                                 now: context.now).isEligible else { continue }
+                accessLabels = prefs.accessNeeds.map {
+                    EligibilityPolicy.label($0, EligibilityPolicy.evaluate($0, place: place, facts: context.evidence, now: context.now))
+                }
+            }
 
             var uncertainties: [Uncertainty] = []
             var withinBudget = false
@@ -121,6 +146,8 @@ public enum PlaceSearch {
                                         matchedMoods: matchedMoods, withinKnownBudget: withinBudget,
                                         uncertainties: uncertainties)
             suggestion.matchedKeywords = matchedKeywords
+            suggestion.accessLabels = accessLabels
+            if prefs.novelty != .any { suggestion.passedBefore = context.passedPlaceIDs.contains(place.id) }
             results.append((suggestion, true))
         }
         // One street search from the origin covers every candidate.
@@ -146,6 +173,10 @@ public enum PlaceSearch {
             }
         }
         results.sort { a, b in
+            // Novelty intent: "new" prefers places no adventure passed; "familiar" the opposite.
+            if prefs.novelty != .any, a.0.passedBefore != b.0.passedBefore {
+                return (a.0.passedBefore == true) == (prefs.novelty == .familiar)
+            }
             if a.0.withinKnownBudget != b.0.withinKnownBudget { return a.0.withinKnownBudget }
             if a.0.matchedMoods.count != b.0.matchedMoods.count { return a.0.matchedMoods.count > b.0.matchedMoods.count }
             if a.fitsTime != b.fitsTime { return a.fitsTime }

@@ -23,7 +23,6 @@ final class StreetRoutingTests: XCTestCase {
         let d = try XCTUnwrap(graph.distance(from: at(0, 0), to: at(200, 0)))
         XCTAssertEqual(d.meters, 2200, accuracy: 5)
         XCTAssertFalse(d.throughRestricted)
-        XCTAssertEqual(d.walkingMinutes, 29)
     }
 
     func testOffStreetPointsHaveNoStreetDistance() {
@@ -79,7 +78,7 @@ final class StreetRoutingTests: XCTestCase {
         guard case let .suggestions(_, intro, results) = response else { return XCTFail("expected suggestions") }
         XCTAssertEqual(results.map(\.place.id), ["upstream", "across"])
         XCTAssertTrue(intro.contains("by streets"), intro)
-        XCTAssertTrue(PlannerCopy.reason(results[1]).contains("2.20 km lakad"), PlannerCopy.reason(results[1]))
+        XCTAssertTrue(PlannerCopy.reason(results[1]).contains("2.20 km by streets"), PlannerCopy.reason(results[1]))
 
         let plain = PlaceSearch.suggest(OutingPreferences(categories: [.park]), catalog: catalog, origin: .currentLocation(at(0, 0)))
         XCTAssertEqual(plain.map(\.place.id), ["across", "upstream"])

@@ -102,6 +102,7 @@ public final class LocalStore: @unchecked Sendable {
             try encoder.encode(moments).write(to: momentsIndexURL, options: .atomic)
         }
         try? fileManager.removeItem(at: memoriesDirectory.appendingPathComponent("\(sessionID.uuidString).jpg"))
+        try removeNarrations(for: sessionID)
     }
 
     public func loadFinishedWalks() -> [WalkSession] {
@@ -123,10 +124,13 @@ public final class LocalStore: @unchecked Sendable {
 
     // MARK: Erase
 
-    /// Removes personal walks and exploration only. Model, catalog and map assets live elsewhere.
+    /// Removes personal walks, exploration, saved preferences and AI caches. Model, catalog and
+    /// map assets live elsewhere.
     public func erasePersonalData() throws {
         lock.lock(); defer { lock.unlock() }
-        for url in [activeSessionURL, explorationURL] {
+        let preferences = directory.appendingPathComponent("preferences.json")
+        let narrations = directory.appendingPathComponent("narrations.json")
+        for url in [activeSessionURL, explorationURL, preferences, narrations] {
             for candidate in [url, backupURL(url)] where fileManager.fileExists(atPath: candidate.path) {
                 try fileManager.removeItem(at: candidate)
             }
@@ -143,6 +147,9 @@ public final class LocalStore: @unchecked Sendable {
     }
 
     // MARK: Primitives
+
+    func writeJSON<T: Encodable>(_ value: T, to url: URL) throws { try write(value, to: url) }
+    func removeJSON(_ url: URL) throws { try removeWithBackup(url) }
 
     private func backupURL(_ url: URL) -> URL { url.appendingPathExtension("bak") }
 
