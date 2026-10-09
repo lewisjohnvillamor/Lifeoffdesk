@@ -30,6 +30,14 @@ struct MeView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView().environmentObject(model) }
+            #if targetEnvironment(simulator)
+            .task {
+                // Screenshot helper (simulator only).
+                guard ProcessInfo.processInfo.arguments.contains("--open-settings") else { return }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                showSettings = true
+            }
+            #endif
         }
     }
 

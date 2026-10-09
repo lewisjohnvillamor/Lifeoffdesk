@@ -64,6 +64,9 @@ struct MapScreen: View {
                 style = CardStyle(rawValue: arguments[i + 1]) ?? .photo
             }
             if arguments.contains("--open-card") { simCard = SimCard(session: walk, style: style) } else { model.presentedRecap = walk }
+            // --request-narration: exercises the recap narration path (Simulator has no model, so this
+            // shows the labelled computed fallback, never an AI result).
+            if arguments.contains("--request-narration") { model.requestNarration(for: walk) }
         }
         .sheet(item: $simCard) { card in
             MemoryCardSheet(session: card.session, initialStyle: card.style).environmentObject(model)

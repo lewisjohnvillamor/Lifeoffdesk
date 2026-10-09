@@ -87,7 +87,9 @@ jobs:
           shoot 08b-card-photo --demo-map --open-card --seed-photo --card-style Photo
           shoot 08c-card-collage --demo-map --open-card --seed-photo --card-style Collage
           shoot 08d-card-sticker --demo-map --open-card --seed-photo --card-style Sticker
+          shoot 07b-recap-narration --demo-map --open-recap --request-narration
           shoot 10-walks-tab --demo-map --tab walks
+          shoot 12-preferences --tab me --open-settings
           shoot 11-me-tab --demo-map --tab me
           # Simulated GPS walk through the real tracking pipeline (simulator location, labelled in-app).
           xcrun simctl privacy "$UDID" grant location-always com.lifeoffdesk.simulator || xcrun simctl privacy "$UDID" grant location com.lifeoffdesk.simulator || true
