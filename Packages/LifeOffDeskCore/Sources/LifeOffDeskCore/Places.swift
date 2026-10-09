@@ -1,7 +1,7 @@
 import Foundation
 
 public enum PlaceCategory: String, Codable, CaseIterable, Sendable {
-    case park, cafe, museum, library, scenic, other
+    case park, cafe, food, museum, library, scenic, other
 }
 
 public enum MoodTag: String, Codable, CaseIterable, Sendable {
@@ -29,6 +29,18 @@ public struct Place: Codable, Hashable, Identifiable, Sendable {
     public var sourceAccess: String?
     public var sourceFee: String?
     public var sourceLevel: String?
+    /// OSM cuisine tag, e.g. "pizza;italian" (source claim, unreviewed).
+    public var sourceCuisine: String?
+
+    /// Lower-cased words a keyword can match: the name plus OSM cuisine values.
+    public var searchableTerms: [String] {
+        var terms = [name.lowercased()]
+        if let cuisine = sourceCuisine {
+            terms += cuisine.lowercased().split(whereSeparator: { $0 == ";" || $0 == "," })
+                .map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "_", with: " ") }
+        }
+        return terms
+    }
 
     public var coordinate: Coordinate { Coordinate(latitude: latitude, longitude: longitude) }
     public var isReviewed: Bool { verificationStatus == "reviewed" }

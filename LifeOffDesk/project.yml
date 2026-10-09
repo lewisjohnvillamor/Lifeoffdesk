@@ -21,6 +21,8 @@ targets:
         buildPhase: resources
       - path: ../eval/taglish-cases.json
         buildPhase: resources
+      - path: ../eval/taglish-heldout.json
+        buildPhase: resources
       # Pinned model, provisioned by scripts/download_materials.py (not in Git).
       # Alternatively copy it into the app's Documents folder with Finder file sharing.
       - path: ../downloads/model/Qwen3-0.6B-Q4_0.gguf

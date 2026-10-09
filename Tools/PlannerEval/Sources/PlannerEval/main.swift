@@ -16,8 +16,9 @@ let outPath = args.firstIndex(of: "--out").flatMap { $0 + 1 < args.count ? args[
 let pack = root.appendingPathComponent("LifeOffDesk/Resources/StarterData/makati-cbd-starter")
 let catalog = try PlaceCatalog.decode(Data(contentsOf: pack.appendingPathComponent("places.json")))
 let region = try JSONDecoder().decode(RegionManifest.self, from: Data(contentsOf: pack.appendingPathComponent("region.json")))
+let casesPath = args.firstIndex(of: "--cases").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil } ?? "eval/taglish-cases.json"
 let cases = try JSONDecoder().decode(PlannerEvaluation.CaseFile.self,
-                                     from: Data(contentsOf: root.appendingPathComponent("eval/taglish-cases.json"))).cases
+                                     from: Data(contentsOf: root.appendingPathComponent(casesPath))).cases
 
 let engine = try LlamaEngine.load(path: modelPath)
 let info = engine.info

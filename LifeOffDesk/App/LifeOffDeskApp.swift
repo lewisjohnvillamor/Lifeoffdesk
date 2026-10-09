@@ -8,7 +8,7 @@ struct LifeOffDeskApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MapScreen()
+            RootView()
                 .environmentObject(model)
                 .tint(Theme.primary)
                 .preferredColorScheme(.light)

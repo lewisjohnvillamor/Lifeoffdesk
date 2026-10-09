@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LLAMA="${1:?path to a llama.cpp b11429 checkout built with BUILD_SHARED_LIBS=ON}"
 shift
-MODEL="$ROOT/downloads/model/Qwen3-0.6B-Q4_0.gguf"
+MODEL="${MODEL:-$ROOT/downloads/model/Qwen3-0.6B-Q4_0.gguf}"
 [ -f "$MODEL" ] || { echo "Missing $MODEL; run scripts/download_materials.py --group model" >&2; exit 1; }
 LIBDIR="$LLAMA/build/bin"
 PKG="$ROOT/Tools/PlannerEval"

@@ -9,6 +9,7 @@ struct PlannerSheet: View {
 
     /// Quick picks fill the request and still go through the on-device model.
     private let quickPicks: [(icon: String, text: String)] = [
+        ("fork.knife", "Pizza malapit"),
         ("cup.and.saucer", "Kape muna, 30 mins"),
         ("leaf", "Tahimik na park"),
         ("building.columns", "Museum, may 1 hour ako"),
@@ -20,7 +21,10 @@ struct PlannerSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     inputBar
-                    if showQuickPicks { quickPickRow }
+                    if showQuickPicks {
+                        quickPickRow
+                        nextAdventures
+                    }
                     stateView
                 }
                 .padding(Theme.inset)
@@ -39,11 +43,17 @@ struct PlannerSheet: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 6)
                     .background(Theme.canvas)
             }
-            .onAppear { if model.plannerText.isEmpty { inputFocused = true } }
+            .onAppear {
+                model.refreshAdventureIdeas()
+                model.refreshIdleLocation(promptIfNeeded: true)
+                if model.plannerText.isEmpty { inputFocused = true }
+            }
         }
     }
 
-    private var isBusy: Bool { model.plannerState == .loadingModel || model.plannerState == .thinking }
+    private var isBusy: Bool {
+        model.plannerState == .loadingModel || model.plannerState == .thinking || model.plannerState == .locating
+    }
     private var showQuickPicks: Bool { model.plannerState == .idle }
     private var canAsk: Bool { !model.plannerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
@@ -107,6 +117,15 @@ struct PlannerSheet: View {
         }
     }
 
+    @ViewBuilder private var nextAdventures: some View {
+        if !model.adventureIdeas.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Next adventure").font(.headline).foregroundStyle(Theme.ink).padding(.top, 6)
+                ForEach(model.adventureIdeas) { idea in AdventureIdeaCard(idea: idea) }
+            }
+        }
+    }
+
     private var radiusMenu: some View {
         Menu {
             ForEach([1000.0, 2000, 3000, 5000], id: \.self) { meters in
@@ -123,10 +142,11 @@ struct PlannerSheet: View {
         switch model.plannerState {
         case .idle:
             EmptyView()
-        case .loadingModel, .thinking:
+        case .locating, .loadingModel, .thinking:
             HStack(spacing: 10) {
                 ProgressView()
-                Text(model.plannerState == .loadingModel ? "Loading…" : "Nag-iisip…").foregroundStyle(Theme.secondaryInk)
+                Text(model.plannerState == .locating ? "Hinahanap ka…" : model.plannerState == .loadingModel ? "Loading…" : "Nag-iisip…")
+                    .foregroundStyle(Theme.secondaryInk)
             }
             .accessibilityElement(children: .combine)
         case let .modelUnavailable(message):
@@ -162,7 +182,7 @@ struct PlannerSheet: View {
 
     private var manualFilters: some View {
         HStack(spacing: 8) {
-            ForEach([PlaceCategory.park, .cafe, .museum, .library], id: \.self) { category in
+            ForEach([PlaceCategory.food, .cafe, .park, .museum], id: \.self) { category in
                 Button(PlannerCopy.categoryWord(category).capitalized) { model.manualSearch(category: category) }
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.ink)
@@ -238,10 +258,67 @@ struct SuggestionCard: View {
         switch suggestion.place.category {
         case .park: return "leaf.fill"
         case .cafe: return "cup.and.saucer.fill"
+        case .food: return "fork.knife"
         case .museum: return "building.columns.fill"
         case .library: return "books.vertical.fill"
         case .scenic: return "binoculars.fill"
         case .other: return "mappin"
+        }
+    }
+}
+
+/// A suggested adventure: an undiscovered real place, or unexplored streets nearby (computed).
+struct AdventureIdeaCard: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    let idea: AdventureIdea
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.canvas)
+                .frame(width: 40, height: 40)
+                .background(Theme.primary, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
+                Text(subtitle).font(.subheadline).foregroundStyle(Theme.secondaryInk)
+            }
+            Spacer(minLength: 8)
+            Button("Go") {
+                model.choose(idea)
+                dismiss()
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Theme.canvas)
+            .padding(.horizontal, 18)
+            .frame(minHeight: Theme.minTarget)
+            .background(PaperStyle.ink, in: Capsule())
+            .accessibilityLabel("Set \(title) as destination")
+        }
+        .padding(14)
+        .background(Theme.revealedGround, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var icon: String {
+        if case .frontier = idea.kind { return "map" }
+        return "sparkles"
+    }
+
+    private var title: String {
+        switch idea.kind {
+        case let .frontier(meters, _): return "\(Format.distance(meters)) of streets you haven't explored"
+        case let .undiscoveredPlace(place): return place.name
+        }
+    }
+
+    private var subtitle: String {
+        switch idea.kind {
+        case let .frontier(_, bearing):
+            return "Pa-\(AdventureSuggester.compassWord(bearing)) · \(Format.distance(idea.straightLineMeters)) straight-line"
+        case let .undiscoveredPlace(place):
+            return "Hindi mo pa napupuntahan · \(PlannerCopy.categoryWord(place.category).capitalized) · \(Format.distance(idea.straightLineMeters))"
         }
     }
 }

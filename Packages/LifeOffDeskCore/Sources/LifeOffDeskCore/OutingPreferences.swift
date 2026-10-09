@@ -6,15 +6,18 @@ public struct OutingPreferences: Codable, Hashable, Sendable {
     public var budgetPHP: Int?
     public var categories: [PlaceCategory]
     public var moodTags: [MoodTag]
+    /// Specific things asked for ("pizza", "ramen", "milk tea"); matched against names and OSM cuisine.
+    public var keywords: [String]
     public var travelMode: String
     public var needsClarification: Bool
 
     public init(durationMinutes: Int? = nil, budgetPHP: Int? = nil, categories: [PlaceCategory] = [],
-                moodTags: [MoodTag] = [], needsClarification: Bool = false) {
+                moodTags: [MoodTag] = [], keywords: [String] = [], needsClarification: Bool = false) {
         self.durationMinutes = durationMinutes
         self.budgetPHP = budgetPHP
         self.categories = categories
         self.moodTags = moodTags
+        self.keywords = keywords
         travelMode = "walk"
         self.needsClarification = needsClarification
     }
@@ -22,6 +25,12 @@ public struct OutingPreferences: Codable, Hashable, Sendable {
     public static let durationRange = 5...120
     public static let budgetRange = 0...10_000
     public static let maxListItems = 3
+    public static let keywordLength = 2...24
+
+    /// True when nothing searchable was given (then ask instead of listing random places).
+    public var isEmptyRequest: Bool {
+        durationMinutes == nil && budgetPHP == nil && categories.isEmpty && moodTags.isEmpty && keywords.isEmpty
+    }
 }
 
 public enum ValidationError: Error, Hashable, Sendable {
@@ -33,6 +42,7 @@ public enum ValidationError: Error, Hashable, Sendable {
     case unknownEnumValue(key: String, value: String)
     case tooManyItems(String)
     case unsupportedTravelMode(String)
+    case invalidKeyword(String)
 }
 
 /// What the planner should do with a model reply.
@@ -44,11 +54,11 @@ public enum ValidationOutcome: Hashable, Sendable {
 }
 
 public enum ClarificationReason: String, Hashable, Sendable {
-    case modelAsked, budgetOutOfRange, durationOutOfRange
+    case modelAsked, budgetOutOfRange, durationOutOfRange, nothingToSearch
 }
 
 public enum PreferenceValidator {
-    static let keys = ["durationMinutes", "budgetPHP", "categories", "moodTags", "travelMode", "needsClarification"]
+    static let keys = ["durationMinutes", "budgetPHP", "categories", "moodTags", "keywords", "travelMode", "needsClarification"]
 
     /// Extracts the first balanced JSON object, ignoring any `<think>` block or surrounding prose.
     public static func extractJSONObject(from text: String) -> String? {
@@ -88,6 +98,7 @@ public enum PreferenceValidator {
         let budget = optionalInt(object["budgetPHP"], key: "budgetPHP", errors: &errors)
         let categories: [PlaceCategory] = enumList(object["categories"], key: "categories", errors: &errors)
         let moods: [MoodTag] = enumList(object["moodTags"], key: "moodTags", errors: &errors)
+        let keywords = keywordList(object["keywords"], errors: &errors)
 
         switch object["travelMode"] {
         case nil: break
@@ -103,7 +114,7 @@ public enum PreferenceValidator {
         guard errors.isEmpty else { return .invalid(errors) }
 
         var prefs = OutingPreferences(durationMinutes: duration, budgetPHP: budget, categories: categories,
-                                      moodTags: moods, needsClarification: asked)
+                                      moodTags: moods, keywords: keywords, needsClarification: asked)
         if let budget, !OutingPreferences.budgetRange.contains(budget) {
             prefs.budgetPHP = nil
             return .needsClarification(prefs, .budgetOutOfRange)
@@ -112,7 +123,9 @@ public enum PreferenceValidator {
             prefs.durationMinutes = nil
             return .needsClarification(prefs, .durationOutOfRange)
         }
-        if asked { return .needsClarification(prefs, .modelAsked) }
+        // Ask only when nothing usable was extracted (the prompt's own rule). A model that fills in
+        // categories/keywords/moods/duration and also says "ask" is resolved in favour of its data.
+        if prefs.isEmptyRequest { return .needsClarification(prefs, asked ? .modelAsked : .nothingToSearch) }
         return .valid(prefs)
     }
 
@@ -127,6 +140,30 @@ public enum PreferenceValidator {
         default:
             errors.append(.wrongType(key)); return nil
         }
+    }
+
+    /// Words that are moods, place kinds or filler, not something to match in a name or cuisine.
+    static let keywordStopList: Set<String> = [
+        "quiet", "tahimik", "nature", "relax", "active", "curious", "park", "cafe", "coffee", "kape", "food", "pagkain",
+        "museum", "library", "scenic", "place", "lugar", "good", "best", "masarap", "nearby", "malapit", "walk", "lakad",
+        "opening hours", "open", "bukas", "cheap", "mura", "restaurant", "kainan",
+    ]
+
+    private static func keywordList(_ value: JSONValue?, errors: inout [ValidationError]) -> [String] {
+        guard let value else { return [] }
+        guard case let .array(array) = value else { errors.append(.wrongType("keywords")); return [] }
+        if array.count > OutingPreferences.maxListItems { errors.append(.tooManyItems("keywords")) }
+        var result: [String] = []
+        for item in array {
+            guard case let .string(raw) = item else { errors.append(.wrongType("keywords")); continue }
+            let word = raw.lowercased().trimmingCharacters(in: .whitespaces)
+            let allowed = word.unicodeScalars.allSatisfy { CharacterSet.letters.contains($0) || $0 == " " || $0 == "-" }
+            guard OutingPreferences.keywordLength.contains(word.count), allowed else {
+                errors.append(.invalidKeyword(raw)); continue
+            }
+            if !result.contains(word) && !keywordStopList.contains(word) { result.append(word) }
+        }
+        return result
     }
 
     private static func enumList<E: RawRepresentable & Hashable>(_ value: JSONValue?, key: String,

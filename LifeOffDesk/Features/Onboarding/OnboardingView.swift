@@ -17,7 +17,7 @@ struct OnboardingView: View {
         ("New streets count.", "Turn an unknown corner and your map grows."),
         ("Ask for a nearby spot.", "Type in Taglish. The AI on your phone suggests real places, even offline."),
         ("Stays on your phone.", "No account. Your walks and the AI never leave your iPhone."),
-        ("Share your walk as a card.", "Your route, your photo and your new streets in one card."),
+        ("Share your adventure as a card.", "Your route, your photos and the places you found in one card."),
     ]
 
     var body: some View {

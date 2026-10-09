@@ -108,6 +108,30 @@
       "expectedConstraints": {
         "expectedSearchOutcome": "no supported local match or clarification"
       }
+    },
+    {
+      "id": 13,
+      "prompt": "Good pizza place.",
+      "expectedConstraints": {
+        "categories": [
+          "food"
+        ],
+        "keywords": [
+          "pizza"
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "prompt": "May siomai ba malapit?",
+      "expectedConstraints": {
+        "categories": [
+          "food"
+        ],
+        "keywords": [
+          "siomai"
+        ]
+      }
     }
   ]
 }

@@ -94,6 +94,32 @@ The UI smoke test confirms walking entry remains available, not a completed walk
 - Captured moments: camera during a walk; photo saved on device with the latest accepted fix (none without a fix) and pinned on the map; erase removes them.
 - Memory card styles: Photo / Collage / Sticker, choose from the walk's photos, add from library or take a final photo. Sticker uses iOS 17 on-device subject lifting; not verifiable in Simulator (white-border fallback used there).
 
+## Founder feedback round 3 (2026-10-09)
+
+- Layout restructured to three tabs (Map, Walks, Me). Map has no bottom card: tagline, round side buttons (Spot camera while walking, Locate, Layers menu with tilt and demo), today/total new-streets stack, one **Start exploring** button; while walking Pause plus **Hold to end** (VoiceOver gets a direct Finish action).
+- Walks tab: this week vs last week, day dots, month calendar (tap a day to filter), "Watch your map grow" timelapse of all shown walks, walk list by month. Me tab: total new streets, distance, walks, area explored, photo spots, settings.
+- Fixed: per-walk "new streets" now measured only against earlier walks (`WalkStats`, tested); later walks no longer shrink earlier numbers. Summed newly revealed area = exact explored area.
+- Fixed "two maps": Metro Manila context roads duplicated detailed-pack roads with different hand-drawn wobble, drawing doubled lines that drifted apart when zooming. Context roads are now skipped inside detailed areas.
+- Fixed planner origin: GPS ran only during walks, so the planner fell back to the Makati reference point. One-shot fixes are now taken when the planner opens, a destination is chosen, permission is granted or the app starts; the planner waits up to 8 s for one ("Hinahanap ka…"). "You are here" also shows outside walks (fixes are not trail).
+- The map opens framed on the most recent walk.
+- Planner: new `food` category and `keywords` field (validated, filler/mood words filtered); places now include up to 60 OSM food places per detailed area with cuisine tags kept as unverified source claims. Keyword search matches names/cuisine only; no match → honest empty result or labelled category fallback; an empty request → clarifying question instead of listing nearby parks. Linux CPU dev run (prompt v3, 14 cases incl. "Good pizza place."): 14/14 schema-valid, 13/14 intent (`eval/results/dev-linux-cpu-prompt-v3.json`). Not phone evidence.
+- Catalog now 90 places per detailed area (still `source-only-unreviewed`).
+
+## Adventures reframe and AI evaluation (2026-10-09)
+
+- Product language moved from walks to **adventures**: tab "Adventures", metrics are new streets, **places found** (catalogue places within 40 m of the accepted trail, computed) and area explored; distance is secondary.
+- **Next adventure** (✨ sheet): real targets only — undiscovered catalogue places ordered by the user's favourite categories, and **street frontiers** (clusters of unexplored street length nearby, by compass sector, computed from bundled road data). Frontiers do not run out while fog remains, which addresses area exhaustion; full coverage is the cue for more area packs later.
+- AI evaluation expanded: `eval/taglish-heldout.json`, 60 new prompts (slang, typos, English/deep Tagalog, combined constraints, brands, out-of-scope, unsupported facts, injection), written after prompt v3 and not used for tuning. Linux CPU dev results (not phone):
+
+| Model / prompt | 14 tuning cases | 60 held-out | Typical latency (dev CPU, 2 threads) |
+| --- | --- | --- | --- |
+| Qwen3-0.6B Q4_0, prompt v3 | 13/14 | 40/60 | 4.5–5.5 s |
+| Qwen3-1.7B Q4_K_M, prompt v3 | — | 41/60 | 11–15 s |
+| Qwen3-0.6B Q4_0, prompt v4 (10 examples, contradiction rule) | 13/14 | 41/60 | 6–8 s |
+
+  All runs 100% schema-valid; no invented places. The bigger model did not help, so 0.6B stays. Remaining misses: durations in words, two categories in one request, implicit categories ("art", "fresh air"), some budgets. The held-out set has now been seen once; a fresh set is needed for the next honest measurement. Both sets can be run on the phone from Settings → AI diagnostics.
+- Validator now resolves a model saying "ask" while extracting usable preferences in favour of the extracted data; it asks only when nothing usable came out.
+
 ## Gate table
 
 | Gate | Status | Evidence |
@@ -115,7 +141,7 @@ The UI smoke test confirms walking entry remains available, not a completed walk
 
 ## Tested here (Linux container, 2026-10-09)
 
-**Core unit tests — 50 passing** (demo dataset + replay tests added; multi-region pack checks and a Muntinlupa search test). Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
+**Core unit tests — 57 passing** (demo dataset + replay tests added; multi-region pack checks and a Muntinlupa search test). Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
 
 Two defects found and fixed by these tests: random GPS jitter leaked into the trail with the original 5 m threshold (now combined-accuracy threshold + speed hint), and 5 m raster cells under-counted the 25 m corridor (now 2.5 m).
 

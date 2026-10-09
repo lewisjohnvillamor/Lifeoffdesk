@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 RESTRICTED_ACCESS = {'private', 'no', 'customers', 'permit', 'residents'}
 MAX_CAFES = 3
 MAX_NON_CAFE = 27
+MAX_FOOD = 60
+PER_CUISINE = 4
 MAX_PER_CHAIN = 1
 MAX_RADIUS_M = 2500
 
@@ -35,14 +37,35 @@ def median_anchor(places):
     lons = sorted(p['longitude'] for p in places)
     return (round(lats[len(lats)//2], 6), round(lons[len(lons)//2], 6))
 
+def select_food(places, anchor, max_radius_m):
+    """Nearest named food places: up to PER_CUISINE nearest per cuisine (variety), then nearest overall."""
+    pool = [p for p in sorted(places, key=lambda p: (haversine_m(anchor, (p['latitude'], p['longitude'])), p['id']))
+            if p['category'] == 'food' and p.get('sourceTags', {}).get('access') not in RESTRICTED_ACCESS
+            and (max_radius_m is None or haversine_m(anchor, (p['latitude'], p['longitude'])) <= max_radius_m)]
+    chosen, names, per_cuisine = [], set(), {}
+    for place in pool:  # variety pass
+        cuisine = (place.get('sourceTags', {}).get('cuisine') or '').split(';')[0].strip()
+        if cuisine and per_cuisine.get(cuisine, 0) < PER_CUISINE and place['name'].casefold() not in names \
+                and len(chosen) < MAX_FOOD:
+            chosen.append(place); names.add(place['name'].casefold())
+            per_cuisine[cuisine] = per_cuisine.get(cuisine, 0) + 1
+    for place in pool:  # fill nearest
+        if len(chosen) >= MAX_FOOD:
+            break
+        if place['name'].casefold() not in names:
+            chosen.append(place); names.add(place['name'].casefold())
+    return chosen
+
 def select_places(places, anchor, max_radius_m=MAX_RADIUS_M):
-    """Nearest non-café categories within the radius plus a few nearest distinct cafés."""
+    """Nearest non-café categories within the radius plus a few nearest distinct cafés and food places."""
     chosen, cafes, seen_names = [], [], {}
     for place in sorted(places, key=lambda p: (haversine_m(anchor, (p['latitude'], p['longitude'])), p['id'])):
         tags = place.get('sourceTags', {})
         if tags.get('access') in RESTRICTED_ACCESS:
             continue
         if max_radius_m is not None and haversine_m(anchor, (place['latitude'], place['longitude'])) > max_radius_m:
+            continue
+        if place['category'] == 'food':
             continue
         if place['category'] == 'cafe':
             key = place['name'].casefold()
@@ -52,7 +75,7 @@ def select_places(places, anchor, max_radius_m=MAX_RADIUS_M):
             cafes.append(place)
         elif len(chosen) < MAX_NON_CAFE:
             chosen.append(place)
-    return sorted(chosen + cafes, key=lambda p: p['id'])
+    return sorted(chosen + cafes + select_food(places, anchor, max_radius_m), key=lambda p: p['id'])
 
 def app_place(place):
     tags = place.get('sourceTags', {})
@@ -74,6 +97,7 @@ def app_place(place):
         'sourceAccess': tags.get('access'),
         'sourceFee': tags.get('fee'),
         'sourceLevel': tags.get('level'),
+        'sourceCuisine': tags.get('cuisine'),
     }
 
 def compact_roads(roads):
@@ -111,7 +135,8 @@ def build_region(region, source_dir, output_dir):
         rule_radius = f'within {MAX_RADIUS_M} m of {anchor}' if radius else f'inside the region box, nearest to {anchor}'
         write_json(output_dir/'places.json', {**common,
             'selectionRule': f'Rule-based subset: up to {MAX_NON_CAFE} named OSM parks/museums/libraries/viewpoints '
-                             f'{rule_radius} plus the {MAX_CAFES} nearest distinctly named cafes; source access tags '
+                             f'{rule_radius}, the {MAX_CAFES} nearest distinctly named cafes and up to {MAX_FOOD} food '
+                             f'places (up to {PER_CUISINE} nearest per cuisine first); source access tags '
                              f'{sorted(RESTRICTED_ACCESS)} excluded. Not a human review.',
             'places': selected})
         names.insert(0, 'places.json')

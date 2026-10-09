@@ -71,3 +71,29 @@ final class DemoDatasetTests: XCTestCase {
         XCTAssertEqual(replay.partialSession.segments, session.segments)
     }
 }
+
+final class WalkStatsTests: XCTestCase {
+    private func walk(_ easts: [Double], startingAt seconds: Double) -> WalkSession {
+        var s = WalkSession(startedAt: Fixture.time(seconds))
+        s.segments = [easts.enumerated().map { Fixture.sample(east: $0.element, north: 0, at: seconds + Double($0.offset)) }]
+        s.state = .finished
+        s.endedAt = Fixture.time(seconds + 100)
+        return s
+    }
+
+    func testNewDistanceIsMeasuredAgainstEarlierWalksOnly() {
+        let grid = ExplorationGrid(origin: Fixture.origin)
+        let first = walk([0, 100, 200], startingAt: 0)
+        let second = walk([0, 100, 200, 300], startingAt: 1000) // repeats the first walk, then 100 m new
+        let stats = WalkStats.compute(walks: [second, first], grid: grid, revealWidthMeters: 25)
+        XCTAssertEqual(stats.recaps[first.id]!.newDistanceMeters, 200, accuracy: 1, "A later walk must not shrink an earlier one")
+        XCTAssertEqual(stats.recaps[second.id]!.newDistanceMeters, 100, accuracy: 15)
+        XCTAssertEqual(stats.totalDistanceMeters, 500, accuracy: 1)
+        XCTAssertEqual(stats.walkCount, 2)
+        XCTAssertEqual(stats.firstWalkAt, first.startedAt)
+        // Summed newly revealed areas equal the union area.
+        var all = Exploration(revealWidthMeters: 25)
+        all.merge(first); all.merge(second)
+        XCTAssertEqual(stats.exploredSquareMeters, grid.areaSquareMeters(grid.cells(for: all)), accuracy: 0.001)
+    }
+}

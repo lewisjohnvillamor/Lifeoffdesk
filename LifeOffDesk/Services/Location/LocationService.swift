@@ -50,6 +50,13 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         isUpdating = true
     }
 
+    /// One fix outside a walk (planner origin, destination distance, "you are here").
+    /// GPS works without mobile data or Wi-Fi; the first fix can just take longer offline.
+    func requestOneShot() {
+        guard authorization == .authorized, !isUpdating else { return }
+        manager.requestLocation()
+    }
+
     func stop() {
         manager.stopUpdatingLocation()
         manager.allowsBackgroundLocationUpdates = false

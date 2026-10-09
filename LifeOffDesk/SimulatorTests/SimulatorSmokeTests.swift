@@ -5,7 +5,9 @@ final class SimulatorSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--skip-intro"]
         app.launch()
-        XCTAssertTrue(app.buttons["Preview demo map"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["Layers"].waitForExistence(timeout: 15))
+        app.buttons["Layers"].tap()
+        XCTAssertTrue(app.buttons["Preview demo map"].waitForExistence(timeout: 5))
         app.buttons["Preview demo map"].tap()
         XCTAssertTrue(app.buttons["Replay a sample walk"].waitForExistence(timeout: 10))
         let screenshot = XCTAttachment(screenshot: app.screenshot())
@@ -13,17 +15,17 @@ final class SimulatorSmokeTests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
         app.buttons["Replay a sample walk"].tap()
-        XCTAssertTrue(app.staticTexts["Replay · sample walk, not real GPS"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Sample walks · not real GPS"].waitForExistence(timeout: 5))
         app.buttons["Back to my map"].tap()
-        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Preview demo map"].exists)
+        XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 5))
+
     }
 
     func testPlannerFailurePreservesInputAndWalkingEntry() {
         let app = XCUIApplication()
         app.launchArguments = ["--skip-intro"]
         app.launch()
-        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.staticTexts["Simulator · no AI · simulated GPS"].exists)
         app.buttons["Help me choose somewhere"].tap()
         let request = app.textFields["Outing request"]
@@ -35,10 +37,10 @@ final class SimulatorSmokeTests: XCTestCase {
         XCTAssertTrue(failure.waitForExistence(timeout: 5))
         XCTAssertEqual(request.value as? String, "May 30 minutes ako, gusto ko ng park.")
         app.buttons["Close"].tap()
-        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 5))
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 10))
     }
 
     func testIntroShowsOnceAndCanBeSkipped() {
@@ -47,11 +49,11 @@ final class SimulatorSmokeTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.staticTexts["Every street you walk becomes your map."].waitForExistence(timeout: 10))
         app.buttons["Skip"].tap()
-        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 5))
         app.terminate()
         app.launchArguments = []
         app.launch()
-        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 10), "Intro is shown only once")
+        XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 10), "Intro is shown only once")
     }
 
     func testSimulatorLaunchPerformance() {
