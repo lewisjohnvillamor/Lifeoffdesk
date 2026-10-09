@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Starter map regions. 'full' = footpaths/streets + places; 'major-roads' = recording area with main-road context only. Bounding boxes come from OSM administrative boundaries unless noted.",
+  "note": "Starter map regions. 'full' = footpaths/streets + places; 'major-roads' = recording area with main-road context only. Bounding boxes come from OSM administrative boundaries unless noted. All 17 Metro Manila cities/municipality are configured; packs are streamed per city at runtime.",
   "regions": [
     {
       "id": "makati-cbd-starter",
@@ -96,6 +96,227 @@
       "anchor": null,
       "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Taguig'",
       "boundaryName": "Taguig"
+    },
+    {
+      "id": "makati",
+      "name": "Makati",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "makati",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Makati'",
+      "boundaryName": "Makati"
+    },
+    {
+      "id": "caloocan",
+      "name": "Caloocan",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "caloocan",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Caloocan'",
+      "boundaryName": "Caloocan"
+    },
+    {
+      "id": "las-pinas",
+      "name": "Las Piñas",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "las-pinas",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Las Piñas'",
+      "boundaryName": "Las Piñas"
+    },
+    {
+      "id": "malabon",
+      "name": "Malabon",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "malabon",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Malabon'",
+      "boundaryName": "Malabon"
+    },
+    {
+      "id": "mandaluyong",
+      "name": "Mandaluyong",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "mandaluyong",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Mandaluyong'",
+      "boundaryName": "Mandaluyong"
+    },
+    {
+      "id": "manila",
+      "name": "Manila",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "manila",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Manila'",
+      "boundaryName": "Manila"
+    },
+    {
+      "id": "marikina",
+      "name": "Marikina",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "marikina",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Marikina'",
+      "boundaryName": "Marikina"
+    },
+    {
+      "id": "navotas",
+      "name": "Navotas",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "navotas",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Navotas'",
+      "boundaryName": "Navotas"
+    },
+    {
+      "id": "pasig",
+      "name": "Pasig",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "pasig",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Pasig'",
+      "boundaryName": "Pasig"
+    },
+    {
+      "id": "pateros",
+      "name": "Pateros",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "pateros",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Pateros'",
+      "boundaryName": "Pateros"
+    },
+    {
+      "id": "quezon-city",
+      "name": "Quezon City",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "quezon-city",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Quezon City'",
+      "boundaryName": "Quezon City"
+    },
+    {
+      "id": "san-juan",
+      "name": "San Juan",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "san-juan",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'San Juan'",
+      "boundaryName": "San Juan"
+    },
+    {
+      "id": "valenzuela",
+      "name": "Valenzuela",
+      "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
+      "bbox": null,
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "all named OSM places"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "valenzuela",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Valenzuela'",
+      "boundaryName": "Valenzuela"
     },
     {
       "id": "metro-manila",

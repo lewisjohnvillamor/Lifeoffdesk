@@ -55,7 +55,7 @@ nwr["historic"]["name"]({b});
 nwr["leisure"~"^({'|'.join(sorted(SPORTS_LEISURE))})$"]({b});
 ''' if include_places else ''
     out = 'out tags center geom;' if roads else 'out tags center;'  # geometry only needed for roads
-    return f'''[out:json][timeout:180];(
+    return f'''[out:json][timeout:600];(
 {places}{roads}
 );{out}'''
 
@@ -98,13 +98,14 @@ METRO_MANILA_SEARCH_BOX = '14.30,120.90,14.80,121.20'
 
 def boundary_query(name):
     return f'''[out:json][timeout:60];
-relation["boundary"="administrative"]["name"="{name}"]({METRO_MANILA_SEARCH_BOX});
+relation["boundary"="administrative"]["name"~"^(City of )?{name}( City)?$"]({METRO_MANILA_SEARCH_BOX});
 out bb tags;'''
 
 def bbox_from_boundary(raw, name):
     """Bounding box of the administrative boundary called `name` (city level preferred)."""
+    accepted = {name, f'City of {name}', f'{name} City'}
     candidates = [e for e in raw.get('elements', []) if e.get('type') == 'relation' and e.get('bounds')
-                  and e.get('tags', {}).get('name') == name]
+                  and e.get('tags', {}).get('name') in accepted]
     if not candidates:
         raise ValueError(f'No OSM administrative boundary named {name!r} found')
     level = lambda e: abs(int(e['tags'].get('admin_level', '99') or 99) - 6)
@@ -118,7 +119,7 @@ def overpass(query, endpoint):
     request = urllib.request.Request(endpoint, data=body,
                 headers={'User-Agent':'LifeOffDesk-hackathon-starter/1.0 (one-time preparation)',
                          'Content-Type':'application/x-www-form-urlencoded'})
-    with urllib.request.urlopen(request, timeout=300) as response:
+    with urllib.request.urlopen(request, timeout=900) as response:
         return json.load(response)
 
 def resolve_bbox(region, endpoint):

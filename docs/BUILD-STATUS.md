@@ -1,5 +1,16 @@
 # Life Off Desk — build status
 
+## City streaming (game-style chunks) and all of Metro Manila configured (2026-10-09, founder decision)
+
+**Streaming.** The app no longer decodes every city at launch. `RegionLibrary` keeps only the small manifests in memory, plus the always-on Metro Manila main-roads context and the primary city. `RegionChunks` (pure, tested) decides which cities should be in memory:
+- the visible map area plus a 1.5 km margin, so neighbours load before they scroll into view;
+- the GPS position (rechecked every 300 m while walking or riding), the destination, the planner origin with its search radius (loaded before each search), and the last point of the adventure in progress;
+- every city that a shown adventure passed through (pinned so history totals stay correct).
+
+Cities not demanded are freed, keeping the 2 most recently used warm. Zoomed out wider than ~12 km, the map shows main roads only and does not pull in cities (level of detail). Loading runs off the main thread; street matching, walking distances and the map drawing rebuild only when the loaded set changes, and a newer rebuild always wins. Overlapping city boxes are deduplicated (places by OSM ID, roads by identical geometry), so "new streets" never counts a street twice. Settings shows each city as In memory / On demand / Loading, and diagnostics shows the count. 5 new tests (124 Swift total). Not yet exercised on the phone with more than the current packs.
+
+**Metro Manila.** All 17 cities/municipality are configured in `config/regions.json` (Caloocan, Las Piñas, Makati, Malabon, Mandaluyong, Manila, Marikina, Muntinlupa, Navotas, Parañaque, Pasay, Pasig, Pateros, Quezon City, San Juan, Taguig, Valenzuela; plus the Makati CBD starter as primary/demo area). Bounding boxes resolve from OSM administrative boundaries ("X", "City of X" or "X City"). `scripts/refresh_places.sh` downloads every configured city (streets + all named places for new ones; places only for existing ones), continues past a city that fails and lists it at the end, then rebuilds packs and runs tests. **The data itself is not in the repository yet** because the OSM servers are blocked in this environment; until the script runs on the Mac, unconfigured cities are skipped and adventures there record against the main-roads context.
+
 ## More cities: Parañaque, Pasay, Taguig configured (2026-10-09)
 
 For riding adventures (e.g. Sucat → Makati), the corridor cities are added as detailed regions in `config/regions.json`: **Parañaque, Pasay, Taguig**. Their bounding boxes are not hand-typed: `prepare_makati.py` resolves each from the OSM administrative boundary of that name (city level preferred) and records the relation in the config. `scripts/refresh_places.sh` downloads streets + every named place for new cities and refreshes places for existing ones. Until it runs (the OSM servers are blocked in this environment), the builder skips the new regions and the app behaves as before: recording works there against the Metro Manila main-roads pack.

@@ -24,15 +24,23 @@ struct SettingsView: View {
                 }
                 PreferencesSection()
                 Section("Starter maps") {
-                    ForEach(model.content?.packs ?? [], id: \.region.id) { pack in
+                    let loaded = model.content?.loadedIDs ?? []
+                    ForEach(model.regions?.manifests ?? [], id: \.id) { region in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(pack.region.name)
-                            Text(pack.region.hasFullDetail
-                                 ? "Streets, footpaths and \(pack.catalog?.places.count ?? 0) places. \(pack.region.coverageStatus)."
-                                 : "Main roads only; walks are recorded anywhere. \(pack.region.coverageStatus).")
+                            HStack {
+                                Text(region.name)
+                                Spacer()
+                                Text(model.loadingRegions.contains(region.id) ? "Loading…" : loaded.contains(region.id) ? "In memory" : "On demand")
+                                    .font(.caption).foregroundStyle(Theme.secondaryInk)
+                            }
+                            Text(region.hasFullDetail
+                                 ? "Streets, footpaths and named places. \(region.coverageStatus)."
+                                 : "Main roads only; adventures are recorded anywhere. \(region.coverageStatus).")
                                 .font(.footnote).foregroundStyle(Theme.secondaryInk)
                         }
                     }
+                    Text("Cities load when the map, your location, a search or a past adventure reaches them, and are freed when far away.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryInk)
                     Text("Places are OpenStreetMap source records, not reviewed for hours, prices or access. Walks outside these areas are still recorded.")
                         .font(.footnote).foregroundStyle(Theme.secondaryInk)
                     Text("Map data © OpenStreetMap contributors, ODbL.").font(.footnote)
@@ -108,6 +116,7 @@ struct AIDiagnosticsView: View {
                 if let interruption = ai.lastInterruption { row("Last interruption", interruption) }
                 ForEach(model.content?.issues ?? [], id: \.self) { row("Data issue", $0) }
                 row("Access facts loaded", "\(model.content?.evidence.count ?? 0)")
+                row("Cities in memory", "\(model.content?.packs.count ?? 0) of \(model.regions?.manifests.count ?? 0)")
                 Button("Verify SHA-256") { Task { await ai.verifyModelHash() } }
                 if let hash = ai.hashResult { Text(hash).font(.footnote.monospaced()) }
             }

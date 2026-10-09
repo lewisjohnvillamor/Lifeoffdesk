@@ -63,6 +63,13 @@ public struct PlaceCatalog: Codable, Sendable {
     public var selectionRule: String
     public var places: [Place]
 
+    public init(schemaVersion: Int, regionID: String, attribution: String, licenseURL: String, retrievedAt: String,
+                sourceTimestamp: String?, selectionRule: String, places: [Place]) {
+        self.schemaVersion = schemaVersion; self.regionID = regionID; self.attribution = attribution
+        self.licenseURL = licenseURL; self.retrievedAt = retrievedAt; self.sourceTimestamp = sourceTimestamp
+        self.selectionRule = selectionRule; self.places = places
+    }
+
     public func place(id: String) -> Place? { places.first { $0.id == id } }
 
     public static func decode(_ data: Data) throws -> PlaceCatalog {

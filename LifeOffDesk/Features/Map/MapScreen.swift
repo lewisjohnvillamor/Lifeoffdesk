@@ -78,6 +78,8 @@ struct MapScreen: View {
         .onChange(of: model.phase) { _, phase in
             if phase == .acquiringFix || phase == .walking { followUser = true }
         }
+        .onChange(of: model.contentVersion) { _, _ in rebuildGeometry() }
+        .onChange(of: camera) { _, camera in reportViewport(camera) }
         .onChange(of: model.mapPosition) { _, position in
             guard followUser, let position, let geometry else { return }
             camera.center = geometry.point(position)
@@ -124,6 +126,31 @@ struct MapScreen: View {
                let category = PlaceCategory(rawValue: arguments[i + 1]) { model.manualSearch(category: category) }
         }
         #endif
+    }
+
+    /// Cities streamed in or out: redraw with the new set off the main thread. The projection
+    /// origin never changes, so the camera stays where it is.
+    private func rebuildGeometry() {
+        guard let content = model.content else { return }
+        Task {
+            let built = await Task.detached(priority: .userInitiated) { MapGeometry(content: content) }.value
+            geometry = built
+        }
+    }
+
+    /// Tells the model what is on screen so nearby cities stream in. Zoomed far out (wider than
+    /// ~12 km) the map shows main roads only and does not pull in every city (level of detail).
+    private func reportViewport(_ camera: MapCamera) {
+        guard let geometry else { return }
+        let size = UIScreen.main.bounds.size
+        let halfWidth = Double(size.width / 2 / camera.pointsPerMeter)
+        let halfHeight = Double(size.height / 2 / camera.pointsPerMeter)
+        guard halfWidth < 6000 else { return }
+        let center = MeterPoint(x: Double(camera.center.x), y: Double(camera.center.y))
+        let sw = geometry.projection.unproject(MeterPoint(x: center.x - halfWidth, y: center.y - halfHeight))
+        let ne = geometry.projection.unproject(MeterPoint(x: center.x + halfWidth, y: center.y + halfHeight))
+        model.mapViewportChanged(BoundingBox(south: sw.latitude, west: sw.longitude,
+                                             north: ne.latitude, east: ne.longitude))
     }
 
     /// Open on the user's explored world: frame their most recent walk instead of the Makati origin.

@@ -66,3 +66,7 @@ Privacy intent: no account, analytics upload or cloud inference in this slice. N
 ## Makati and Taglish implementation update
 
 Use config/regions.json for the starter regions (Makati CBD primary, Muntinlupa, Metro Manila main-road context; decision 2026-10-09). scripts/prepare_makati.py retrieves source records and starter road geometry once during provisioning; review places before bundling. Raw OSM records are source-backed, not independently verified open/accessible venues. Treat Taglish requests as required AI inputs; see eval/taglish-cases.json. Display Taglish guidance through localized templates built from validated matches, with model intent extraction actually running on the phone. Localized templates do not replace the model inference requirement.
+
+## Region streaming (implemented 2026-10-09)
+
+City packs are chunks. At launch only `regions.json`, each `region.json` manifest, the main-road context pack and the primary city are read. `RegionChunks.desired` selects cities from the padded map viewport (skipped when zoomed out beyond ~12 km — level of detail), GPS position, destination, planner origin + radius and cities touched by shown adventures; `RegionChunks.evictions` frees the rest beyond two warm cities. Packs load off the main thread; the street network, walking graph and map geometry are rebuilt per loaded set with a generation guard. Data packs are produced per city by `scripts/refresh_places.sh`; scaling to more of Luzon means adding regions, not changing the app.
