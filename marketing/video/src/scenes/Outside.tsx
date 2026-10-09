@@ -3,7 +3,7 @@ import { AbsoluteFill, Sequence, interpolate, staticFile, useCurrentFrame, useVi
 import { Video } from "@remotion/media";
 import { Words, clamp, ease, useSquare } from "../kit";
 
-// Stock footage (Mixkit Free License): closing the laptop, then a sunny walk outside.
+// Stock footage: closing the laptop (Mixkit Free License), then friends walking outside (Pexels License).
 export const Outside: React.FC = () => {
   const f = useCurrentFrame();
   const sq = useSquare();
@@ -20,7 +20,7 @@ export const Outside: React.FC = () => {
       </Sequence>
       <Sequence from={100}>
         <AbsoluteFill style={{ opacity: swap }}>
-          <Video src={staticFile("stock/park.mp4")} muted style={cover} />
+          <Video src={staticFile("stock/friends.mp4")} muted style={cover} />
         </AbsoluteFill>
       </Sequence>
       <AbsoluteFill style={{ background: shade }} />

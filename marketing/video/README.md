@@ -32,6 +32,6 @@ Both run about 56 s.
 
 **Licensed media** (not committed; run `./fetch-media.sh` first). Both items are under the Mixkit Free License (checked 2026-10-09): commercial use and social media posts and ads are allowed, attribution is not required, and standalone redistribution is not allowed.
 - **Music:** "Just Keep Walking" by Michael Ramir C., https://mixkit.co/free-stock-music/discover/just-keep-walking-963/
-- **Footage:** "Woman finishes working on her computer" (42653) and "Girl walking through a park on a sunny day" (4871), from https://mixkit.co/free-stock-video/
+- **Footage:** "Woman finishes working on her computer" (Mixkit 42653, Mixkit Free License) and "People Walking Together" (Pexels 7971035, https://www.pexels.com/video/people-walking-together-7971035/, Pexels License: free commercial use, no attribution required).
 
 **Still missing:** real phone footage. The app screens are simulator captures of the demo world.
