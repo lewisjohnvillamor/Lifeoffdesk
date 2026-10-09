@@ -12,7 +12,7 @@ Calm illustrated neighborhood, approved ivory/forest palette, native sans-serif 
 
 The demo supports start, pause, continue, replay and reset. Reduced motion switches to explicit step advances. It pauses on tab hiding or when scrolled out of view. Coordinates and illustration are synthetic; demo progress is not distance or GPS evidence. Planner examples are lightweight website interactions, while the product gallery shows the corresponding current app experience. Accessibility/route and offline claims retain the app's current evidence limitations.
 
-The product showcase uses the finished portrait compositions from `marketing/mockups/`, with the complete iPhone visible instead of cropping raw screenshots into cards. A scroll-snap carousel supports touch swiping, arrow controls, position dots and keyboard navigation across the explored map, a suggested route, the local AI coach, an adventure recap and offline help. The captures visibly identify sample or Simulator content where applicable. `app-icon.png` comes from the canonical app asset catalog.
+The product showcase uses the finished portrait compositions from `marketing/mockups/`, with the complete iPhone visible instead of cropping raw screenshots into cards. A scroll-snap carousel supports touch swiping, desktop wheel scrolling and mouse dragging, arrow controls, position dots and keyboard navigation across the explored map, a suggested route, the local AI coach, an adventure recap and offline help. The active phone gains emphasis as the carousel moves; reduced-motion settings remove that transition. The captures visibly identify sample or Simulator content where applicable. `app-icon.png` comes from the canonical app asset catalog.
 
 ## Artwork
 

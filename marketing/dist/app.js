@@ -101,6 +101,7 @@ let carouselFrame = 0;
 function setCarouselIndex(index) {
   carouselIndex = (index + carouselSlides.length) % carouselSlides.length;
   carouselDots.forEach((dot, dotIndex) => dot.setAttribute('aria-current', String(dotIndex === carouselIndex)));
+  carouselSlides.forEach((slide, slideIndex) => slide.classList.toggle('is-active', slideIndex === carouselIndex));
 }
 function goToCarouselSlide(index) {
   setCarouselIndex(index);
@@ -118,13 +119,48 @@ carousel.addEventListener('keydown', event => {
   event.preventDefault();
   goToCarouselSlide(carouselIndex + (event.key === 'ArrowRight' ? 1 : -1));
 });
+function nearestCarouselIndex() {
+  const start = carouselSlides[0].offsetLeft + carousel.scrollLeft;
+  return carouselSlides.reduce((best, slide, index) =>
+    Math.abs(slide.offsetLeft - start) < Math.abs(carouselSlides[best].offsetLeft - start) ? index : best, 0);
+}
 carousel.addEventListener('scroll', () => {
   cancelAnimationFrame(carouselFrame);
   carouselFrame = requestAnimationFrame(() => {
-    const start = carouselSlides[0].offsetLeft + carousel.scrollLeft;
-    const nearest = carouselSlides.reduce((best, slide, index) =>
-      Math.abs(slide.offsetLeft - start) < Math.abs(carouselSlides[best].offsetLeft - start) ? index : best, 0);
-    setCarouselIndex(nearest);
+    setCarouselIndex(nearestCarouselIndex());
   });
 }, { passive: true });
+const desktopCarousel = window.matchMedia('(min-width: 768px)');
+carousel.addEventListener('wheel', event => {
+  if (!desktopCarousel.matches || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+  const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+  const canMove = event.deltaY > 0 ? carousel.scrollLeft < maxScroll - 1 : carousel.scrollLeft > 1;
+  if (!canMove) return;
+  event.preventDefault();
+  carousel.scrollBy({ left: event.deltaY, behavior: 'auto' });
+}, { passive: false });
+let draggingCarousel = false;
+let carouselPointerStart = 0;
+let carouselScrollStart = 0;
+carousel.addEventListener('pointerdown', event => {
+  if (!desktopCarousel.matches || event.pointerType !== 'mouse') return;
+  draggingCarousel = true;
+  carouselPointerStart = event.clientX;
+  carouselScrollStart = carousel.scrollLeft;
+  carousel.classList.add('is-dragging');
+  carousel.setPointerCapture(event.pointerId);
+});
+carousel.addEventListener('pointermove', event => {
+  if (!draggingCarousel) return;
+  carousel.scrollLeft = carouselScrollStart - (event.clientX - carouselPointerStart);
+});
+function stopCarouselDrag(event) {
+  if (!draggingCarousel) return;
+  draggingCarousel = false;
+  carousel.classList.remove('is-dragging');
+  if (carousel.hasPointerCapture(event.pointerId)) carousel.releasePointerCapture(event.pointerId);
+  goToCarouselSlide(nearestCarouselIndex());
+}
+carousel.addEventListener('pointerup', stopCarouselDrag);
+carousel.addEventListener('pointercancel', stopCarouselDrag);
 document.querySelector('#year').textContent=new Date().getFullYear();

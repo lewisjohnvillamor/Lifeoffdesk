@@ -122,9 +122,11 @@ footer .wordmark{font-size:20px}
 .carousel-controls button{width:48px;height:48px;border-radius:50%;border:1px solid #bdcbbb;background:rgba(255,255,255,.62);color:var(--ink);font-size:22px;display:grid;place-items:center;transition:background .2s,border-color .2s,transform .2s}
 .carousel-controls button:hover{background:white;border-color:var(--green)}
 .carousel-controls button:active{transform:scale(.95)}
-.carousel-track{display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain;scrollbar-width:none;padding:5px max(0px,calc((100% - var(--slide-width))/2)) 36px}
+.carousel-track{display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain;scrollbar-width:none;padding:5px max(0px,calc((100% - var(--slide-width))/2)) 36px;cursor:grab}
+.carousel-track.is-dragging{cursor:grabbing;scroll-snap-type:none;user-select:none}
 .carousel-track::-webkit-scrollbar{display:none}
-.carousel-slide{flex:0 0 var(--slide-width);margin:0;scroll-snap-align:center;border-radius:30px;overflow:hidden;background:var(--paper);box-shadow:0 22px 55px rgba(40,58,49,.1)}
+.carousel-slide{flex:0 0 var(--slide-width);margin:0;scroll-snap-align:center;border-radius:30px;overflow:hidden;background:var(--paper);box-shadow:0 22px 55px rgba(40,58,49,.1);opacity:.58;transform:scale(.955);transition:opacity .35s ease,transform .35s ease,box-shadow .35s ease}
+.carousel-slide.is-active{opacity:1;transform:scale(1);box-shadow:0 28px 70px rgba(40,58,49,.16)}
 .carousel-slide img{width:100%;height:auto;aspect-ratio:4/5;object-fit:contain;background:var(--paper)}
 .carousel-dots{display:flex;justify-content:center;gap:9px;margin-top:5px}
 .carousel-dots button{width:9px;height:9px;padding:0;border:0;border-radius:50%;background:#aebbaa;transition:width .2s,background .2s}
