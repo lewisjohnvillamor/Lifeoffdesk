@@ -733,6 +733,41 @@ final class AppModel: ObservableObject {
 
     private var thumbnails: [UUID: UIImage] = [:]
 
+    /// Demo mode only: illustrated sample "captures" (mascot postcards stamped SAMPLE) pinned along
+    /// some sample walks, so photo pins, Spots and memory cards can be tried. Never real photos.
+    private func seedSampleMoments() {
+        guard sampleMoments.isEmpty, let walks = demo?.walks else { return }
+        let poses: [Mascot] = [.cafeBreak, .takingPhotos, .discovering, .resting, .walking, .celebrating, .fogPeek, .savingMemories]
+        for (i, walk) in walks.prefix(24).enumerated() where i % 2 == 0 {
+            let samples = walk.segments.flatMap { $0 }
+            guard let mid = samples.dropFirst(samples.count / 2).first else { continue }
+            let pose = poses[(i / 2) % poses.count]
+            let memory = WalkMemory(sessionID: walk.id, takenAt: mid.timestamp, coordinate: mid.coordinate)
+            sampleMoments.append(memory)
+            sampleMomentPhotos[memory.id] = Self.samplePostcard(pose)
+        }
+    }
+
+    private static func samplePostcard(_ pose: Mascot) -> UIImage {
+        let size = CGSize(width: 600, height: 600)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            UIColor(Theme.revealedGround).setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            if let mascot = UIImage(named: pose.imageName) {
+                let side: CGFloat = 440
+                let scale = min(side / mascot.size.width, side / mascot.size.height)
+                let w = mascot.size.width * scale, h = mascot.size.height * scale
+                mascot.draw(in: CGRect(x: (size.width - w) / 2, y: 40 + (side - h) / 2, width: w, height: h))
+            }
+            let label = NSAttributedString(string: "SAMPLE", attributes: [
+                .font: UIFont.systemFont(ofSize: 44, weight: .heavy), .foregroundColor: UIColor(Theme.danger),
+                .kern: 6,
+            ])
+            let bounds = label.size()
+            label.draw(at: CGPoint(x: (size.width - bounds.width) / 2, y: size.height - bounds.height - 28))
+        }
+    }
+
     /// Small cached thumbnail for map pins (decoded once).
     func thumbnail(for memory: WalkMemory) -> UIImage? {
         if let cached = thumbnails[memory.id] { return cached }
@@ -775,6 +810,7 @@ final class AppModel: ObservableObject {
         }
         demoProblem = nil
         demoMode = true
+        seedSampleMoments()
         refreshStats()
         updateChunks()
     }
@@ -860,6 +896,9 @@ final class AppModel: ObservableObject {
 
     // MARK: Planner
 
+    /// A warm-up is in flight (cheap when the prefix is already cached, so it runs on every open).
+    private var plannerWarming = false
+
     func ask() {
         let request = plannerText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !request.isEmpty, let content else { return }
@@ -867,25 +906,29 @@ final class AppModel: ObservableObject {
         let options = SearchOptions(radiusMeters: searchRadiusMeters)
         plannerTask = Task { [weak self] in
             guard let self else { return }
+            self.plannerState = self.ai.state == .ready ? .thinking : .loadingModel
+            // The model reads the request while GPS and city packs are still being fetched.
+            let ai = self.ai
+            let extraction = Task { try await ai.run { await Planner(engine: $0).extract(request) } }
             // Prefer where the user actually is: wait briefly for a fresh one-shot fix.
             if self.currentPosition == nil && self.location.authorization == .authorized {
-                self.plannerState = .locating
                 self.refreshIdleLocation()
                 for _ in 0..<16 where self.currentPosition == nil && !Task.isCancelled {
                     try? await Task.sleep(nanoseconds: 500_000_000)
                 }
             }
-            guard let origin = self.distanceOrigin else { return }
-            self.plannerState = self.ai.state == .ready ? .thinking : .loadingModel
+            guard let origin = self.distanceOrigin else { extraction.cancel(); return }
             // Stream in every city the search radius reaches before searching.
             await self.ensureChunks(around: [origin.coordinate], reach: options.radiusMeters)
             let catalog = self.content?.catalog ?? content.catalog, graph = self.walkingGraph
             let context = self.searchContext, saved = self.preferenceProfile
             do {
-                let (response, trace) = try await self.ai.run { engine in
-                    await Planner(engine: engine).plan(request, catalog: catalog, origin: origin,
-                                                       options: options, graph: graph, context: context, saved: saved)
-                }
+                let (outcome, extractTrace) = try await withTaskCancellationHandler {
+                    try await extraction.value
+                } onCancel: { extraction.cancel() }
+                let (response, trace) = Planner.answer(outcome, trace: extractTrace, request: request, catalog: catalog,
+                                                       origin: origin, options: options, graph: graph,
+                                                       context: context, saved: saved)
                 guard !Task.isCancelled else { return }
                 self.lastTrace = trace
                 self.plannerState = .answered(response, usedAI: true)
@@ -899,6 +942,18 @@ final class AppModel: ObservableObject {
                 default: self.plannerState = .modelUnavailable("\(PlannerCopy.modelFailure) (\(error))")
                 }
             }
+        }
+    }
+
+    /// Loads the model and pre-reads the planner's fixed instructions and examples while the user
+    /// types, so the request itself only processes the new words (llama.cpp KV prefix reuse).
+    func warmPlanner() {
+        guard !plannerWarming else { return }
+        plannerWarming = true
+        let prompt = PlannerPrompt.chatML(request: "")
+        Task { [weak self] in
+            _ = try? await self?.ai.run { try await $0.complete(prompt: prompt, grammar: nil, maxTokens: 1) }
+            self?.plannerWarming = false
         }
     }
 

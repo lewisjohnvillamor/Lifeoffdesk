@@ -1,5 +1,19 @@
 # Life Off Desk — build status
 
+## Founder round: faster planner, choice buttons, icons, Me-tab demo world (2026-10-09)
+
+- **Planner speed (founder: ~10 s per request on the phone).** Three changes:
+  1. The engine keeps the KV cache between requests and reuses the shared prefix (system prompt plus few-shot examples, about 90% of the prompt), so only the new request is processed.
+  2. Opening the planner loads the model and pre-reads that prefix while the user types.
+  3. The model now reads the request while GPS and city packs are still loading; it no longer waits up to 8 s for a fix first.
+
+  Dev CPU check, same 6 category requests: ~27 s → ~10 s per request with identical answers (6/6). **Not measured on the phone yet**; the remaining time is mostly JSON generation.
+- **Wrong accessibility question** ("Library, lakad lang" asked about step-free entrances): access needs and route access now count only when the request itself mentions access (wheelchair, PWD, step-free, ramp, stroller…; deterministic check on the user's words). 2 tests.
+- **Choice actions are buttons:** clarifications, "show all (unverified access)", retry and remove-requirement are full-width buttons, not bold text.
+- **Icons:** one place-icon map (police, hospital, fire station, pharmacy, café, restaurant, tennis, basketball, golf, pool, gym, mall, supermarket, church, school…), used in planner results, next-adventure cards, the Help sheet, the destination pill and a new map destination badge. Help places are red. The map Help button is a red SOS.
+- **Layers button removed** from the map. Demo world moved to the **Me tab** ("Try the demo world"); the flat/tilted map switch moved to Settings.
+- **Demo world** is bigger: 84 synthetic walks (~217 km; 60 in Makati CBD, 24 in Muntinlupa) along bundled OSM streets, plus 12 illustrated **sample captures** (mascot postcards stamped SAMPLE) pinned along sample walks. They show in Spots, on the map and on memory cards. Never real photos or GPS; labelled sample data.
+
 ## CI trimmed for the submission crunch (2026-10-09, founder decision)
 
 - The `simulator-screenshots` job is paused: it runs only via Actions → iOS build check → Run workflow. It was the slowest job (~10 min of macOS runner per push), and every branch push ran twice (push + pull_request).

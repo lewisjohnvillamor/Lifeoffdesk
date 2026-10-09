@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var confirmErase = false
     @AppStorage("hasSeenIntro") private var hasSeenIntro = false
+    @AppStorage("map.tilted") private var tiltedMap = true
 
     var body: some View {
         NavigationStack {
@@ -65,6 +66,7 @@ struct SettingsView: View {
                         dismiss()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { hasSeenIntro = false }
                     }
+                    Toggle("Tilted map", isOn: $tiltedMap)
                     Toggle("Demo map (sample adventures)", isOn: Binding(get: { model.demoMode },
                                                                     set: { model.setDemoMode($0) }))
                         .disabled(model.activeSession != nil)

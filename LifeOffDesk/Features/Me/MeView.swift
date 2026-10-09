@@ -15,6 +15,7 @@ struct MeView: View {
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
                     }
                     totals
+                    demoCard
                     Text("SPOTS").font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryInk)
                     spots
                 }
@@ -75,6 +76,38 @@ struct MeView: View {
         .padding(20)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).stroke(Theme.border))
+    }
+
+    /// Play with a well-explored map: sample adventures and illustrated sample captures, clearly labelled.
+    private var demoCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                MascotView(pose: .fogPeek, size: 48)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Demo world").font(.headline).foregroundStyle(Theme.ink)
+                    Text("84 sample adventures across Makati CBD and Muntinlupa, with sample captures. Not real GPS; never mixed into your own adventures.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Button {
+                model.setDemoMode(!model.demoMode)
+            } label: {
+                Label(model.demoMode ? "Back to my map" : "Try the demo world",
+                      systemImage: model.demoMode ? "person.crop.circle" : "sparkles")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: Theme.minTarget)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(model.demoMode ? PaperStyle.ink : Theme.primary)
+            .disabled(model.activeSession != nil)
+            if let problem = model.demoProblem {
+                Text(problem).font(.caption).foregroundStyle(Theme.danger)
+            }
+        }
+        .padding(16)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Theme.border))
     }
 
     private func total(_ value: String, _ title: String) -> some View {

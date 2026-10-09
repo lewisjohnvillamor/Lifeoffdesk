@@ -46,6 +46,8 @@ struct LlamaLoadInfo: Sendable {
 
 struct LlamaGenerationStats: Sendable {
     var promptTokens: Int
+    /// Prompt tokens already in the KV cache from the previous request (same system prompt and examples).
+    var reusedTokens: Int = 0
     var generatedTokens: Int
     var seconds: Double
 }
@@ -73,6 +75,9 @@ actor LlamaEngine: IntentEngine {
     private let batchSize: Int
     let info: LlamaLoadInfo
     private(set) var lastStats: LlamaGenerationStats?
+    /// Tokens currently held in the KV cache (prompt plus decoded output of the last request).
+    /// A new prompt sharing a prefix (the long system prompt and few-shot examples) only decodes the rest.
+    private var cached: [llama_token] = []
 
     private static let backendOnce: Void = { llama_backend_init() }()
 
@@ -129,9 +134,7 @@ actor LlamaEngine: IntentEngine {
 
     func complete(prompt: String, grammar: String?, maxTokens: Int) async throws -> String {
         let start = Date()
-        llama_memory_clear(llama_get_memory(context), true)
-
-        var tokens = try tokenize(prompt)
+        let tokens = try tokenize(prompt)
         let limit = Int(llama_n_ctx(context))
         guard tokens.count + maxTokens <= limit else {
             throw LlamaEngineError.promptTooLong(tokens: tokens.count + maxTokens, limit: limit)
@@ -147,15 +150,27 @@ actor LlamaEngine: IntentEngine {
         }
         llama_sampler_chain_add(sampler, llama_sampler_init_greedy())
 
+        // Reuse the shared prefix; at least the last prompt token is decoded so fresh logits exist.
+        var reuse = zip(cached, tokens).prefix { $0 == $1 }.count
+        reuse = min(reuse, tokens.count - 1)
+        let memory = llama_get_memory(context)
+        if reuse == 0 || !llama_memory_seq_rm(memory, 0, Int32(reuse), -1) {
+            llama_memory_clear(memory, true)
+            reuse = 0
+        }
+        cached = Array(tokens.prefix(reuse))
+        var pending = Array(tokens.dropFirst(reuse))
         var offset = 0
-        while offset < tokens.count {
-            let count = min(batchSize, tokens.count - offset)
-            let status = tokens.withUnsafeMutableBufferPointer { buffer in
+        while offset < pending.count {
+            let count = min(batchSize, pending.count - offset)
+            let status = pending.withUnsafeMutableBufferPointer { buffer in
                 llama_decode(context, llama_batch_get_one(buffer.baseAddress! + offset, Int32(count)))
             }
-            guard status == 0 else { throw LlamaEngineError.decodeFailed(status) }
+            guard status == 0 else { cached = []; llama_memory_clear(memory, true); throw LlamaEngineError.decodeFailed(status) }
             offset += count
         }
+        cached = tokens
+        let reusedTokens = reuse
 
         var output: [UInt8] = []
         var generated = 0
@@ -166,11 +181,12 @@ actor LlamaEngine: IntentEngine {
             output += piece(token)
             generated += 1
             let status = llama_decode(context, llama_batch_get_one(&token, 1))
-            guard status == 0 else { throw LlamaEngineError.decodeFailed(status) }
+            guard status == 0 else { cached = []; llama_memory_clear(memory, true); throw LlamaEngineError.decodeFailed(status) }
+            cached.append(token)
             await Task.yield()
         }
-        lastStats = LlamaGenerationStats(promptTokens: tokens.count, generatedTokens: generated,
-                                         seconds: Date().timeIntervalSince(start))
+        lastStats = LlamaGenerationStats(promptTokens: tokens.count, reusedTokens: reusedTokens,
+                                         generatedTokens: generated, seconds: Date().timeIntervalSince(start))
         return String(decoding: output, as: UTF8.self)
     }
 

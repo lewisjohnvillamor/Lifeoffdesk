@@ -74,12 +74,23 @@ public struct Planner: Sendable {
                      options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil,
                      context: SearchContext = SearchContext(), saved: PreferenceProfile? = nil) async -> (PlannerResponse, PlannerTrace) {
         let (outcome, trace) = await extract(request)
+        return Self.answer(outcome, trace: trace, request: request, catalog: catalog, origin: origin, options: options,
+                           graph: graph, context: context, saved: saved)
+    }
+
+    /// Turns a validated extraction into places (deterministic). Split from `extract` so the app can
+    /// run the model while it is still waiting for a GPS fix.
+    public static func answer(_ outcome: ValidationOutcome?, trace: PlannerTrace, request: String, catalog: PlaceCatalog,
+                              origin: DistanceOrigin, options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil,
+                              context: SearchContext = SearchContext(),
+                              saved: PreferenceProfile? = nil) -> (PlannerResponse, PlannerTrace) {
         switch outcome {
         case nil, .invalid?:
             return (.failed, trace)
         case let .needsClarification(prefs, reason)?:
-            return (.clarify(prefs, question: PlannerCopy.clarification(reason)), trace)
-        case let .valid(prefs)?:
+            return (.clarify(AccessWords.grounded(prefs, in: request), question: PlannerCopy.clarification(reason)), trace)
+        case let .valid(extracted)?:
+            let prefs = AccessWords.grounded(extracted, in: request)
             // A radius left at the default is not an explicit choice, so a saved radius may apply.
             let explicit = options.radiusMeters == SearchOptions.defaultRadiusMeters ? nil : options.radiusMeters
             let resolved = PreferenceResolver.resolve(request: prefs, saved: saved, radiusMeters: explicit)
@@ -103,5 +114,27 @@ public struct Planner: Sendable {
         return .suggestions(prefs, intro: PlannerCopy.intro(prefs: prefs, count: suggestions.count, origin: origin,
                                                             radiusMeters: options.radiusMeters,
                                                             byStreets: suggestions.contains { $0.street != nil }), suggestions)
+    }
+}
+
+/// Access requirements only count when the request actually mentions access. A small model can
+/// read "lakad lang" (just walking) as a route-accessibility need; that must not trigger the
+/// accessibility filter or its clarification. Deterministic keyword check on the user's own words.
+public enum AccessWords {
+    static let words = ["wheelchair", "wheel chair", "pwd", "accessible", "accessibility", "step-free", "step free",
+                        "stepfree", "ramp", "rampa", "elevator", "lift", "stroller", "saklay", "crutch", "walker",
+                        "kapansanan", "disability", "disabled", "mobility", "hagdan", "stairs", "baby carriage"]
+
+    public static func mentioned(in request: String) -> Bool {
+        let text = request.lowercased()
+        return words.contains { text.contains($0) }
+    }
+
+    public static func grounded(_ prefs: OutingPreferences, in request: String) -> OutingPreferences {
+        guard !mentioned(in: request) else { return prefs }
+        var p = prefs
+        p.routeAccess = false
+        p.accessNeeds = []
+        return p
     }
 }
