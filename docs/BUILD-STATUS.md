@@ -7,11 +7,11 @@ Updated 2026-10-09, Asia/Manila. Implementation started at the hackathon kickoff
 | Part | Location | State |
 | --- | --- | --- |
 | Core logic (GPS filter, sessions, recovery, exploration, persistence, AI schema validation, prompt/grammar, catalog search, Taglish copy, eval scoring) | `Packages/LifeOffDeskCore` | Implemented; 43 XCTest cases pass on Linux (Swift 6.3.3) |
-| iPhone app (SwiftUI map/fog, walk controls, planner sheet, recap/history, settings/erase, AI diagnostics) | `LifeOffDesk/` + `LifeOffDesk/project.yml` | Source written; **not yet compiled with Xcode** (no Mac in this environment) |
+| iPhone app (SwiftUI map/fog, walk controls, planner sheet, recap/history, settings/erase, AI diagnostics) | `LifeOffDesk/` + `LifeOffDesk/project.yml` | Compiles unsigned for generic iOS in CI (Xcode 16.4, macos-15); **not yet installed or run on a phone** |
 | On-device inference adapter (llama.cpp b11429 C API, GBNF-constrained JSON, ChatML/no-think) | `LifeOffDesk/Services/AI/LlamaEngine.swift` | Compiled and run against the real model on Linux; **not yet run on iPhone** |
 | Makati starter data | `LifeOffDesk/Resources/StarterData/` | 30 places (21 park, 4 museum, 2 library, 3 café) + 4,131 road lines; all `source-only-unreviewed` |
 | Dev-machine planner eval | `Tools/PlannerEval`, `scripts/run_planner_eval.sh`, `eval/results/` | Linux CPU diagnostics only |
-| CI compile check | `.github/workflows/ios-build.yml` | Added; see "CI" below |
+| CI compile check | `.github/workflows/ios-build.yml` | Passing: core tests on macOS, Python tests, pinned downloads verified, XcodeGen, unsigned iOS build |
 
 ## Gate table
 
@@ -19,7 +19,7 @@ Updated 2026-10-09, Asia/Manila. Implementation started at the hackathon kickoff
 | --- | --- | --- |
 | Organizer source | Read | HACKATHON.md; exact cutoff and track rules still unknown |
 | Starter city/language | Confirmed | Makati; Taglish. Exact outdoor demo segment still to choose |
-| Xcode build | Not tested | Needs the Mac (`scripts/setup_ios.sh`) or the CI workflow |
+| Xcode build | Passed in CI (unsigned) | GitHub Actions macos-15, Xcode 16.4, `generic/platform=iOS`; first run found one init error, fixed |
 | Target iOS/signing | Not tested | Deployment target iOS 17.0; set DEVELOPMENT_TEAM in Xcode |
 | Signed phone launch | Not tested | — |
 | Actual phone inference offline | **Not tested** | Use Settings → On-device AI diagnostics on the phone in airplane mode |
@@ -51,7 +51,7 @@ The v2 prompt was adjusted after seeing v1 failures, so the 12 cases are no long
 
 ## Next steps on the Mac and iPhone
 
-1. `brew install xcodegen && scripts/setup_ios.sh`; open `LifeOffDesk/LifeOffDesk.xcodeproj`, set signing team and a unique bundle ID, run on the iPhone 12 Pro Max. Fix any compile errors first (the SwiftUI layer has never been compiled).
+1. `brew install xcodegen && scripts/setup_ios.sh`; open `LifeOffDesk/LifeOffDesk.xcodeproj`, set signing team and a unique bundle ID, run on the iPhone 12 Pro Max. CI compiles it unsigned; signing and on-device launch are still unproven.
 2. Settings → On-device AI diagnostics: Verify SHA-256, then Run all cases with airplane mode on, Wi-Fi off, Mac unplugged. Copy the JSON report into `eval/results/iphone-…json` and fill the evidence template in ACCEPTANCE-AND-DEMO.md.
 3. Short outdoor walk: check fix acquisition, pause/resume, recap, relaunch persistence, force-quit recovery, background tracking, permission denial.
 4. Review the 30 places (gated village parks such as Bel-Air/Urdaneta/San Miguel may not be publicly accessible) before calling anything verified; choose the demo segment.
