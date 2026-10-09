@@ -97,7 +97,7 @@ The UI smoke test confirms walking entry remains available, not a completed walk
 ## Founder feedback round 3 (2026-10-09)
 
 - Layout restructured to three tabs (Map, Walks, Me). Map has no bottom card: tagline, round side buttons (Spot camera while walking, Locate, Layers menu with tilt and demo), today/total new-streets stack, one **Start exploring** button; while walking Pause plus **Hold to end** (VoiceOver gets a direct Finish action).
-- Walks tab: this week vs last week, day dots, month calendar (tap a day to filter), "Watch your map grow" timelapse of all shown walks, walk list by month. Me tab: total new streets, distance, walks, area explored, photo spots, settings.
+- Walks tab: this week vs last week, day dots, month calendar (tap a day to filter), "Watch your world grow" timelapse of all shown walks, walk list by month. Me tab: total new streets, distance, walks, area explored, photo spots, settings.
 - Fixed: per-walk "new streets" now measured only against earlier walks (`WalkStats`, tested); later walks no longer shrink earlier numbers. Summed newly revealed area = exact explored area.
 - Fixed "two maps": Metro Manila context roads duplicated detailed-pack roads with different hand-drawn wobble, drawing doubled lines that drifted apart when zooming. Context roads are now skipped inside detailed areas.
 - Fixed planner origin: GPS ran only during walks, so the planner fell back to the Makati reference point. One-shot fixes are now taken when the planner opens, a destination is chosen, permission is granted or the app starts; the planner waits up to 8 s for one ("Hinahanap ka…"). "You are here" also shows outside walks (fixes are not trail).
@@ -120,6 +120,14 @@ The UI smoke test confirms walking entry remains available, not a completed walk
   All runs 100% schema-valid; no invented places. The bigger model did not help, so 0.6B stays. Remaining misses: durations in words, two categories in one request, implicit categories ("art", "fresh air"), some budgets. The held-out set has now been seen once; a fresh set is needed for the next honest measurement. Both sets can be run on the phone from Settings → AI diagnostics.
 - Validator now resolves a model saying "ask" while extracting usable preferences in favour of the extracted data; it asks only when nothing usable came out.
 
+## Street matching (2026-10-09)
+
+- Accepted GPS is matched to bundled streets (within 25 m, heading within 40°, 5 m pieces). Raw trails are still the only stored data; matches are recomputed from them, so replacing street data never loses exploration.
+- The paper island now follows matched street centrelines (40 m ribbon); off-street stretches ≥ 20 m (plazas, unmapped paths) keep a raw-trail ribbon. The live trail is drawn dotted on newly walked street pieces and solid grey on streets walked before.
+- "New streets" = matched street length walked for the first time, counted against earlier adventures only. Frontier suggestions use unwalked street segments.
+- Tests cover GPS drift snapping to the walked street, crossing a street without painting its length, cutting through a block (unmatched, not painted), once-only counting across adventures, reveal following centrelines, and frontiers skipping walked streets. Tolerances are provisional; check outdoors (wide avenues, parallel streets, underpasses).
+- CI walking screenshot now uses a simulated route along real Makati street geometry (not hand-typed points).
+
 ## Gate table
 
 | Gate | Status | Evidence |
@@ -141,7 +149,7 @@ The UI smoke test confirms walking entry remains available, not a completed walk
 
 ## Tested here (Linux container, 2026-10-09)
 
-**Core unit tests — 57 passing** (demo dataset + replay tests added; multi-region pack checks and a Muntinlupa search test). Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
+**Core unit tests — 63 passing** (demo dataset + replay tests added; multi-region pack checks and a Muntinlupa search test). Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
 
 Two defects found and fixed by these tests: random GPS jitter leaked into the trail with the original 5 m threshold (now combined-accuracy threshold + speed hint), and 5 m raster cells under-counted the 25 m corridor (now 2.5 m).
 

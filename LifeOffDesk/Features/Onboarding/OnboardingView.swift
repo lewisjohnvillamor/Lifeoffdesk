@@ -14,7 +14,7 @@ struct OnboardingView: View {
 
     private let pages: [(title: String, subtitle: String)] = [
         ("Every street you walk becomes your map.", "The map starts blank. Only where you actually walk is drawn."),
-        ("New streets count.", "Turn an unknown corner and your map grows."),
+        ("New streets count.", "Turn an unknown corner and your world grows."),
         ("Ask for a nearby spot.", "Type in Taglish. The AI on your phone suggests real places, even offline."),
         ("Stays on your phone.", "No account. Your walks and the AI never leave your iPhone."),
         ("Share your adventure as a card.", "Your route, your photos and the places you found in one card."),

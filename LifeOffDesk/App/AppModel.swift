@@ -101,6 +101,7 @@ final class AppModel: ObservableObject {
         }
         loadPersonalData()
         refreshStats()
+        buildStreetNetwork()
         refreshIdleLocation()
     }
 
@@ -135,7 +136,57 @@ final class AppModel: ObservableObject {
 
     /// Saved exploration plus the walk in progress, for rendering. In Demo mode: the sample
     /// walks plus any replay in progress, and nothing personal.
+    // MARK: Street matching
+
+    /// Built once in the background from bundled roads; nil until ready (legacy strip until then).
+    private(set) var streetNetwork: StreetNetwork?
+    /// Matched-street reveal of the shown history (from `stats`), used for the paper island.
+    @Published private(set) var streetReveal: Exploration?
+    private var liveCache: (key: String, reveal: [ExploredPath], runs: [TrailRun])?
+
+    private func buildStreetNetwork() {
+        guard let content else { return }
+        Task { [weak self] in
+            let network = await Task.detached(priority: .utility) {
+                StreetNetwork(roads: content.matchingRoads, origin: content.region.center)
+            }.value
+            self?.streetNetwork = network
+            self?.refreshStats()
+        }
+    }
+
+    /// Street match of the live adventure (or replay), cached until it gains samples.
+    private func liveMatch() -> (reveal: [ExploredPath], runs: [TrailRun])? {
+        guard let network = streetNetwork else { return nil }
+        let segments = displayedTrail
+        guard let id = replay?.source.id ?? recorder?.session.id, !segments.isEmpty else { return nil }
+        let count = segments.reduce(0) { $0 + $1.count }
+        let key = "\(id)-\(count)-\(segments.last?.last?.timestamp.timeIntervalSinceReferenceDate ?? 0)"
+        if let liveCache, liveCache.key == key { return (liveCache.reveal, liveCache.runs) }
+        var prior = StreetCoverage()
+        for (walkID, coverage) in stats.coverageByWalk where walkID != id { prior.merge(coverage) }
+        let matched = StreetMatcher.match(segments, network: network)
+        let reveal = matched.coverage.pieces(in: network).map {
+            ExploredPath(sessionID: id, points: $0.points.map(network.projection.unproject))
+        } + matched.unmatched.map { ExploredPath(sessionID: id, points: $0) }
+        let runs = matched.coverage.pieces(in: network, prior: prior).map {
+            TrailRun(points: $0.points.map(network.projection.unproject), isNew: $0.isNew)
+        } + matched.unmatched.map { TrailRun(points: $0, isNew: true) }
+        liveCache = (key, reveal, runs)
+        return (reveal, runs)
+    }
+
+    /// What the map reveals: matched streets (paper ribbons along real streets) once the street
+    /// network is ready, otherwise the raw GPS corridor.
     var displayExploration: Exploration {
+        guard streetNetwork != nil, let reveal = streetReveal else { return rawDisplayExploration }
+        var base = timelapseBase ?? reveal
+        if timelapseBase == nil, let replay { base = base.excluding(sessionID: replay.source.id) }
+        if let live = liveMatch() { base.paths += live.reveal }
+        return base
+    }
+
+    private var rawDisplayExploration: Exploration {
         if var base = timelapseBase {
             if let replay { base.merge(replay.partialSession) }
             return base
@@ -155,7 +206,7 @@ final class AppModel: ObservableObject {
     /// Trail drawn on top of the fog: the live walk, or the replay in Demo mode.
     /// Trail split into new ground (drawn dotted) and revisits (drawn solid grey).
     var displayedTrailRuns: [TrailRun] {
-        grid.trailRuns(for: displayedTrail, prior: priorCells)
+        liveMatch()?.runs ?? grid.trailRuns(for: displayedTrail, prior: priorCells)
     }
 
     var displayedTrail: [[TrackSample]] {
@@ -330,16 +381,22 @@ final class AppModel: ObservableObject {
         let walks = historyWalks
         let grid = self.grid
         let catalog = content?.catalog
+        let network = streetNetwork
         statsTask = Task { [weak self] in
-            let (computed, found) = await Task.detached(priority: .utility) { () -> (WalkStats, [UUID: [Place]]) in
-                let stats = WalkStats.compute(walks: walks, grid: grid)
+            let (computed, found, reveal) = await Task.detached(priority: .utility) { () -> (WalkStats, [UUID: [Place]], Exploration?) in
+                let stats = WalkStats.compute(walks: walks, grid: grid, network: network)
                 var found: [UUID: [Place]] = [:]
                 if let catalog { for walk in walks { found[walk.id] = Discovery.placesPassed(by: walk, in: catalog) } }
-                return (stats, found)
+                let reveal = network.map {
+                    StreetReveal.exploration(coverage: stats.coverageByWalk, unmatched: stats.unmatchedByWalk, network: $0)
+                }
+                return (stats, found, reveal)
             }.value
             guard !Task.isCancelled else { return }
             self?.stats = computed
             self?.discoveries = found
+            self?.streetReveal = reveal
+            self?.liveCache = nil
         }
     }
 
@@ -365,8 +422,15 @@ final class AppModel: ObservableObject {
         let taste = AdventureSuggester.favouriteCategories(discoveries.values.flatMap { $0 } + (destination.map { [$0] } ?? []))
         let roadContexts = content.packs.map(\.roads)
         let catalog = content.catalog
+        let network = streetNetwork
+        let walkedStreets = stats.streetCoverage
         Task { [weak self] in
             let ideas = await Task.detached(priority: .userInitiated) { () -> [AdventureIdea] in
+                if let network {
+                    return AdventureSuggester.frontiers(from: origin, network: network, coverage: walkedStreets, limit: 1)
+                        + AdventureSuggester.undiscoveredPlaces(from: origin, catalog: catalog, discoveredIDs: discoveredIDs,
+                                                                preferred: taste, limit: 2)
+                }
                 let center = grid.projection.project(origin)
                 let region = MeterRect(minX: center.x - 2000, minY: center.y - 2000, maxX: center.x + 2000, maxY: center.y + 2000)
                 let explored = grid.cells(for: exploration, region: region)
@@ -404,7 +468,7 @@ final class AppModel: ObservableObject {
         return finished.reduce(0) { $0 + $1.newDistanceMeters } + (demoMode ? 0 : liveNewDistanceMeters)
     }
 
-    // MARK: Timelapse ("Watch your map grow")
+    // MARK: Timelapse ("Watch your world grow")
 
     @Published private(set) var timelapseBase: Exploration?
 
@@ -415,8 +479,13 @@ final class AppModel: ObservableObject {
         stopReplay()
         replayTask = Task { [weak self] in
             var base = Exploration()
+            var shown = Set<UUID>()
             for walk in ordered {
                 guard let self, !Task.isCancelled else { return }
+                if let network = self.streetNetwork {
+                    base = StreetReveal.exploration(coverage: self.stats.coverageByWalk, unmatched: self.stats.unmatchedByWalk,
+                                                    network: network, include: shown)
+                }
                 self.timelapseBase = base
                 var current = WalkReplay(source: walk)
                 let step = max(1, current.totalSamples / 40)
@@ -425,7 +494,12 @@ final class AppModel: ObservableObject {
                     self.replay = current
                     try? await Task.sleep(nanoseconds: 16_000_000)
                 }
-                base.merge(walk)
+                if self.streetNetwork == nil { base.merge(walk) }
+                shown.insert(walk.id)
+            }
+            if let self, let network = self.streetNetwork {
+                base = StreetReveal.exploration(coverage: self.stats.coverageByWalk, unmatched: self.stats.unmatchedByWalk,
+                                                network: network, include: shown)
             }
             self?.timelapseBase = base
             try? await Task.sleep(nanoseconds: 1_500_000_000)

@@ -10,17 +10,31 @@ public struct WalkStats: Sendable {
     public var exploredSquareMeters: Double
     public var walkCount: Int
     public var firstWalkAt: Date?
+    /// Street matching per adventure and in total (empty when no street network was supplied).
+    public var coverageByWalk: [UUID: StreetCoverage] = [:]
+    public var unmatchedByWalk: [UUID: [[Coordinate]]] = [:]
+    public var streetCoverage = StreetCoverage()
 
     public static let empty = WalkStats(recaps: [:], totalDistanceMeters: 0, totalNewDistanceMeters: 0,
                                         exploredSquareMeters: 0, walkCount: 0, firstWalkAt: nil)
 
+    /// With a street network, "new streets" is matched street length walked for the first time;
+    /// without one it falls back to distance outside earlier corridors.
     public static func compute(walks: [WalkSession], grid: ExplorationGrid,
-                               revealWidthMeters: Double = Exploration.defaultRevealWidthMeters) -> WalkStats {
+                               revealWidthMeters: Double = Exploration.defaultRevealWidthMeters,
+                               network: StreetNetwork? = nil) -> WalkStats {
         let ordered = walks.sorted { $0.startedAt < $1.startedAt }
         var earlier = Exploration(revealWidthMeters: revealWidthMeters)
         var stats = WalkStats.empty
         for walk in ordered {
-            let recap = WalkRecap.compute(session: walk, exploration: earlier, grid: grid, now: walk.endedAt ?? walk.startedAt)
+            var recap = WalkRecap.compute(session: walk, exploration: earlier, grid: grid, now: walk.endedAt ?? walk.startedAt)
+            if let network {
+                let matched = StreetMatcher.match(walk.segments, network: network)
+                recap.newDistanceMeters = matched.coverage.newMeters(comparedTo: stats.streetCoverage, network: network)
+                stats.coverageByWalk[walk.id] = matched.coverage
+                stats.unmatchedByWalk[walk.id] = matched.unmatched
+                stats.streetCoverage.merge(matched.coverage)
+            }
             stats.recaps[walk.id] = recap
             stats.totalDistanceMeters += recap.distanceMeters
             stats.totalNewDistanceMeters += recap.newDistanceMeters

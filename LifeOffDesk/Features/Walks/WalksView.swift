@@ -26,7 +26,7 @@ struct WalksView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "play.fill").font(.system(size: 15, weight: .semibold))
                                 .frame(width: 44, height: 44).background(PaperStyle.paper, in: Circle())
-                            Text("Watch your map grow").font(.headline)
+                            Text("Watch your world grow").font(.headline)
                             Spacer()
                         }
                         .foregroundStyle(PaperStyle.ink)

@@ -88,12 +88,14 @@ jobs:
           shoot 11-me-tab --demo-map --tab me
           # Simulated GPS walk through the real tracking pipeline (simulator location, labelled in-app).
           xcrun simctl privacy "$UDID" grant location-always com.lifeoffdesk.simulator || xcrun simctl privacy "$UDID" grant location com.lifeoffdesk.simulator || true
-          xcrun simctl location "$UDID" set 14.55420,121.02170 || true
+          # Route follows real Makati street geometry from the bundled road data (~550 m).
+          ROUTE="14.557897,121.024944 14.557818,121.024669 14.557316,121.023045 14.557235,121.022777 14.557102,121.022317 14.556949,121.021808 14.556799,121.021289 14.556664,121.021501 14.556532,121.021707 14.556405,121.021906 14.556089,121.022385"
+          xcrun simctl location "$UDID" set 14.557897,121.024944 || true
           xcrun simctl terminate "$UDID" com.lifeoffdesk.simulator 2>/dev/null || true
-          xcrun simctl launch "$UDID" com.lifeoffdesk.simulator --skip-intro --start-walk --map-scale 0.9 --flat
-          sleep 4
-          xcrun simctl location "$UDID" start --speed=2.5 --interval=1 14.55420,121.02170 14.55480,121.02260 14.55540,121.02350 14.55600,121.02300 14.55660,121.02250 || true
-          sleep 35
+          xcrun simctl launch "$UDID" com.lifeoffdesk.simulator --skip-intro --start-walk --map-scale 0.6 --flat
+          sleep 5
+          xcrun simctl location "$UDID" start --speed=3.4 --interval=1 $ROUTE || true
+          sleep 175
           xcrun simctl io "$UDID" screenshot screenshots/09-walking.png
           xcrun simctl location "$UDID" clear || true
           ls -la screenshots

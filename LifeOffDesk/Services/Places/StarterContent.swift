@@ -17,6 +17,20 @@ struct StarterContent {
     /// First indexed region: map origin and fallback distance origin.
     var region: RegionManifest { packs[0].region }
 
+    /// Roads for street matching: detailed packs, plus context roads outside detailed areas
+    /// (context packs repeat detailed roads; the detailed copy wins).
+    var matchingRoads: [RoadContext.Road] {
+        let detailed = packs.filter { $0.region.hasFullDetail }.map(\.region.bounds)
+        return packs.flatMap { pack -> [RoadContext.Road] in
+            guard !pack.region.hasFullDetail else { return pack.roads.roads }
+            return pack.roads.roads.filter { road in
+                let c = road.coordinates
+                guard let mid = c.dropFirst(c.count / 2).first else { return false }
+                return !detailed.contains { $0.contains(mid) }
+            }
+        }
+    }
+
     enum Coverage: Equatable {
         case detailed(String)
         case mainRoadsOnly(String)
