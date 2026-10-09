@@ -48,9 +48,14 @@
     },
     {
       "id": "paranaque",
-      "name": "Parañaque",
+      "name": "Para\u00f1aque",
       "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
-      "bbox": null,
+      "bbox": {
+        "south": 14.4342393,
+        "west": 120.940262,
+        "north": 14.5332355,
+        "east": 121.0481398
+      },
       "language": "tl-PH+en",
       "catalogCategories": [
         "all named OSM places"
@@ -60,14 +65,19 @@
       "detail": "full",
       "places": true,
       "anchor": null,
-      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Parañaque'",
-      "boundaryName": "Parañaque"
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Para\u00f1aque'",
+      "boundaryName": "Para\u00f1aque"
     },
     {
       "id": "pasay",
       "name": "Pasay",
       "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
-      "bbox": null,
+      "bbox": {
+        "south": 14.5019841,
+        "west": 120.9103199,
+        "north": 14.5617554,
+        "east": 121.0347428
+      },
       "language": "tl-PH+en",
       "catalogCategories": [
         "all named OSM places"
@@ -84,7 +94,12 @@
       "id": "taguig",
       "name": "Taguig",
       "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
-      "bbox": null,
+      "bbox": {
+        "south": 14.4513116,
+        "west": 121.0222048,
+        "north": 14.5685464,
+        "east": 121.1222787
+      },
       "language": "tl-PH+en",
       "catalogCategories": [
         "all named OSM places"
@@ -133,7 +148,7 @@
     },
     {
       "id": "las-pinas",
-      "name": "Las Piñas",
+      "name": "Las Pi\u00f1as",
       "coverageStatus": "administrative bounding box (resolved from OSM at preparation); validate walking areas before relying on it",
       "bbox": null,
       "language": "tl-PH+en",
@@ -145,8 +160,8 @@
       "detail": "full",
       "places": true,
       "anchor": null,
-      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Las Piñas'",
-      "boundaryName": "Las Piñas"
+      "boundarySource": "resolved by scripts/prepare_makati.py from the OSM administrative boundary named 'Las Pi\u00f1as'",
+      "boundaryName": "Las Pi\u00f1as"
     },
     {
       "id": "malabon",
