@@ -1,5 +1,12 @@
 # Life Off Desk — build status
 
+## Suggested street route to the destination (2026-10-09, founder report)
+
+- Founder report: choosing a place showed "2.14 km by streets" but no path. The shortest-path search already ran; it now keeps predecessors and returns the path (`WalkingGraph.route`), the same search and the same metres as the distance.
+- Map: a dashed green line (white casing) from your position, onto the nearest mapped street, along the streets and off to the place; the camera frames the whole route once when a place is chosen (not while walking). Caption and VoiceOver label: "suggested route on mapped streets · check gates and crossings", or "passes a private or gated way" when it does. Recomputed when you move 40 m.
+- Not navigation: no turn-by-turn, no ETA, no traffic or one-way data; OSM ways are unreviewed. Motorways excluded, private/no-access ways penalised ×2.
+- Tested here: 3 new core tests (route follows the bridge detour, drawn line length equals the quoted distance, endpoints exact; same-street route is direct; no route off the streets). 127 Swift tests pass on Linux. App drawing compiles in CI only; **not yet seen on the phone**.
+
 ## Branding pass (2026-10-09)
 
 The app had no icon or asset catalog and the mascot appeared nowhere. Added `Assets.xcassets` with an app icon (crop of the canonical concept portrait), BrandCanvas/AccentColor, a branded launch screen, and the 12 canonical poses cut from the sticker sheet by their own transparency (verified visually: none clipped). Intro pages show a pose each, the wordmark and updated copy (adventures on foot or riding; offline Taglish AI; stays on your phone). Small mascot accents per the brand guide in recap, planner idle, empty states, Me, Settings About and the card badge. Verified only via CI Simulator screenshots; not yet seen on the phone home screen.

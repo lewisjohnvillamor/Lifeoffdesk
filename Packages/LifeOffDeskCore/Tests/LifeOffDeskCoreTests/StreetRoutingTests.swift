@@ -93,4 +93,31 @@ final class StreetRoutingTests: XCTestCase {
                                           graph: WalkingGraph(roads: detourStreets))
         XCTAssertTrue(results[0].uncertainties.contains(.mayExceedTime(minutes: 20)))
     }
+
+    func testRouteFollowsTheDetourAndMatchesTheDistance() throws {
+        let graph = WalkingGraph(roads: detourStreets)
+        let origin = at(-20, 0), target = at(220, 0)
+        let route = try XCTUnwrap(graph.route(from: origin, to: target))
+        let distance = try XCTUnwrap(graph.distance(from: origin, to: target))
+        XCTAssertEqual(route.meters, distance.meters, accuracy: 0.01)
+        XCTAssertEqual(route.points.first, origin)
+        XCTAssertEqual(route.points.last, target)
+        // The line passes the bridge corners, never straight across the river.
+        let projected = route.points.map { Fixture.projection.project($0) }
+        XCTAssertTrue(projected.contains { abs($0.x) < 1 && abs($0.y - 1000) < 1 })
+        XCTAssertTrue(projected.contains { abs($0.x - 200) < 1 && abs($0.y - 1000) < 1 })
+        let drawn = zip(route.points, route.points.dropFirst()).reduce(0) { $0 + Geo.distanceMeters($1.0, $1.1) }
+        XCTAssertEqual(drawn, route.meters, accuracy: 5, "the drawn line is as long as the quoted distance")
+    }
+
+    func testRouteOnOneStreetIsDirect() throws {
+        let graph = WalkingGraph(roads: detourStreets)
+        let route = try XCTUnwrap(graph.route(from: at(0, 100), to: at(0, 130)))
+        XCTAssertEqual(route.meters, 30, accuracy: 1)
+        XCTAssertLessThanOrEqual(route.points.count, 4)
+    }
+
+    func testNoRouteOffTheStreets() {
+        XCTAssertNil(WalkingGraph(roads: detourStreets).route(from: at(0, 0), to: at(5000, 5000)))
+    }
 }

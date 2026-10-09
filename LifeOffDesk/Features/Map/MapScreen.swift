@@ -13,6 +13,8 @@ struct MapScreen: View {
     @State private var followUser = true
     @State private var tilted = true
     @State private var launchScale: CGFloat?
+    /// Destination whose route should be framed once it arrives (set when a place is chosen).
+    @State private var routeToFrame: String?
 
     var body: some View {
         ZStack {
@@ -24,6 +26,7 @@ struct MapScreen: View {
                                m.coordinate.map { (coordinate: $0, image: model.thumbnail(for: m)) }
                            },
                            position: model.mapPosition, destination: model.destination,
+                           route: model.destinationRoute?.points,
                            camera: $camera, tilted: tilted)
                     .ignoresSafeArea()
                     .simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { _ in followUser = false })
@@ -79,6 +82,14 @@ struct MapScreen: View {
             if phase == .acquiringFix || phase == .walking { followUser = true }
         }
         .onChange(of: model.contentVersion) { _, _ in rebuildGeometry() }
+        .onChange(of: model.destination?.id) { _, id in routeToFrame = id }
+        .onChange(of: model.destinationRoute) { _, route in
+            // Show the whole suggested route once when a place is chosen (not while walking).
+            guard let route, let id = routeToFrame, id == model.destination?.id, model.phase == .idle,
+                  let geometry else { return }
+            routeToFrame = nil
+            frame(route.points, using: geometry, padding: 120)
+        }
         .onChange(of: camera) { _, camera in reportViewport(camera) }
         .onChange(of: model.mapPosition) { _, position in
             guard followUser, let position, let geometry else { return }
@@ -156,11 +167,15 @@ struct MapScreen: View {
     /// Open on the user's explored world: frame their most recent walk instead of the Makati origin.
     private func frameRecentExploration(using geometry: MapGeometry) {
         guard let recent = model.historyWalks.max(by: { $0.startedAt < $1.startedAt }) else { return }
-        let points = recent.segments.flatMap { $0 }.map { geometry.point($0.coordinate) }
+        frame(recent.segments.flatMap { $0 }.map(\.coordinate), using: geometry, padding: 250)
+    }
+
+    private func frame(_ coordinates: [Coordinate], using geometry: MapGeometry, padding: CGFloat) {
+        let points = coordinates.map { geometry.point($0) }
         guard let first = points.first else { return }
         var box = CGRect(origin: first, size: .zero)
         for p in points { box = box.union(CGRect(origin: p, size: .zero)) }
-        box = box.insetBy(dx: -250, dy: -250)
+        box = box.insetBy(dx: -padding, dy: -padding)
         let screen = UIScreen.main.bounds.size
         camera = MapCamera(center: CGPoint(x: box.midX, y: box.midY),
                            pointsPerMeter: min(1.2, max(0.05, min(screen.width / box.width, screen.height * 0.6 / box.height))))
@@ -187,7 +202,18 @@ struct MapScreen: View {
     }
 
     @ViewBuilder private var statusBanners: some View {
-        if let destination = model.destination { destinationPill(destination) }
+        if let destination = model.destination {
+            destinationPill(destination)
+            if let route = model.destinationRoute {
+                Text(route.throughRestricted
+                     ? "Dashed line: suggested route on mapped streets · passes a private or gated way"
+                     : "Dashed line: suggested route on mapped streets · check gates and crossings")
+                    .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                    .padding(.horizontal, 10).padding(.vertical, 3)
+                    .background(Theme.surface.opacity(0.9), in: Capsule())
+                    .accessibilityHidden(true) // the pill's label already says this
+            }
+        }
         if let problem = model.demoProblem { banner(icon: "exclamationmark.triangle", text: problem) }
         #if targetEnvironment(simulator)
         banner(icon: "desktopcomputer", text: "Simulator · no AI · simulated GPS")
@@ -239,7 +265,9 @@ struct MapScreen: View {
         .background(Theme.surface, in: Capsule())
         .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Destination \(place.name). Straight-line distance only, no route.")
+        .accessibilityLabel(model.destinationRoute == nil
+            ? "Destination \(place.name). Straight-line distance only, no street route."
+            : "Destination \(place.name). Suggested route along mapped streets drawn on the map; check gates and crossings.")
     }
 
     // MARK: Stats and side buttons

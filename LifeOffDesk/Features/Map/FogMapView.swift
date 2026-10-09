@@ -123,6 +123,8 @@ struct FogMapView: View {
     var pins: [(coordinate: Coordinate, image: UIImage?)] = []
     let position: Coordinate?
     let destination: Place?
+    /// Suggested path along mapped streets to the destination (not navigation).
+    var route: [Coordinate]? = nil
     @Binding var camera: MapCamera
     var tilted: Bool = true
 
@@ -210,6 +212,17 @@ struct FogMapView: View {
                                      style: StrokeStyle(lineWidth: max(1.4, 7 * ppm), lineCap: .round, lineJoin: .round))
                     }
                 }
+            }
+
+            // Suggested street route to the destination: white casing, green dashes, under the trail.
+            if let route, let first = route.first, route.count > 1 {
+                var line = Path()
+                line.move(to: geometry.point(first).applying(transform))
+                for c in route.dropFirst() { line.addLine(to: geometry.point(c).applying(transform)) }
+                context.stroke(line, with: .color(Theme.surface.opacity(0.9)),
+                               style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round))
+                context.stroke(line, with: .color(Theme.primary),
+                               style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round, dash: [8, 6]))
             }
 
             // 6. Current walk trail: dots over new ground, a quiet solid line over streets walked before.
@@ -313,6 +326,7 @@ struct FogMapView: View {
         parts.append(walked == 0 ? "Nothing explored yet; the map is covered by fog." : "\(walked) explored path sections are revealed.")
         parts.append(position == nil ? "Current location not shown." : "Current location shown.")
         if let destination { parts.append("Destination marker: \(destination.name).") }
+        if route != nil { parts.append("A suggested route along mapped streets is drawn to it.") }
         return parts.joined(separator: " ")
     }
 }
