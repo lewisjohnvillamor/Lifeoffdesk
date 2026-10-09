@@ -28,6 +28,8 @@ public final class WalkingGraph: @unchecked Sendable {
     public static let restrictedPenalty = 2.0
     /// Points farther than this from any street node get no street distance.
     public static let maxSnapMeters = 250.0
+    /// Edges are split to at most this length so snapping finds a node near any street point.
+    static let maxEdgeMeters = 50.0
 
     private var coordinates: [Coordinate] = []
     private var adjacency: [[Edge]] = []
@@ -52,11 +54,21 @@ public final class WalkingGraph: @unchecked Sendable {
         for road in roads where !Self.excludedClasses.contains(road.h) {
             let points = road.coordinates
             for (a, b) in zip(points, points.dropFirst()) {
-                let i = node(a), j = node(b)
-                guard i != j else { continue }
-                let meters = Float(Geo.distanceMeters(a, b))
-                adjacency[Int(i)].append(Edge(to: j, meters: meters, restricted: road.r))
-                adjacency[Int(j)].append(Edge(to: i, meters: meters, restricted: road.r))
+                // Long straight pieces get intermediate nodes so any point along them can snap.
+                let total = Geo.distanceMeters(a, b)
+                let steps = max(1, Int((total / Self.maxEdgeMeters).rounded(.up)))
+                var previous = node(a)
+                for step in 1...steps {
+                    let f = Double(step) / Double(steps)
+                    let next = step == steps ? node(b) : node(Coordinate(latitude: a.latitude + (b.latitude - a.latitude) * f,
+                                                                      longitude: a.longitude + (b.longitude - a.longitude) * f))
+                    if next != previous {
+                        let meters = Float(total / Double(steps))
+                        adjacency[Int(previous)].append(Edge(to: next, meters: meters, restricted: road.r))
+                        adjacency[Int(next)].append(Edge(to: previous, meters: meters, restricted: road.r))
+                    }
+                    previous = next
+                }
             }
         }
     }
