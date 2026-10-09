@@ -1,49 +1,128 @@
 # Life Off Desk
 
-An offline iPhone exploration app: ask in Taglish for a nearby outing, pick a real local place, and reveal your personal map through actual walking. Built for the AppBuildersPH Hackathon 2026 (Local AI): an on-device LLM (Qwen3-1.7B via llama.cpp) runs the Taglish planner, adventure-history search and grounded recaps with no network at runtime.
+An offline iPhone app that gets desk-bound people outside. An on-device AI notices when your world is getting smaller ("Uyyy, lumiliit na ang mundo mo!") and suggests a real nearby place. You can ask in Taglish ("tahimik na park, 30 mins lang"). As you walk, a paper map lifts its fog over the streets you actually covered. If something goes wrong, the SOS help chat (Taglish, typed, spoken or with a photo) points you to reviewed first-aid and roadside cards, 911, local hotlines and the nearest police or hospital.
 
-**Submission answers (what runs locally, what needs internet, disclosures, why local AI, demo plan): [docs/SUBMISSION.md](docs/SUBMISSION.md).**
+Built for the AppBuildersPH Hackathon 2026 (Local AI). **The app works in Airplane Mode.** Qwen3-1.7B runs on the iPhone through llama.cpp, and the app makes no network calls.
 
-**First city: Makati. First test phone: iPhone 12 Pro Max. Develop on an Apple silicon Mac with Xcode.** Both genuine phone-local AI suggestions and GPS fog reveal are required. No account or cloud inference is part of the intended MVP.
+- **Submission answers** (what runs locally, what needs internet, disclosures, why local AI): [docs/SUBMISSION.md](docs/SUBMISSION.md)
+- **What has been tested, and what hasn't:** [docs/BUILD-STATUS.md](docs/BUILD-STATUS.md)
+- **Launch video:** [square](marketing/life-off-desk-launch-square.mp4) · [16:9](marketing/life-off-desk-launch.mp4)
 
-## Start on your Mac
+---
+
+## Run it on your Mac and iPhone
+
+### What you need
+
+| | Requirement |
+|---|---|
+| Mac | Apple silicon, recent macOS, **Xcode 16 or later** with the iOS platform installed (CI builds on macOS 15). About 5 GB free disk. |
+| iPhone | **iOS 17 or later**, ideally with 6 GB RAM or more (tested on an iPhone 12 Pro Max). Connected with a cable. |
+| Apple ID | A free Apple ID is enough for a personal build. Free-account builds expire after 7 days. |
+| Tools | [Homebrew](https://brew.sh) for XcodeGen. Python 3 and `curl` are already on macOS. |
+| Internet | **Only once, for setup:** about 1.34 GB of downloads (model and runtime). The app itself needs no internet. |
+
+### 1. Get the code and the model
 
 ```bash
 git clone https://github.com/lewisjohnvillamor/Lifeoffdesk.git
 cd Lifeoffdesk
 brew install xcodegen
-scripts/setup_ios.sh        # verifies downloads, unpacks llama.xcframework, generates the Xcode project
-open LifeOffDesk/LifeOffDesk.xcodeproj
+scripts/setup_ios.sh
 ```
 
-Set your signing team, pick the iPhone and Run. `setup_ios.sh` downloads about 1.34 GB (model + runtime, checksum-verified). The pinned runtime has no Simulator slice; `LifeOffDesk/project-simulator.yml` builds a Simulator version that shows every screen but reports AI as unavailable.
+`setup_ios.sh` does four things:
+- Downloads the pinned **Qwen3-1.7B Q4_K_M** model (≈1.28 GB, Hugging Face) and the **llama.cpp b11429** iOS framework (≈62 MB, GitHub releases).
+- Checks every file's SHA-256 against `config/materials-lock.json`.
+- Unpacks the framework into `vendor/`.
+- Generates `LifeOffDesk/LifeOffDesk.xcodeproj`.
 
-Read [Mac setup](docs/MAC-SETUP.md) for prerequisites, download scope, source-data review and device steps. Downloads are separate from Git and checksum-verified. The Makati data script prepares unreviewed source records; it does not establish venues are currently open or accessible.
+Running it again is safe, and it skips files that are already verified.
 
-## Build contract
+### 2. Sign and run on the iPhone
 
-- [MVP feature list](docs/MVP-FEATURES.md)
-- [Implementation plan](docs/IMPLEMENTATION-PLAN.md)
-- [Architecture and data](docs/ARCHITECTURE-AND-DATA.md)
-- [Brand guide](docs/BRAND-GUIDE.md)
-- [Acceptance and demo](docs/ACCEPTANCE-AND-DEMO.md)
-- [Hackathon source](docs/HACKATHON.md)
-- [Remaining decisions](docs/IDEATION-QUESTIONS.md)
-- [Skills and handoff](docs/SKILLS-AND-HANDOFF.md)
-- [Current build status](docs/BUILD-STATUS.md)
-- [Tool/material disclosure](THIRD-PARTY-NOTICES.md)
+1. Open the project: `open LifeOffDesk/LifeOffDesk.xcodeproj`
+2. In Xcode, select the **LifeOffDesk** target → **Signing & Capabilities**:
+   - **Team:** choose your Apple ID. Add it under Xcode → Settings → Accounts if it isn't listed.
+   - **Bundle Identifier:** change `com.lifeoffdesk.app` to something unique, e.g. `com.yourname.lifeoffdesk`. Otherwise Xcode reports that the ID is unavailable.
+3. Plug in the iPhone, unlock it and tap **Trust This Computer**.
+4. Turn on **Developer Mode**: iPhone Settings → Privacy & Security → Developer Mode → On. The phone restarts.
+5. In Xcode, pick your iPhone as the run destination and press **Run (⌘R)**. The first build takes a few minutes, because the 1.28 GB model is copied into the app.
+6. If the iPhone says **"Untrusted Developer"**: Settings → General → VPN & Device Management → your Apple ID → **Trust**. Then run again.
 
-AGENTS.md and skills/ contain portable implementation guidance. The TXT brief and reference guide support later ingestion. Approved cat artwork is under assets/mascot/; the latest static interface board is under design/. The sticker sheet is still unsplit. The included Figma update script is unapplied.
+### 3. Check that the AI is really local
+
+1. Put the iPhone in **Airplane Mode**. GPS still works.
+2. In the app, open the gear icon (Settings) → **On-device AI diagnostics**:
+   - **Verify SHA-256** confirms the bundled model matches the pinned file.
+   - **Load model now** warms it up, so the first request is fast.
+   - **Run 60 held-out cases** runs the built-in Taglish planner checks on the phone.
+3. Try the features:
+   - **Planner:** tap ✨ on the map and type or say *"tahimik na park, 30 mins lang"*.
+   - **Demo world:** Settings → **Demo map (sample adventures)** shows a filled-in map of labelled sample adventures.
+   - **Help chat:** tap **SOS** → **Ask the help assistant** and ask *"na-flat gulong ko"*, *"may nahimatay, hindi humihinga"* or *"Ano ang number ng NLEX?"*.
+   - **Walking:** tap **Start exploring** outdoors. Walk, then hold to end and see your new streets and the recap card.
+
+The app asks for location (needed), plus microphone and speech recognition (for voice input) and camera and photos (for walk photos and the help chat). Everything is processed on the phone.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `Install XcodeGen first` | `brew install xcodegen`, then run `scripts/setup_ios.sh` again. |
+| Checksum mismatch or interrupted download | Delete the partial file in `downloads/` and run `scripts/setup_ios.sh` again. |
+| "Failed to register bundle identifier" / no signing team | Set your Team and a unique Bundle Identifier (step 2.2). |
+| Build fails for an iPhone Simulator destination | The pinned llama.cpp framework is iPhone-only. Pick a real iPhone, or use the Simulator build below. |
+| "Developer Mode disabled" / "Untrusted Developer" | Steps 2.4 and 2.6. |
+| AI says unavailable on the phone | Settings → On-device AI diagnostics shows why: model file missing, checksum mismatch, or not enough memory. Close other apps and load again. |
+| Help-chat hotlines missing after pulling new code | Run `scripts/setup_ios.sh` again so the project picks up new data files. |
+
+### No iPhone? Simulator build (UI only)
+
+```bash
+xcodegen generate --spec LifeOffDesk/project-simulator.yml
+open LifeOffDesk/LifeOffDeskSimulator.xcodeproj
+```
+
+Choose an iPhone simulator and Run. Every screen, the maps, routes, help cards, hotlines and demo world work here. The on-device model doesn't run in the Simulator (the runtime has no Simulator slice), so AI features say they are unavailable and the help chat uses its keyword routing. Locations are simulated.
+
+### Run the tests (no iPhone needed)
+
+```bash
+swift test --package-path Packages/LifeOffDeskCore   # 165 core tests: GPS filtering, sessions, routing, help-chat routing, hotlines, AI output validation
+python3 -m unittest discover -s tests                  # data-preparation scripts
+```
+
+CI (GitHub Actions) runs both, plus an unsigned iPhone build, on every push.
+
+---
+
+## How it works
+
+- **On-device AI** (Qwen3-1.7B through llama.cpp, inside the app): it understands Taglish requests, filters your adventure history, picks recap highlights, words the "your world" coach, picks among real recommendation candidates, and routes help-chat questions to a reviewed card.
+  - Every call is **grammar-constrained JSON plus a validator**.
+  - The model chooses; deterministic code supplies the facts, numbers, places and advice text. It cannot invent a place, a distance or first-aid steps.
+- **Apple on-device frameworks:** Speech (voice input), and Vision (recognising objects in help-chat photos, cutting out photo stickers).
+- **Deterministic engines:** place search and walking routes over bundled OpenStreetMap streets, GPS filtering and street matching, the fog-of-war map, arrival detection, recaps, a Taglish emergency keyword safety net, and the hotline lookup.
+- **Data on the phone:** Metro Manila map packs (detailed Makati, Muntinlupa, Taguig, Pasay, Parañaque), 28 sourced help cards, 26 sourced hotlines, plus your walks, photos and preferences. No account, no server.
 
 ## Repository layout
 
-- `LifeOffDesk/` — SwiftUI iPhone app and `project.yml` (XcodeGen)
-- `Packages/LifeOffDeskCore/` — platform-independent logic with tests (`swift test --package-path Packages/LifeOffDeskCore`)
-- `Tools/PlannerEval/` — runs the app's planner against the pinned model on a dev machine (`scripts/run_planner_eval.sh`)
-- `scripts/` — downloads, Makati OSM preparation, starter catalog build, iOS setup
+- `LifeOffDesk/`: the SwiftUI iPhone app. `project.yml` is the XcodeGen spec; the `.xcodeproj` is generated, not committed.
+- `Packages/LifeOffDeskCore/`: platform-independent logic and its tests.
+- `scripts/`: model and runtime downloads, `setup_ios.sh`, map-data preparation, and help-card, keyword and hotline builders.
+- `Tools/PlannerEval/`: runs the planner against the pinned model on a dev machine.
+- `marketing/`: website, mockups and the Remotion launch-video project.
+- `docs/`: [Mac setup details](docs/MAC-SETUP.md), [build status](docs/BUILD-STATUS.md), [help guide and AI safety](docs/SAFETY-GUIDE.md), [submission](docs/SUBMISSION.md), [architecture](docs/ARCHITECTURE-AND-DATA.md), [brand guide](docs/BRAND-GUIDE.md).
+- `THIRD-PARTY-NOTICES.md`: models, libraries, data sources and tools.
 
-## Current status
+## Honest status
 
-App, core library (114 tests), 1.7B on-device inference, street matching and the local-AI features (history search, grounded recap, preferences, adaptive suggestions, accessibility evidence) are implemented and merged. CI builds the unsigned iPhone app and the Simulator app on every push. The founder reported the iPhone 12 Pro Max checks working (offline AI, outdoor walk, camera/sticker, accessibility, edge cases). Phone latency/memory numbers are not yet recorded; model accuracy figures in the build status are development-machine runs, labelled as such. See [build status](docs/BUILD-STATUS.md).
+- **Tested on the founder's iPhone 12 Pro Max:** the core flows (offline AI, outdoor walk, camera and stickers, help chat), reported working.
+- **Not recorded yet:** phone latency and memory numbers.
+- **Development machine, not phone:** model accuracy figures in the build status come from a dev machine and are labelled that way.
+- **Not phone-tested yet:** the newest changes (hotlines; stroke, heart-attack and seizure cards; arrival detection) compile in CI.
+- **Demo data:** sample adventures are synthetic and labelled "SAMPLE".
+- **Deferred:** full Luzon map packs, turn-by-turn navigation, accounts and reviewed accessibility facts.
 
-Deferred by design: full Luzon map packs, turn-by-turn routing, accounts, live hazard information, reviewed accessibility facts (the evidence files ship empty, so access requests honestly return no verified places).
+Map data © OpenStreetMap contributors (ODbL). Help cards link their public sources; hotlines list their sources and check dates. They are offline copies, so re-check before relying on them, and call **911** in an emergency.
