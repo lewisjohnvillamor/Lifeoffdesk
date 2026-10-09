@@ -12,7 +12,7 @@ Calm illustrated neighborhood, approved ivory/forest palette, native sans-serif 
 
 The demo supports start, pause, continue, replay and reset. Reduced motion switches to explicit step advances. It pauses on tab hiding or when scrolled out of view. Coordinates and illustration are synthetic; demo progress is not distance or GPS evidence. Planner examples are lightweight website interactions, while the product gallery shows the corresponding current app experience. Accessibility/route and offline claims retain the app's current evidence limitations.
 
-The product gallery uses current UI captures from the repository's iPhone 12 Pro Max Simulator target: demo map, grounded planner results and Adventures. The captures visibly identify sample or simulator content where applicable. `app-icon.png` and `mascot-walking.png` are resized/copied from the canonical app asset catalog; do not regenerate them independently.
+The product gallery uses current UI captures (map refreshed 2026-10-09 with the demo world; mockups in `marketing/mockups/`) from the repository's iPhone 12 Pro Max Simulator target: demo map, grounded planner results and Adventures. The captures visibly identify sample or simulator content where applicable. `app-icon.png` and `mascot-walking.png` are resized/copied from the canonical app asset catalog; do not regenerate them independently.
 
 ## Artwork
 
