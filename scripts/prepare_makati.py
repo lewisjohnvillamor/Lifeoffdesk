@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""One-time Makati OSM source-data preparation. Review before bundling."""
+"""One-time OSM source-data preparation for a configured region (config/regions.json).
+
+Despite the historical file name this handles every starter region (Makati, Muntinlupa,
+Metro Manila context). Review places before bundling."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -12,13 +15,25 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 ENDPOINT = 'https://overpass-api.de/api/interpreter'
 
-def query_for(bbox):
+FULL_DETAIL_HIGHWAYS = ['footway', 'path', 'pedestrian', 'residential', 'living_street', 'service',
+                        'tertiary', 'secondary', 'primary']
+
+def load_region(region_id):
+    config = json.loads((ROOT/'config/regions.json').read_text())
+    for region in config['regions']:
+        if region['id'] == region_id:
+            return region
+    raise ValueError(f"Unknown region {region_id}; see config/regions.json")
+
+def query_for(bbox, highways=None, include_places=True):
     b = ','.join(str(bbox[k]) for k in ('south', 'west', 'north', 'east'))
-    return f'''[out:json][timeout:60];(
-nwr["amenity"~"^(cafe|library)$"]["name"]({b});
+    classes = '|'.join(highways or FULL_DETAIL_HIGHWAYS)
+    places = f'''nwr["amenity"~"^(cafe|library)$"]["name"]({b});
 nwr["leisure"="park"]["name"]({b});
 nwr["tourism"~"^(museum|viewpoint)$"]["name"]({b});
-way["highway"~"^(footway|path|pedestrian|residential|living_street|service|tertiary|secondary|primary)$"]({b});
+''' if include_places else ''
+    return f'''[out:json][timeout:180];(
+{places}way["highway"~"^({classes})$"]({b});
 );out tags center geom;'''
 
 def representative_point(element):
@@ -34,7 +49,7 @@ def representative_point(element):
                 'lon':(bounds['minlon']+bounds['maxlon'])/2}, 'bounds-midpoint'
     return None, None
 
-def convert(raw, retrieved_at):
+def convert(raw, retrieved_at, require_places=True):
     if raw.get('remark'):
         raise ValueError('Overpass reported a partial/error response: ' + raw['remark'])
     if not isinstance(raw.get('elements'), list):
@@ -69,7 +84,7 @@ def convert(raw, retrieved_at):
                                         'access':tags.get('access'), 'foot':tags.get('foot'),
                                         'sourceURL':f"https://www.openstreetmap.org/way/{element['id']}"},
                           'geometry':{'type':'LineString','coordinates':[[point['lon'],point['lat']] for point in geometry]}})
-    if not places or not roads:
+    if (require_places and not places) or not roads:
         raise ValueError('No usable places or roads; review the region/source response')
     return sorted(places, key=lambda p:p['id']), {'type':'FeatureCollection','features':roads}
 
@@ -77,10 +92,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, help='Use an existing Overpass JSON response without network access')
     parser.add_argument('--dry-run', action='store_true')
-    parser.add_argument('--output', type=Path, default=ROOT/'local-data/makati')
+    parser.add_argument('--region', default='makati-cbd-starter', help='Region id from config/regions.json')
+    parser.add_argument('--output', type=Path, help='Defaults to local-data/<region dir>')
     args = parser.parse_args()
-    region = json.loads((ROOT/'config/starter-region.json').read_text())
-    query = query_for(region['bbox'])
+    region = load_region(args.region)
+    args.output = args.output or ROOT/'local-data'/region['localDir']
+    include_places = region.get('places', True)
+    query = query_for(region['bbox'], region.get('highways'), include_places)
     if args.dry_run:
         print(query)
         return
@@ -94,7 +112,7 @@ def main():
         with urllib.request.urlopen(request, timeout=90) as response:
             raw = json.load(response)
     retrieved = datetime.now(timezone.utc).isoformat()
-    places, roads = convert(raw, retrieved)
+    places, roads = convert(raw, retrieved, require_places=include_places)
     args.output.mkdir(parents=True, exist_ok=True)
     outputs = {'source-osm.json':raw, 'places-source.json':places, 'roads.geojson':roads}
     for name, data in outputs.items():

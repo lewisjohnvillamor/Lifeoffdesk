@@ -132,21 +132,50 @@ final class PlaceSearchTests: XCTestCase {
         XCTAssertTrue(PlaceSearch.suggest(OutingPreferences(categories: [.library]), catalog: catalog, origin: origin).isEmpty)
     }
 
-    func testBundledCatalogKeepsSourceClaimsUnverified() throws {
+    func testBundledRegionPacksKeepSourceClaimsUnverified() throws {
         let base = Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData")
-        let catalog = try PlaceCatalog.decode(Data(contentsOf: base.appendingPathComponent("places.json")))
-        let region = try JSONDecoder().decode(RegionManifest.self, from: Data(contentsOf: base.appendingPathComponent("region.json")))
-        let roads = try JSONDecoder().decode(RoadContext.self, from: Data(contentsOf: base.appendingPathComponent("roads.json")))
-        XCTAssertTrue((15...30).contains(catalog.places.count))
-        XCTAssertEqual(Set(catalog.places.map(\.id)).count, catalog.places.count)
-        XCTAssertFalse(roads.roads.isEmpty)
-        for place in catalog.places {
-            XCTAssertEqual(place.verificationStatus, "source-only-unreviewed")
-            XCTAssertNil(place.openingHours); XCTAssertNil(place.budgetPHP); XCTAssertNil(place.quietness)
-            XCTAssertTrue(place.tags.isEmpty)
-            XCTAssertTrue(place.sourceURL.hasPrefix("https://www.openstreetmap.org/"))
-            XCTAssertTrue(region.bounds.contains(place.coordinate), place.name)
+        let index = try JSONDecoder().decode(RegionIndex.self, from: Data(contentsOf: base.appendingPathComponent("regions.json")))
+        XCTAssertEqual(index.regions.first?.id, "makati-cbd-starter", "Makati stays the primary region")
+        XCTAssertTrue(index.regions.contains { $0.id == "muntinlupa" })
+        var catalogs: [PlaceCatalog] = []
+        for entry in index.regions {
+            let dir = base.appendingPathComponent(entry.id)
+            let region = try JSONDecoder().decode(RegionManifest.self, from: Data(contentsOf: dir.appendingPathComponent("region.json")))
+            let roads = try JSONDecoder().decode(RoadContext.self, from: Data(contentsOf: dir.appendingPathComponent("roads.json")))
+            XCTAssertEqual(region.id, entry.id)
+            XCTAssertFalse(roads.roads.isEmpty)
+            let placesURL = dir.appendingPathComponent("places.json")
+            guard region.hasFullDetail else {
+                XCTAssertFalse(FileManager.default.fileExists(atPath: placesURL.path), "Context-only regions bundle no places")
+                continue
+            }
+            let catalog = try PlaceCatalog.decode(Data(contentsOf: placesURL))
+            catalogs.append(catalog)
+            XCTAssertTrue((15...30).contains(catalog.places.count), entry.id)
+            for place in catalog.places {
+                XCTAssertEqual(place.verificationStatus, "source-only-unreviewed")
+                XCTAssertNil(place.openingHours); XCTAssertNil(place.budgetPHP); XCTAssertNil(place.quietness)
+                XCTAssertTrue(place.tags.isEmpty)
+                XCTAssertTrue(place.sourceURL.hasPrefix("https://www.openstreetmap.org/"))
+                XCTAssertTrue(region.bounds.contains(place.coordinate), place.name)
+            }
         }
+        let merged = try XCTUnwrap(PlaceCatalog.merged(catalogs))
+        XCTAssertEqual(Set(merged.places.map(\.id)).count, merged.places.count)
+        XCTAssertEqual(merged.places.count, catalogs.reduce(0) { $0 + $1.places.count })
+    }
+
+    func testSearchNearMuntinlupaReturnsMuntinlupaPlaces() throws {
+        let base = Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData")
+        let catalogs = try ["makati-cbd-starter", "muntinlupa"].map {
+            try PlaceCatalog.decode(Data(contentsOf: base.appendingPathComponent("\($0)/places.json")))
+        }
+        let merged = try XCTUnwrap(PlaceCatalog.merged(catalogs))
+        let munti = catalogs[1]
+        let here = try XCTUnwrap(munti.places.first { $0.category == .park }).coordinate
+        let results = PlaceSearch.suggest(OutingPreferences(categories: [.park]), catalog: merged, origin: .currentLocation(here))
+        XCTAssertFalse(results.isEmpty)
+        XCTAssertTrue(results.allSatisfy { r in munti.places.contains { $0.id == r.id } }, "Makati is ~15 km away, outside 2 km")
     }
 }
 

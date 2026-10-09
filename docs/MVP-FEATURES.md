@@ -24,7 +24,7 @@ The opening screen is a warm ivory map with **Start walking** as its main action
 | P0-10 | Offline starter area | Bundle a small verified place catalog and simple vector context for one walkable area | AI, catalog, reveal and recap work without a network; show coverage limits outside the area |
 | P0-11 | Essential errors/privacy | Handle permissions, no GPS, no matches, model missing/loading/failure; local erase control | Input survives AI failure; walking remains usable; erase clears personal walks and exploration |
 
-The confirmed starter city is Makati. Begin with a proposed Makati CBD subset; its exact walking boundary still needs outdoor validation. Luzon is the initial product market, not a promise to ship detailed coverage of all Luzon in eight hours.
+Update 2026-10-09: Metro Manila is the initial map people can record walks on (main-road context across NCR; trails record anywhere). Makati CBD (primary) and Muntinlupa have street/footpath detail and place catalogs. The original note follows. The confirmed starter city is Makati. Begin with a proposed Makati CBD subset; its exact walking boundary still needs outdoor validation. Luzon is the initial product market, not a promise to ship detailed coverage of all Luzon in eight hours.
 
 ## P1 — add after both required loops pass
 

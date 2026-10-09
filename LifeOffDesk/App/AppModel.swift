@@ -131,9 +131,10 @@ final class AppModel: ObservableObject {
         return lastFix.coordinate
     }
 
-    var isOutsideCoverage: Bool {
-        guard let content, let position = currentPosition else { return false }
-        return !content.region.bounds.contains(position)
+    /// Coverage at the live position; nil when there is no recent fix.
+    var coverageHere: StarterContent.Coverage? {
+        guard let content, let position = currentPosition else { return nil }
+        return content.coverage(at: position)
     }
 
     var distanceOrigin: DistanceOrigin? {

@@ -15,6 +15,7 @@ def load(name):
 
 downloads = load('download_materials')
 makati = load('prepare_makati')
+catalog = load('build_starter_catalog')
 
 class DownloadTests(unittest.TestCase):
     def artifact(self, content):
@@ -87,6 +88,36 @@ class MakatiTests(unittest.TestCase):
 
     def test_missing_data_fails(self):
         with self.assertRaises(ValueError):makati.convert({'elements':[]},'fixture-time')
+
+class RegionTests(unittest.TestCase):
+    def test_every_configured_region_builds_a_query(self):
+        import json
+        config = json.loads((ROOT/'config/regions.json').read_text())
+        ids = [r['id'] for r in config['regions']]
+        self.assertEqual(ids[0], 'makati-cbd-starter')
+        self.assertIn('muntinlupa', ids)
+        for region in config['regions']:
+            query = makati.query_for(region['bbox'], region.get('highways'), region.get('places', True))
+            self.assertIn('way["highway"', query)
+            self.assertEqual('leisure' in query, region.get('places', True))
+
+    def test_roads_only_region_needs_no_places(self):
+        raw = {'elements':[{'type':'way','id':9,'tags':{'highway':'primary'},
+                            'geometry':[{'lat':14.4,'lon':121.0},{'lat':14.41,'lon':121.01}]}]}
+        places, roads = makati.convert(raw, 'fixture-time', require_places=False)
+        self.assertEqual(places, [])
+        self.assertEqual(len(roads['features']), 1)
+
+    def test_selection_caps_and_skips_restricted_access(self):
+        def place(i, category, access=None, name=None):
+            return {'id':f'osm:node:{i}','name':name or f'P{i}','latitude':14.4+i*1e-4,'longitude':121.0,
+                    'category':category,'sourceTags':{'access':access} if access else {}}
+        places = [place(i, 'park') for i in range(40)] + [place(100, 'park', access='private')] + \
+                 [place(200+i, 'cafe', name='Same Chain') for i in range(5)] + [place(300, 'cafe', name='Other')]
+        chosen = catalog.select_places(places, (14.4, 121.0), None)
+        self.assertEqual(sum(p['category']=='park' for p in chosen), catalog.MAX_NON_CAFE)
+        self.assertEqual(sum(p['category']=='cafe' for p in chosen), 2, 'one per chain name')
+        self.assertNotIn('osm:node:100', [p['id'] for p in chosen])
 
 if __name__ == '__main__':
     unittest.main()

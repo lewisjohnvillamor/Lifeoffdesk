@@ -62,6 +62,8 @@ public struct RegionManifest: Codable, Sendable {
     public var id: String
     public var version: Int
     public var name: String
+    /// "full" (streets, footpaths, places) or "major-roads" (recording area with main-road context).
+    public var detail: String?
     public var coverageStatus: String
     public var bounds: BoundingBox
     public var center: Coordinate
@@ -70,6 +72,33 @@ public struct RegionManifest: Codable, Sendable {
     public var licenseURL: String
     public var builtAt: String
     public var files: [FileEntry]
+}
+
+/// Index of bundled region packs; the first entry is the primary region (map origin).
+public struct RegionIndex: Codable, Sendable {
+    public struct Entry: Codable, Sendable {
+        public var id: String
+        public var detail: String
+    }
+    public var schemaVersion: Int
+    public var regions: [Entry]
+}
+
+extension RegionManifest {
+    public var hasFullDetail: Bool { (detail ?? "full") == "full" }
+}
+
+extension PlaceCatalog {
+    /// Union of several region catalogs, first occurrence of an ID wins.
+    public static func merged(_ catalogs: [PlaceCatalog]) -> PlaceCatalog? {
+        guard var first = catalogs.first else { return nil }
+        var seen = Set(first.places.map(\.id))
+        for catalog in catalogs.dropFirst() {
+            for place in catalog.places where seen.insert(place.id).inserted { first.places.append(place) }
+        }
+        first.regionID = catalogs.map(\.regionID).joined(separator: "+")
+        return first
+    }
 }
 
 /// Compact road context: visual only, never a routing graph.

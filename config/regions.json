@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "note": "Starter map regions. 'full' = footpaths/streets + places; 'major-roads' = recording area with main-road context only. Bounding boxes come from OSM administrative boundaries unless noted.",
+  "regions": [
+    {
+      "id": "makati-cbd-starter",
+      "name": "Makati CBD starter subset",
+      "coverageStatus": "proposed bounding box; validate before bundling",
+      "bbox": {
+        "south": 14.545,
+        "west": 121.008,
+        "north": 14.57,
+        "east": 121.04
+      },
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "park",
+        "cafe",
+        "museum",
+        "library",
+        "scenic"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "makati",
+      "detail": "full",
+      "places": true,
+      "anchor": [
+        14.5566,
+        121.0244
+      ]
+    },
+    {
+      "id": "muntinlupa",
+      "name": "Muntinlupa",
+      "coverageStatus": "administrative bounding box; validate walking areas before relying on it",
+      "bbox": {
+        "south": 14.3472554,
+        "west": 121.0079059,
+        "north": 14.4679664,
+        "east": 121.1343954
+      },
+      "language": "tl-PH+en",
+      "catalogCategories": [
+        "park",
+        "cafe",
+        "museum",
+        "library",
+        "scenic"
+      ],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "muntinlupa",
+      "detail": "full",
+      "places": true,
+      "anchor": null,
+      "boundarySource": "https://www.openstreetmap.org/relation/1346849 (bounding box of the administrative boundary, includes water)"
+    },
+    {
+      "id": "metro-manila",
+      "name": "Metro Manila",
+      "coverageStatus": "administrative bounding box; roads only",
+      "bbox": {
+        "south": 14.3472554,
+        "west": 120.7917034,
+        "north": 14.7853355,
+        "east": 121.1350232
+      },
+      "language": "tl-PH+en",
+      "catalogCategories": [],
+      "source": "OpenStreetMap via one-time Overpass query",
+      "localDir": "metro-manila",
+      "detail": "major-roads",
+      "places": false,
+      "highways": [
+        "motorway",
+        "trunk",
+        "primary",
+        "secondary"
+      ],
+      "anchor": null,
+      "boundarySource": "https://www.openstreetmap.org/relation/147488 (bounding box of the administrative boundary, includes water)"
+    }
+  ]
+}

@@ -9,22 +9,41 @@ Updated 2026-10-09, Asia/Manila. Implementation started at the hackathon kickoff
 | Core logic (GPS filter, sessions, recovery, exploration, persistence, AI schema validation, prompt/grammar, catalog search, Taglish copy, eval scoring) | `Packages/LifeOffDeskCore` | Implemented; 43 XCTest cases pass on Linux (Swift 6.3.3) |
 | iPhone app (SwiftUI map/fog, walk controls, planner sheet, recap/history, settings/erase, AI diagnostics) | `LifeOffDesk/` + `LifeOffDesk/project.yml` | Compiles unsigned for generic iOS in CI (Xcode 16.4, macos-15); **not yet installed or run on a phone** |
 | On-device inference adapter (llama.cpp b11429 C API, GBNF-constrained JSON, ChatML/no-think) | `LifeOffDesk/Services/AI/LlamaEngine.swift` | Compiled and run against the real model on Linux; **not yet run on iPhone** |
-| Makati starter data | `LifeOffDesk/Resources/StarterData/` | 30 places (21 park, 4 museum, 2 library, 3 café) + 4,131 road lines; all `source-only-unreviewed` |
+| Starter map packs | `LifeOffDesk/Resources/StarterData/<region>/` | Makati CBD (primary): 30 places + 4,131 street/footpath lines. Muntinlupa: 30 places (27 parks, 3 cafés) + 12,216 lines. Metro Manila: 13,400 main-road lines, no places. All places `source-only-unreviewed`; ~4.3 MB total |
 | Dev-machine planner eval | `Tools/PlannerEval`, `scripts/run_planner_eval.sh`, `eval/results/` | Linux CPU diagnostics only |
 | CI compile check | `.github/workflows/ios-build.yml` | Passing: core tests on macOS, Python tests, pinned downloads verified, XcodeGen, unsigned iOS build |
+
+## MVP feature status (docs/MVP-FEATURES.md)
+
+"Code done" means implemented and compiling; none of these is accepted until checked on the iPhone.
+
+| ID | Feature | Code | Phone/outdoor verified |
+| --- | --- | --- | --- |
+| P0-01 | Map-first entry | Done | No |
+| P0-02 | Explicit walk session (start/pause/resume/finish, permission) | Done; state logic unit-tested | No |
+| P0-03 | Real GPS tracking with filtering | Done; filter unit-tested on synthetic replays | No outdoor walk yet |
+| P0-04 | Fog of war, narrow corridor | Done (25 m corridor, tiled drawing) | No |
+| P0-05 | Local persistence + recovery | Done; unit-tested | No relaunch/force-quit test on phone |
+| P0-06 | On-device AI chat (Taglish) | Done; real model run on Linux CPU only | **No — the key open gate** |
+| P0-07 | Grounded suggestions (≤3, sourced) | Done; unit-tested | No |
+| P0-08 | Choose destination, straight-line label | Done | No |
+| P0-09 | Honest recap + reopen | Done | No |
+| P0-10 | Offline starter area | Done for Makati + Muntinlupa (+ NCR main roads); places unreviewed | No airplane-mode run |
+| P0-11 | Errors/privacy (permission, no fix, no match, model missing/failure, erase) | Done | No |
+| P1 | Photo memory, cutouts, mascot accents, storage view/export | Not started | — |
 
 ## Gate table
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Organizer source | Read | HACKATHON.md; exact cutoff and track rules still unknown |
-| Starter city/language | Confirmed | Makati; Taglish. Exact outdoor demo segment still to choose |
+| Starter area/language | Updated 2026-10-09 | Metro Manila recording area; Makati CBD (primary) + Muntinlupa detailed; Taglish. Demo segment still to choose |
 | Xcode build | Passed in CI (unsigned) | GitHub Actions macos-15, Xcode 16.4, `generic/platform=iOS`; first run found one init error, fixed |
 | Target iOS/signing | Not tested | Deployment target iOS 17.0; set DEVELOPMENT_TEAM in Xcode |
 | Signed phone launch | Not tested | — |
 | Actual phone inference offline | **Not tested** | Use Settings → On-device AI diagnostics on the phone in airplane mode |
 | Inference adapter on real model (dev machine) | Passed (Linux CPU) | See below; not phone evidence |
-| Catalog/data provenance | Prepared, unreviewed | OSM source URLs, retrieval time, rule-based selection recorded; no human review |
+| Catalog/data provenance | Prepared, unreviewed | OSM source URLs, retrieval time, rule-based selection recorded; no human review. Region boxes are OSM admin-boundary bounding boxes (Muntinlupa relation 1346849, Metro Manila 147488), which include water and some neighbouring areas |
 | GPS filtering/session/persistence logic | Unit-tested | Synthetic replay fixtures only |
 | Outdoor GPS/fog | Not tested | — |
 | Background tracking | Not tested | `UIBackgroundModes: location` + `allowsBackgroundLocationUpdates` configured; verify on phone |
@@ -34,11 +53,11 @@ Updated 2026-10-09, Asia/Manila. Implementation started at the hackathon kickoff
 
 ## Tested here (Linux container, 2026-10-09)
 
-**Core unit tests — 43 passing.** Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
+**Core unit tests — 44 passing** (multi-region pack checks and a Muntinlupa search test added). Covers: invalid/inaccurate/stale/future/non-increasing fixes; teleport jumps; 15 s gap segment breaks; 5-minute stationary jitter (±4 m, 5–15 m accuracy) adds ≤3 trail points and <20 m; measured-zero-speed suppression; pause adds no trail; resume starts a new segment; distance excludes inter-segment gaps; active time excludes pauses; idempotent finish; invalid transitions; crash recovery to paused without counting closed time; recap numbers; exploration merge idempotence; revisits add no area; gaps are not revealed; corridor width; atomic save/reload; corrupt file falls back to backup and is set aside; newer-schema files untouched; erase keeps model/catalog; validator types/enums/bounds/extra keys/think-block stripping; out-of-range budget/duration → clarification; prompt sanitising against template injection; few-shot examples distinct from eval prompts; search radius/category/budget/mood/time labelling; bundled catalog keeps all facts unverified; planner repair (max one) and failure paths with a scripted engine (scripted engine is not AI evidence).
 
 Two defects found and fixed by these tests: random GPS jitter leaked into the trail with the original 5 m threshold (now combined-accuracy threshold + speed hint), and 5 m raster cells under-counted the 25 m corridor (now 2.5 m).
 
-**Python preparation tests — 7 passing.** Fixed `prepare_makati.py` dropping every park/museum way (Overpass `out geom` returns bounds, not center); now uses the bounds midpoint and records `positionMethod`.
+**Python preparation tests — 10 passing** (region queries, roads-only regions, place selection caps). Fixed `prepare_makati.py` dropping every park/museum way (Overpass `out geom` returns bounds, not center); now uses the bounds midpoint and records `positionMethod`.
 
 **Real model through the app's LlamaEngine (development diagnostic, NOT iPhone evidence).** Machine: Linux x86_64, 4 vCPU Intel Xeon 2.1 GHz, CPU only, 2 threads. Runtime llama.cpp b11429 built from source; model `Qwen3-0.6B-Q4_0.gguf`, 428,970,080 bytes, SHA-256 `da2572f1…17d4` (matches lock). Context 2048, max 160 output tokens, greedy, grammar-constrained.
 
@@ -54,7 +73,7 @@ The v2 prompt was adjusted after seeing v1 failures, so the 12 cases are no long
 1. `brew install xcodegen && scripts/setup_ios.sh`; open `LifeOffDesk/LifeOffDesk.xcodeproj`, set signing team and a unique bundle ID, run on the iPhone 12 Pro Max. CI compiles it unsigned; signing and on-device launch are still unproven.
 2. Settings → On-device AI diagnostics: Verify SHA-256, then Run all cases with airplane mode on, Wi-Fi off, Mac unplugged. Copy the JSON report into `eval/results/iphone-…json` and fill the evidence template in ACCEPTANCE-AND-DEMO.md.
 3. Short outdoor walk: check fix acquisition, pause/resume, recap, relaunch persistence, force-quit recovery, background tracking, permission denial.
-4. Review the 30 places (gated village parks such as Bel-Air/Urdaneta/San Miguel may not be publicly accessible) before calling anything verified; choose the demo segment.
+4. For the Muntinlupa test walk, note that many selected parks are inside subdivisions (Alabang Hills, Ayala Alabang, Pacific Malayan, Camella) and may be residents-only. Review the places (gated village parks such as Bel-Air/Urdaneta/San Miguel may not be publicly accessible) before calling anything verified; choose the demo segment.
 
 ## Known limitations
 

@@ -97,8 +97,13 @@ struct MapScreen: View {
         if model.phase == .acquiringFix {
             banner(icon: "location.magnifyingglass", text: "Finding your location…")
         }
-        if model.isOutsideCoverage {
+        switch model.coverageHere {
+        case .outside?:
             banner(icon: "map", text: "Map detail unavailable here. Your trail is still recorded.")
+        case let .mainRoadsOnly(name)?:
+            banner(icon: "map", text: "Only main roads are mapped here (\(name)). Your trail is still recorded.")
+        case .detailed?, nil:
+            EmptyView()
         }
         if let error = model.locationError {
             banner(icon: "exclamationmark.triangle", text: "Location problem: \(error)")
