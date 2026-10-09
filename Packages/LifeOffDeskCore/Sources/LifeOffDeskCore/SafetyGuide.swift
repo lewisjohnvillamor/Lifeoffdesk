@@ -279,9 +279,16 @@ public enum SafetyPrompt {
     }
 
     /// A short follow-up ("numbing", "paano?") continues the previous question when it matches nothing alone.
+    /// Only messages that read like a follow-up ("paano na?", "tapos?", "what if ...") continue; a
+    /// short new complaint ("eyes sore", "migraine") is a new question, not more of the last card.
+    static let followUpCues: Set<String> = ["paano", "pano", "bakit", "tapos", "pagkatapos", "then", "how", "why", "what",
+                                            "kung", "pwede", "puwede", "dapat", "gaano", "ilang", "kailan", "ok", "okay",
+                                            "safe", "ligtas", "next", "ano", "sige", "more", "else", "after", "and"]
+
     public static func followUp(_ question: String, previous: String?) -> String? {
         guard let previous, question.split(separator: " ").count <= 4,
-              SafetyKeywords.topic(in: question) == nil, !SafetyKeywords.emergency(in: question) else { return nil }
+              SafetyKeywords.topic(in: question) == nil, !SafetyKeywords.emergency(in: question),
+              SafetyLexicon.normalize(question).contains(where: followUpCues.contains) else { return nil }
         return previous + " " + question
     }
 }

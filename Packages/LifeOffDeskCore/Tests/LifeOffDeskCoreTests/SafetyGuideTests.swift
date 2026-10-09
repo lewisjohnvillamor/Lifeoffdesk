@@ -205,4 +205,11 @@ final class SafetyGuideTests: XCTestCase {
             XCTAssertNil(SafetyPrompt.followUp(q, previous: "nakagat ako ng aso"), q)
         }
     }
+
+    func testShortNewComplaintsAreNotFollowUps() {
+        XCTAssertNil(SafetyPrompt.followUp("eyes sore", previous: "natapilok ako"))
+        XCTAssertNil(SafetyPrompt.followUp("migrain", previous: "natapilok ako"))
+        XCTAssertNotNil(SafetyPrompt.followUp("tapos?", previous: "natapilok ako"))
+        XCTAssertNotNil(SafetyPrompt.followUp("what if namamaga", previous: "natapilok ako"))
+    }
 }
