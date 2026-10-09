@@ -138,24 +138,42 @@
 <h2 id="features-title">More than a line on a map.</h2>
 <p>Life Off Desk now connects the outing, the discovery and the memory afterward.</p>
 </div>
-<div class="prototype-showcase">
-<div class="prototype-menu">
-<div class="prototype-tabs" role="tablist" aria-label="Explore app screens">
-<button type="button" role="tab" aria-selected="true" aria-controls="prototype-panel" data-prototype="map">Explore</button>
-<button type="button" role="tab" aria-selected="false" aria-controls="prototype-panel" data-prototype="route">Go somewhere</button>
-<button type="button" role="tab" aria-selected="false" aria-controls="prototype-panel" data-prototype="coach">Local AI</button>
-<button type="button" role="tab" aria-selected="false" aria-controls="prototype-panel" data-prototype="recap">Remember</button>
-<button type="button" role="tab" aria-selected="false" aria-controls="prototype-panel" data-prototype="help">Get help</button>
+<div class="prototype-carousel" aria-roledescription="carousel" aria-label="Life Off Desk app features">
+<div class="carousel-heading">
+<div>
+<span class="small-label">EXPLORE THE APP</span>
+<h3>Watch your world grow.</h3>
+<p>Swipe through the ways Life Off Desk helps you explore, choose, remember and get help.</p>
 </div>
-<div class="prototype-copy" aria-live="polite">
-<span class="small-label" id="prototype-kicker">EXPLORE</span>
-<h3 id="prototype-title">Watch your world grow.</h3>
-<p id="prototype-description">Every street you explore turns from fog into a map that feels like yours.</p>
+<div class="carousel-controls">
+<button type="button" id="carousel-previous" aria-label="Previous app feature">←</button>
+<button type="button" id="carousel-next" aria-label="Next app feature">→</button>
 </div>
 </div>
-<figure class="prototype-phone" id="prototype-panel" role="tabpanel">
-<img id="prototype-image" src="assets/mockup-map.jpg" alt="Life Off Desk shown inside an iPhone, with explored streets and discoveries on the map." width="1080" height="1350" loading="lazy">
+<div class="carousel-track" id="feature-carousel" tabindex="0">
+<figure class="carousel-slide" data-carousel-slide aria-label="1 of 5">
+<img src="assets/mockup-map.jpg" alt="Life Off Desk shown inside an iPhone, with explored streets and discoveries on the map." width="1080" height="1350" loading="lazy">
 </figure>
+<figure class="carousel-slide" data-carousel-slide aria-label="2 of 5">
+<img src="assets/mockup-route.jpg" alt="Life Off Desk shown inside an iPhone, with a suggested route following mapped streets." width="1080" height="1350" loading="lazy">
+</figure>
+<figure class="carousel-slide" data-carousel-slide aria-label="3 of 5">
+<img src="assets/mockup-coach.jpg" alt="Life Off Desk shown on an iPhone with a Taglish on-device AI suggestion above the map." width="1080" height="1350" loading="lazy">
+</figure>
+<figure class="carousel-slide" data-carousel-slide aria-label="4 of 5">
+<img src="assets/mockup-recap.jpg" alt="Life Off Desk shown inside an iPhone with a completed adventure recap and mascot card." width="1080" height="1350" loading="lazy">
+</figure>
+<figure class="carousel-slide" data-carousel-slide aria-label="5 of 5">
+<img src="assets/mockup-help.jpg" alt="Life Off Desk shown inside an iPhone with the offline help assistant and sourced first-aid steps." width="1080" height="1350" loading="lazy">
+</figure>
+</div>
+<div class="carousel-dots" role="group" aria-label="Choose an app feature">
+<button type="button" aria-label="Show feature 1" aria-current="true" data-carousel-dot="0"></button>
+<button type="button" aria-label="Show feature 2" aria-current="false" data-carousel-dot="1"></button>
+<button type="button" aria-label="Show feature 3" aria-current="false" data-carousel-dot="2"></button>
+<button type="button" aria-label="Show feature 4" aria-current="false" data-carousel-dot="3"></button>
+<button type="button" aria-label="Show feature 5" aria-current="false" data-carousel-dot="4"></button>
+</div>
 </div>
 </div>
 </section>
