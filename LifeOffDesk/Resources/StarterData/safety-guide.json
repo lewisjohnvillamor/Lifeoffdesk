@@ -160,6 +160,312 @@
    "sourceURL": "https://www.nhs.uk/symptoms/what-to-do-if-someone-has-a-seizure-fit/"
   },
   {
+   "topic": "nosebleed",
+   "title": "Nosebleed",
+   "steps": [
+    "Sit down and lean forward, head tilted forward, mouth open.",
+    "Pinch the soft part of the nose just above the nostrils for 10–15 minutes.",
+    "Breathe through your mouth while pinching.",
+    "A wrapped ice pack on the bridge of the nose may help.",
+    "For 24 hours after, don't blow or pick your nose, and avoid hot drinks, alcohol and heavy lifting."
+   ],
+   "callNow": [
+    "Bleeding lasts more than 10–15 minutes or seems a lot",
+    "You swallow so much blood you vomit",
+    "It started after a blow to the head",
+    "You feel weak or dizzy, or have trouble breathing"
+   ],
+   "sourceTitle": "Nosebleed - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/nosebleed/"
+  },
+  {
+   "topic": "headache",
+   "title": "Headache and migraine",
+   "steps": [
+    "Drink plenty of water.",
+    "Rest and try to relax; stress can make headaches worse.",
+    "Take paracetamol or ibuprofen if needed.",
+    "Don't skip meals, even if you're not hungry.",
+    "Avoid long screen time, alcohol and oversleeping."
+   ],
+   "callNow": [
+    "A sudden, extremely painful headache",
+    "With a seizure, numbness or weakness, slurred speech, poor balance or confusion",
+    "With vision loss, a rash that doesn't fade under a glass, or a stiff neck with high fever",
+    "After a head injury, or the person is very drowsy"
+   ],
+   "sourceTitle": "Headaches - NHS",
+   "sourceURL": "https://www.nhs.uk/symptoms/headaches/"
+  },
+  {
+   "topic": "eyeInjury",
+   "title": "Something in the eye or eye injury",
+   "steps": [
+    "Rinse the eye with clean, lukewarm water (tap, shower or bottled).",
+    "Hold the eye open and run a gentle stream of water over it for at least 20 minutes.",
+    "For a household or cosmetic product, follow the advice on the packaging.",
+    "Don't touch or rub the eye; leave out contact lenses and eye make-up.",
+    "Never try to remove an object stuck in the eye."
+   ],
+   "callNow": [
+    "A strong chemical like bleach got in the eye: keep rinsing and bring the container",
+    "Something sharp pierced the eye or hit it at high speed",
+    "Vision changes, severe pain, or light hurts the eye",
+    "You can't open or move the eye, or there is blood or pus"
+   ],
+   "sourceTitle": "Eye injuries - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/eye-injuries/"
+  },
+  {
+   "topic": "blisters",
+   "title": "Blisters from walking",
+   "steps": [
+    "Don't pop the blister yourself.",
+    "Gently wash the area and pat it dry.",
+    "Cover it with a soft plaster or padded dressing.",
+    "If it bursts, wash your hands, let it drain, then cover it; don't peel off the loose skin.",
+    "Stop wearing the shoes that caused it; well-fitting shoes and thick socks help prevent them."
+   ],
+   "callNow": [
+    "The skin is hot and red, or there is green or yellow pus",
+    "It is very painful or keeps coming back",
+    "It came from a burn, sunburn or an allergic reaction"
+   ],
+   "sourceTitle": "Blisters - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/blisters/"
+  },
+  {
+   "topic": "cramps",
+   "title": "Muscle cramps (pulikat)",
+   "steps": [
+    "Stretch and massage the cramping muscle.",
+    "Stand up and put your weight on the affected leg.",
+    "Most cramps stop on their own within seconds to 10 minutes.",
+    "Afterwards, paracetamol or ibuprofen can ease soreness for up to a day.",
+    "Drink water; dehydration and hard exercise in heat can trigger cramps."
+   ],
+   "callNow": [
+    "A cramp lasts longer than 10 minutes",
+    "There is also numbness or swelling in the leg",
+    "Cramps keep coming back"
+   ],
+   "sourceTitle": "Leg cramps - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/leg-cramps/"
+  },
+  {
+   "topic": "foodPoisoning",
+   "title": "Food poisoning, diarrhea and vomiting",
+   "steps": [
+    "Rest and drink plenty of fluids; take small sips if you feel sick.",
+    "Use oral rehydration salts (ORS) if you pee less or your pee is dark.",
+    "Eat when you can; avoid fatty or spicy food, fruit juice and fizzy drinks.",
+    "Paracetamol can ease discomfort.",
+    "Wash your hands often with soap and don't prepare food for others."
+   ],
+   "callNow": [
+    "Vomiting blood, or vomit that looks like coffee grounds or is green",
+    "Sudden severe headache or stomach pain, or a stiff neck",
+    "Blue, grey or pale lips or skin, or severe trouble breathing",
+    "You can't keep any fluids down, or there is blood in the diarrhea"
+   ],
+   "sourceTitle": "Diarrhoea and vomiting - NHS",
+   "sourceURL": "https://www.nhs.uk/symptoms/diarrhoea-and-vomiting/"
+  },
+  {
+   "topic": "roadCrash",
+   "title": "Road accident: helping safely",
+   "steps": [
+    "Park well away from the scene, hazard lights on; stay visible.",
+    "Get others to warn traffic in both directions.",
+    "Turn off damaged vehicles' ignition and apply handbrakes.",
+    "Call 911: say how many are hurt, their ages and their injuries.",
+    "Treat life-threatening injuries first; check for other casualties nearby.",
+    "Keep checking each person's breathing and response until help arrives."
+   ],
+   "callNow": [
+    "Assume a neck or spine injury: treat people where they lie and support the head and neck",
+    "Leave trapped people to rescuers; don't try to move an overturned vehicle",
+    "Watch for traffic, fuel spills and damaged power lines; no smoking nearby"
+   ],
+   "sourceTitle": "How to Manage a Traffic Accident | St John Ambulance",
+   "sourceURL": "https://www.sja.org.uk/first-aid-advice/traffic-collision/"
+  },
+  {
+   "topic": "fire",
+   "title": "Fire: get out and stay out",
+   "steps": [
+    "Shout \"Fire!\" and get outside immediately; leave belongings behind.",
+    "Take the stairs, not the elevator.",
+    "If a door or handle feels warm, or smoke blocks the way, use another exit.",
+    "In smoke, stay low and close doors behind you.",
+    "If trapped, stay in a closed room, put a wet towel under the door and call for help.",
+    "Signal from a window with a bright cloth or flashlight."
+   ],
+   "callNow": [
+    "Never go back inside for anything or anyone",
+    "Never open a door that is warm to the touch",
+    "If your clothes catch fire: stop, drop, cover your face and roll"
+   ],
+   "sourceTitle": "What To Do If A Fire Starts | American Red Cross",
+   "sourceURL": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/fire/if-a-fire-starts.html"
+  },
+  {
+   "topic": "earthquake",
+   "title": "Earthquake (lindol)",
+   "steps": [
+    "Drop to your hands and knees, cover your head and neck, and hold on.",
+    "Get under a sturdy table and grip it, or go to an inside wall away from windows.",
+    "Outdoors: move to open space away from buildings, power lines and trees.",
+    "Driving: stop away from buildings, overpasses and wires; stay in the vehicle.",
+    "After the shaking, put on sturdy shoes; leave only if outside is clear and safe.",
+    "If trapped, cover your mouth and nose and knock or whistle three times every few minutes."
+   ],
+   "callNow": [
+    "Near the coast, walk to higher ground as soon as shaking stops; don't wait for a tsunami warning",
+    "Use a flashlight, not candles or matches, until you're sure there's no gas leak",
+    "Expect aftershocks; leave a damaged building"
+   ],
+   "sourceTitle": "Earthquake Safety | Red Cross",
+   "sourceURL": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/earthquake.html"
+  },
+  {
+   "topic": "typhoon",
+   "title": "Typhoon (bagyo)",
+   "steps": [
+    "If authorities advise evacuation, take your emergency kit and leave right away.",
+    "Follow official evacuation routes; shortcuts may be blocked.",
+    "Shelter in a small inside room with no windows, on a floor that won't flood.",
+    "Stay away from glass windows and doors.",
+    "Move to higher ground before flooding begins.",
+    "Secure outdoor items that strong winds could throw."
+   ],
+   "callNow": [
+    "Never walk, swim or drive through floodwater",
+    "Avoid downed power lines and don't touch floodwater",
+    "Never run gas, charcoal or generators indoors",
+    "Don't go home until officials say it's safe"
+   ],
+   "sourceTitle": "Hurricane Preparedness | Red Cross (typhoons are the same storms)",
+   "sourceURL": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/hurricane.html"
+  },
+  {
+   "topic": "powerOutage",
+   "title": "Brownout or power outage",
+   "steps": [
+    "Use flashlights, not candles.",
+    "Unplug appliances and electronics to avoid damage when power returns.",
+    "Keep the fridge closed; it stays cold for about 4 hours.",
+    "Check local alerts and make sure family and neighbours are OK.",
+    "Run generators only outdoors, away from windows.",
+    "Go somewhere else if it gets too hot or a medical device needs power."
+   ],
+   "callNow": [
+    "Stay far from fallen power lines and report them",
+    "Never cook or heat with gas stoves indoors (carbon monoxide)",
+    "Don't use electrical equipment that got wet; throw out food that got warm"
+   ],
+   "sourceTitle": "Power Outage Safety | American Red Cross",
+   "sourceURL": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/types-of-emergencies/power-outage.html"
+  },
+  {
+   "topic": "asthma",
+   "title": "Asthma attack (hika)",
+   "steps": [
+    "Sit upright and try to stay calm.",
+    "Take one puff of the blue reliever inhaler every 30–60 seconds, up to 10 puffs.",
+    "If not better after 10 puffs, or worse at any point, call 911.",
+    "If help hasn't arrived after 10 minutes and it isn't improving, repeat the puffs.",
+    "Helping someone: reassure them, help them sit comfortably and use their inhaler.",
+    "Afterwards, see a doctor the same day even if they feel better."
+   ],
+   "callNow": [
+    "Symptoms get worse at any point",
+    "No better after 10 puffs",
+    "No inhaler and struggling to breathe"
+   ],
+   "sourceTitle": "Asthma attacks | Asthma + Lung UK",
+   "sourceURL": "https://www.asthmaandlung.org.uk/conditions/asthma/asthma-attacks"
+  },
+  {
+   "topic": "lowBloodSugar",
+   "title": "Low blood sugar (diabetes)",
+   "steps": [
+    "Check blood sugar if you can; treat if it's low or there are symptoms.",
+    "Give fast sugar: a small glass of juice or sugary drink, or glucose tablets.",
+    "Recheck after 10–15 minutes; if still low, give more sugar.",
+    "Once better, have a longer-lasting snack like bread or biscuits, or a meal.",
+    "If unconscious: give nothing by mouth and put them in the recovery position.",
+    "Stay with them until fully recovered."
+   ],
+   "callNow": [
+    "They are unconscious or not responding",
+    "They have a seizure",
+    "They have been drinking alcohol"
+   ],
+   "sourceTitle": "Low blood sugar (hypoglycaemia) - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/low-blood-sugar-hypoglycaemia/"
+  },
+  {
+   "topic": "mosquito",
+   "title": "Mosquito bites and dengue",
+   "steps": [
+    "Dengue mosquitoes bite in the daytime: cover as much skin as possible.",
+    "Use repellent with DEET, picaridin or IR3535; screens, coils or nets help.",
+    "Empty, cover and clean water containers every week.",
+    "If dengue is suspected: rest, drink plenty of fluids, paracetamol for pain.",
+    "Avoid ibuprofen and aspirin; they raise bleeding risk.",
+    "Watch for warning signs, especially after the fever goes away."
+   ],
+   "callNow": [
+    "Severe stomach pain or vomiting that won't stop",
+    "Bleeding gums or nose, or blood in vomit or stool",
+    "Fast breathing, restlessness, or pale cold skin",
+    "Marked tiredness or weakness"
+   ],
+   "sourceTitle": "Dengue and severe dengue - WHO",
+   "sourceURL": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue"
+  },
+  {
+   "topic": "sunburn",
+   "title": "Sunburn",
+   "steps": [
+    "Get out of the sun as soon as possible.",
+    "Cool the skin with a cool shower or damp towel.",
+    "Apply aftersun or an unperfumed moisturiser; no ice or petroleum jelly.",
+    "Drink plenty of water and avoid alcohol.",
+    "Paracetamol or ibuprofen can help with pain.",
+    "Keep burnt skin covered; don't pop blisters or pick peeling skin."
+   ],
+   "callNow": [
+    "The skin is blistered or swollen",
+    "A very high temperature, or feeling hot, cold and shivery",
+    "Dizzy, sick, headache or cramps (possible heat exhaustion)",
+    "A baby or young child is sunburnt"
+   ],
+   "sourceTitle": "Sunburn - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/sunburn/"
+  },
+  {
+   "topic": "sparkPlug",
+   "title": "Changing a spark plug",
+   "steps": [
+    "Park on level ground, handbrake on, and wait until the engine is cold.",
+    "Open the hood; twist and pull each wire or coil off its plug.",
+    "Unscrew the old plug with a spark plug socket.",
+    "Thread the new plug in by hand first to avoid cross-threading.",
+    "Tighten it with the socket, then refit the coils, wires and connectors.",
+    "Start the engine and listen for anything unusual."
+   ],
+   "callNow": [
+    "Only work on a cold engine",
+    "Starting the plug by hand protects the engine head",
+    "Diesel engines have glow plugs, not spark plugs",
+    "Unsure, or problems after? Use a mechanic"
+   ],
+   "sourceTitle": "Spark plugs maintenance and replacement guide - RAC",
+   "sourceURL": "https://www.rac.co.uk/drive/advice/car-maintenance/what-are-spark-plugs-maintenance-and-replacement-guide/"
+  },
+  {
    "topic": "choking",
    "title": "Choking (adult)",
    "steps": [

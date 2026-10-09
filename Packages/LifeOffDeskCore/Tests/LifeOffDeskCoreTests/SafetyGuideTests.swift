@@ -218,4 +218,20 @@ final class SafetyGuideTests: XCTestCase {
             XCTAssertEqual(SafetyKeywords.topic(in: q), .unsafe, q)
         }
     }
+
+    func testCommonTravelProblemsHaveCards() throws {
+        let cases: [(String, SafetyTopic)] = [
+            ("there is fire", .fire), ("may sunog sa building", .fire), ("napaso ang kamay ko", .burn),
+            ("lumilindol!", .earthquake), ("may bagyo, signal number 3", .typhoon), ("brownout dito", .powerOutage),
+            ("nabangga ang motor", .roadCrash), ("nasagasaan ng kotse", .roadCrash),
+            ("dumudugo ang ilong ko", .nosebleed), ("sakit ng ulo ko", .headache), ("migrain", .headache),
+            ("napuwing ako", .eyeInjury), ("eyes sore", .eyeInjury), ("may paltos ang paa ko", .blisters),
+            ("pinulikat ako", .cramps), ("food poisoning yata", .foodPoisoning), ("inaatake ng hika", .asthma),
+            ("bumaba ang sugar niya, may diabetes", .lowBloodSugar), ("ang daming lamok, baka dengue", .mosquito),
+            ("sunburn", .sunburn), ("how to change spark plug", .sparkPlug), ("napaso ng mainit na kape", .burn),
+        ]
+        for (q, topic) in cases { XCTAssertEqual(SafetyKeywords.topic(in: q), topic, q) }
+        let guide = try SafetyGuide.decode(Data(contentsOf: Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/safety-guide.json")))
+        for topic in SafetyTopic.allCases { XCTAssertNotNil(guide.card(topic), topic.rawValue) }
+    }
 }

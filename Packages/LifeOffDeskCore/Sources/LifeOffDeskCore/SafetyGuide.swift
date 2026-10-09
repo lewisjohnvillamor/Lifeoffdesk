@@ -4,12 +4,22 @@ import Foundation
 /// (which reviewed card, and whether it describes an emergency); the answer is always a bundled
 /// card summarised from a named public source. The model never writes medical or survival advice.
 public enum SafetyTopic: String, Codable, CaseIterable, Sendable {
-    case bleeding, burn, sprain, heat, fainting, choking, cpr, stroke, heartAttack, seizure, allergy, animalBite, dehydration, sting,
+    case bleeding, burn, sprain, heat, fainting, choking, cpr, stroke, heartAttack, seizure, allergy,
+         roadCrash, fire, earthquake, typhoon, powerOutage, asthma, lowBloodSugar, nosebleed, headache, eyeInjury,
+         blisters, cramps, foodPoisoning, mosquito, sunburn, sparkPlug, animalBite, dehydration, sting,
          snakeBite, wildPlants, flood, lightning, unsafe, lost, phoneBattery, noGPS,
          breakdown, flatTire, overheating, carBattery, wontStart, warningLights
 
     /// Vehicle cards list safety warnings, not "call 911 if" signs.
-    public var isVehicle: Bool { [.breakdown, .flatTire, .overheating, .carBattery, .wontStart, .warningLights].contains(self) }
+    public var isVehicle: Bool { [.breakdown, .flatTire, .overheating, .carBattery, .wontStart, .warningLights, .sparkPlug].contains(self) }
+
+    /// Heading for a card's second list: emergency signs, practical warnings, or see-a-doctor signs
+    /// (the sources for blisters and cramps list no emergency signs).
+    public var warningsHeading: String {
+        if isVehicle || [.powerOutage, .typhoon, .earthquake].contains(self) { return "Safety warnings:" }
+        if [.blisters, .cramps, .sunburn].contains(self) { return "See a doctor if:" }
+        return "Call 911 if:"
+    }
 }
 
 public struct SafetyCard: Codable, Hashable, Sendable, Identifiable {
@@ -198,11 +208,11 @@ public enum SafetyKeywords {
 }
 
 public enum SafetyPrompt {
-    public static let promptVersion = 2
+    public static let promptVersion = 3
 
     static let system = """
     You route a person's safety question (Taglish or English) to one reviewed help card in an offline app. Output one JSON object:
-    topic: one of bleeding, burn, sprain, heat, fainting, choking, cpr, stroke, heartAttack, seizure, allergy, animalBite, dehydration, sting, snakeBite, wildPlants, flood, lightning, unsafe, lost, phoneBattery, noGPS, breakdown, flatTire, overheating, carBattery, wontStart, warningLights, or "unknown" if none fits.
+    topic: one of \(SafetyTopic.allCases.map(\.rawValue).joined(separator: ", ")), or "unknown" if none fits.
     A line "Photo shows: …" lists objects Apple's on-device image recognition saw in the user's photo; use it as context only.
     "Ano ang number / hotline" questions are not cards: use "unknown".
     emergency: true if the words describe a life-threatening situation (not breathing, unconscious, heavy bleeding, chest pain, seizure, severe allergic reaction, snake bite), else false.

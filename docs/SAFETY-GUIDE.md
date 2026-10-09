@@ -110,3 +110,22 @@ The cards **unsafe**, **lost** and **noGPS** describe only what the app can do: 
 - **Prefix terms:** prefix terms that swallowed unrelated words are now exact ("numb*" matched "number", "pantal*" matched "pantalon").
 - **Duplicate spellings:** spellings that normalise to the same words count once.
 - **Emergencies:** an emergency never continues the previous question.
+
+
+## 16 more cards (2026-10-10, founder phone tests)
+
+There are now 44 cards. Each new one is paraphrased from the page it links; all pages were checked 2026-10-09. "Call 999" on UK pages and "call 9-1-1" on US pages became "call 911".
+- **Disasters and road:**
+  - Road accident (St John Ambulance)
+  - Fire, earthquake, typhoon and power outage (American Red Cross; the PHIVOLCS and NDRRMC pages could not be read through the proxy)
+- **Common ailments:**
+  - Nosebleed, headache, eye injury, blisters, cramps, diarrhoea and vomiting, sunburn and low blood sugar (NHS)
+  - Asthma attack (Asthma + Lung UK)
+  - Mosquito bites and dengue (WHO)
+- **Car:** changing a spark plug (RAC general guide; no torque or gap figures).
+- **Card warning headings:** "Call 911 if" for emergencies, "See a doctor if" for blisters, cramps and sunburn (their sources list no emergency signs), and "Safety warnings" for vehicles and disasters.
+- **Routing changes:**
+  - Keyword terms moved to the new cards: lamok to mosquito, bagyo to typhoon, aksidente and nabangga to road crash, paltos to blisters.
+  - Fire, drowning and theft phrases were added.
+  - Follow-ups now need a follow-up cue word.
+- **Relabelled held-out set:** 7 cases in the v1 held-out set were relabelled where a dedicated card now exists (mosquito, drowning to CPR, typhoon, road crash, heart attack, seizure, stroke). After that, keywords-only scores stay 126/126 and 60/60 with no missed emergencies. Both sets have been seen, so they are no longer independent tests.

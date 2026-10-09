@@ -1,131 +1,635 @@
 {
- "label": "Held-out routing cases for the SOS help assistant, written separately from scripts/build_safety_lexicon.py (same author, different phrasings). topic null = no card expected; emergency true = must show Call 911.",
+ "label": "Held-out routing cases for the SOS help assistant, written separately from scripts/build_safety_lexicon.py (same author, different phrasings). topic null = no card expected; emergency true = must show Call 911. Relabelled 2026-10-10 when dedicated cards were added (mosquito, CPR for drowning, typhoon, road crash, heart attack, seizure, stroke).",
  "cases": [
-  {"q": "may sugat ako sa tuhod, dumudugo pa", "topic": "bleeding", "emergency": false},
-  {"q": "nahiwa ako ng kutsilyo habang naghihiwa", "topic": "bleeding", "emergency": false},
-  {"q": "I cut my finger on broken glass", "topic": "bleeding", "emergency": false},
-  {"q": "ayaw tumigil ang dugo sa braso niya", "topic": "bleeding", "emergency": true},
-  {"q": "nagasgas yung siko ko sa semento", "topic": "bleeding", "emergency": false},
-  {"q": "there's a deep wound on his leg", "topic": "bleeding", "emergency": false},
-  {"q": "may nasaksak sa kanto", "topic": "bleeding", "emergency": true},
-  {"q": "natusok ako ng pako", "topic": "bleeding", "emergency": false},
-  {"q": "napaso ako sa kawali", "topic": "burn", "emergency": false},
-  {"q": "natapunan ng kumukulong tubig ang kamay ko", "topic": "burn", "emergency": false},
-  {"q": "nalapnos ang balat ko", "topic": "burn", "emergency": false},
-  {"q": "I burned my hand on the exhaust pipe", "topic": "burn", "emergency": false},
-  {"q": "natalsikan ako ng mainit na mantika", "topic": "burn", "emergency": false},
-  {"q": "may paltos na sa braso ko dahil sa paso", "topic": "burn", "emergency": false},
-  {"q": "natapilok ako pababa ng hagdan", "topic": "sprain", "emergency": false},
-  {"q": "namamaga ang bukung-bukong ko", "topic": "sprain", "emergency": false},
-  {"q": "parang nabali ang braso ng anak ko", "topic": "sprain", "emergency": false},
-  {"q": "I twisted my ankle while jogging", "topic": "sprain", "emergency": false},
-  {"q": "nadulas ako sa basang sahig, masakit ang balakang", "topic": "sprain", "emergency": false},
-  {"q": "nakausli ang buto sa binti niya", "topic": "sprain", "emergency": true},
-  {"q": "namamanhid ang paa ko pagkatapos mahulog", "topic": "sprain", "emergency": false},
-  {"q": "masakit ang tuhod ko", "topic": "sprain", "emergency": false},
-  {"q": "nadapa si lolo, hindi niya maigalaw ang pulso", "topic": "sprain", "emergency": false},
-  {"q": "sobrang init, parang hihimatayin na ako", "topic": "heat", "emergency": false},
-  {"q": "nainitan ako nang sobra sa paglalakad", "topic": "heat", "emergency": false},
-  {"q": "I think I have heat exhaustion", "topic": "heat", "emergency": false},
-  {"q": "baka heatstroke ito, mainit ang balat at hindi pinapawisan", "topic": "heat", "emergency": true},
-  {"q": "tirik ang araw at nahihilo na ako", "topic": "heat", "emergency": false},
-  {"q": "nahimatay ang kasama ko sa pila", "topic": "fainting", "emergency": false},
-  {"q": "nahihilo ako at nandidilim ang paningin", "topic": "fainting", "emergency": false},
-  {"q": "my friend just fainted but is breathing", "topic": "fainting", "emergency": false},
-  {"q": "I feel lightheaded", "topic": "fainting", "emergency": false},
-  {"q": "nahimatay at hindi magising", "topic": "fainting", "emergency": true},
-  {"q": "nabulunan ang tatay ko sa pagkain", "topic": "choking", "emergency": false},
-  {"q": "someone is choking on food", "topic": "choking", "emergency": false},
-  {"q": "nabibilaukan siya, hindi makahinga", "topic": "choking", "emergency": true},
-  {"q": "may naipit sa lalamunan ng bata", "topic": "choking", "emergency": false},
-  {"q": "bumagsak siya at hindi humihinga", "topic": "cpr", "emergency": true},
-  {"q": "walang pulso ang lalaki sa kalsada", "topic": "cpr", "emergency": true},
-  {"q": "how do I do CPR", "topic": "cpr", "emergency": false},
-  {"q": "he collapsed and stopped breathing", "topic": "cpr", "emergency": true},
-  {"q": "namantal ako pagkatapos kumain ng hipon", "topic": "allergy", "emergency": false},
-  {"q": "namamaga ang labi ko, allergic yata", "topic": "allergy", "emergency": false},
-  {"q": "allergic reaction to peanuts, swollen tongue", "topic": "allergy", "emergency": false},
-  {"q": "nagkapantal ako buong katawan", "topic": "allergy", "emergency": false},
-  {"q": "sumisikip ang lalamunan ko pagkatapos ng kagat ng bubuyog", "topic": "allergy", "emergency": true},
-  {"q": "kinagat ako ng askal sa binti", "topic": "animalBite", "emergency": false},
-  {"q": "kinalmot ako ng pusa ng kapitbahay", "topic": "animalBite", "emergency": false},
-  {"q": "a stray dog bit my hand", "topic": "animalBite", "emergency": false},
-  {"q": "kailangan ko ba ng anti rabies?", "topic": "animalBite", "emergency": false},
-  {"q": "nakagat ako ng tuta", "topic": "animalBite", "emergency": false},
-  {"q": "natuklaw ako ng ahas sa damuhan", "topic": "snakeBite", "emergency": true},
-  {"q": "there was a snake and it bit me", "topic": "snakeBite", "emergency": false},
-  {"q": "may ahas sa daan, ano gagawin ko", "topic": "snakeBite", "emergency": false},
-  {"q": "kinagat ako ng putakti", "topic": "sting", "emergency": false},
-  {"q": "a bee stung my arm", "topic": "sting", "emergency": false},
-  {"q": "ang daming kagat ng lamok, sobrang kati", "topic": "sting", "emergency": false},
-  {"q": "kinagat ako ng langgam na pula", "topic": "sting", "emergency": false},
-  {"q": "nauuhaw na ako nang sobra", "topic": "dehydration", "emergency": false},
-  {"q": "tuyo ang bibig ko at madilim ang ihi", "topic": "dehydration", "emergency": false},
-  {"q": "nagtatae ako mula kanina", "topic": "dehydration", "emergency": false},
-  {"q": "I am really thirsty and tired", "topic": "dehydration", "emergency": false},
-  {"q": "kanina pa nagsusuka ang anak ko", "topic": "dehydration", "emergency": false},
-  {"q": "pwede bang kainin itong kabute sa bakuran?", "topic": "wildPlants", "emergency": false},
-  {"q": "is this wild berry safe to eat", "topic": "wildPlants", "emergency": false},
-  {"q": "nakakain ba ang prutas na ito sa gubat", "topic": "wildPlants", "emergency": false},
-  {"q": "kinain ng bata ang dahon ng halaman", "topic": "wildPlants", "emergency": false},
-  {"q": "baka nalason siya sa kinain niyang kabute", "topic": "wildPlants", "emergency": true},
-  {"q": "bumabaha na sa kalye namin", "topic": "flood", "emergency": false},
-  {"q": "kailangan ko bang lumusong sa baha pauwi", "topic": "flood", "emergency": false},
-  {"q": "the street is flooded, can I walk through", "topic": "flood", "emergency": false},
-  {"q": "may nalulunod sa baha!", "topic": "flood", "emergency": true},
-  {"q": "kumikidlat na, nasa labas pa ako", "topic": "lightning", "emergency": false},
-  {"q": "may bagyo at malakas ang kulog", "topic": "lightning", "emergency": false},
-  {"q": "thunderstorm while hiking, what do I do", "topic": "lightning", "emergency": false},
-  {"q": "parang may sumusunod sa akin", "topic": "unsafe", "emergency": false},
-  {"q": "naholdap ako sa jeep", "topic": "unsafe", "emergency": false},
-  {"q": "someone is following me home", "topic": "unsafe", "emergency": false},
-  {"q": "binabastos ako ng lalaki sa kanto", "topic": "unsafe", "emergency": false},
-  {"q": "tinutukan ako ng kutsilyo", "topic": "unsafe", "emergency": true},
-  {"q": "nadukutan ako ng wallet", "topic": "unsafe", "emergency": false},
-  {"q": "naligaw ako, hindi ko alam ang daan pauwi", "topic": "lost", "emergency": false},
-  {"q": "nasaan ako ngayon?", "topic": "lost", "emergency": false},
-  {"q": "I'm lost and it's getting dark", "topic": "lost", "emergency": false},
-  {"q": "lowbat na ako, paano makatipid", "topic": "phoneBattery", "emergency": false},
-  {"q": "mamamatay na phone ko", "topic": "phoneBattery", "emergency": false},
-  {"q": "my phone battery is almost dead", "topic": "phoneBattery", "emergency": false},
-  {"q": "walang signal dito sa bundok", "topic": "noGPS", "emergency": false},
-  {"q": "hindi gumagalaw yung location ko sa mapa", "topic": "noGPS", "emergency": false},
-  {"q": "GPS not updating", "topic": "noGPS", "emergency": false},
-  {"q": "tumirik ang kotse namin sa SLEX", "topic": "breakdown", "emergency": false},
-  {"q": "nasiraan kami sa gitna ng kalsada", "topic": "breakdown", "emergency": false},
-  {"q": "my car broke down on the highway", "topic": "breakdown", "emergency": false},
-  {"q": "naubusan kami ng gasolina", "topic": "breakdown", "emergency": false},
-  {"q": "nabangga kami pero okay naman kami", "topic": "breakdown", "emergency": false},
-  {"q": "na-plat yung gulong ko", "topic": "flatTire", "emergency": false},
-  {"q": "butas ang gulong ng kotse paano magpalit", "topic": "flatTire", "emergency": false},
-  {"q": "how do I change a flat tyre", "topic": "flatTire", "emergency": false},
-  {"q": "pumutok ang gulong habang nagmamaneho", "topic": "flatTire", "emergency": false},
-  {"q": "may reserba ako pero hindi ko alam ikabit", "topic": "flatTire", "emergency": false},
-  {"q": "nag-overheat ang sasakyan", "topic": "overheating", "emergency": false},
-  {"q": "umuusok ang hood ng kotse ko", "topic": "overheating", "emergency": false},
-  {"q": "engine is overheating, temp gauge is red", "topic": "overheating", "emergency": false},
-  {"q": "kumukulo ang radiator", "topic": "overheating", "emergency": false},
-  {"q": "patay ang battery ng kotse, kailangan i-jump start", "topic": "carBattery", "emergency": false},
-  {"q": "how to jump start a car", "topic": "carBattery", "emergency": false},
-  {"q": "may jumper cable ako, paano gamitin", "topic": "carBattery", "emergency": false},
-  {"q": "ayaw mag-start ng kotse, click click lang", "topic": "wontStart", "emergency": false},
-  {"q": "hindi umaandar ang sasakyan pag pinihit ko ang susi", "topic": "wontStart", "emergency": false},
-  {"q": "my car won't start this morning", "topic": "wontStart", "emergency": false},
-  {"q": "umilaw ang check engine", "topic": "warningLights", "emergency": false},
-  {"q": "may pulang ilaw sa dashboard na parang oil", "topic": "warningLights", "emergency": false},
-  {"q": "the brake light came on while driving", "topic": "warningLights", "emergency": false},
-  {"q": "anong ibig sabihin ng battery light", "topic": "warningLights", "emergency": false},
-  {"q": "sumasakit ang dibdib ko at pinagpapawisan", "topic": null, "emergency": true},
-  {"q": "nangingisay ang kasama ko", "topic": null, "emergency": true},
-  {"q": "may na-stroke yata, tabingi ang mukha", "topic": null, "emergency": true},
-  {"q": "nakuryente ang trabahador", "topic": null, "emergency": true},
-  {"q": "what is the capital of France", "topic": null, "emergency": false},
-  {"q": "saan masarap kumain dito", "topic": null, "emergency": false},
-  {"q": "anong oras na", "topic": null, "emergency": false},
-  {"q": "paano po kayo", "topic": null, "emergency": false},
-  {"q": "expired na ang lisensya ko, paso na", "topic": null, "emergency": false},
-  {"q": "nakakuha ako ng anti rabies shot kahapon", "topic": "animalBite", "emergency": false},
-  {"q": "screenshot ng mapa", "topic": null, "emergency": false},
-  {"q": "I'm tired after the walk", "topic": null, "emergency": false}
+  {
+   "q": "may sugat ako sa tuhod, dumudugo pa",
+   "topic": "bleeding",
+   "emergency": false
+  },
+  {
+   "q": "nahiwa ako ng kutsilyo habang naghihiwa",
+   "topic": "bleeding",
+   "emergency": false
+  },
+  {
+   "q": "I cut my finger on broken glass",
+   "topic": "bleeding",
+   "emergency": false
+  },
+  {
+   "q": "ayaw tumigil ang dugo sa braso niya",
+   "topic": "bleeding",
+   "emergency": true
+  },
+  {
+   "q": "nagasgas yung siko ko sa semento",
+   "topic": "bleeding",
+   "emergency": false
+  },
+  {
+   "q": "there's a deep wound on his leg",
+   "topic": "bleeding",
+   "emergency": false
+  },
+  {
+   "q": "may nasaksak sa kanto",
+   "topic": "bleeding",
+   "emergency": true
+  },
+  {
+   "q": "natusok ako ng pako",
+   "topic": "bleeding",
+   "emergency": false
+  },
+  {
+   "q": "napaso ako sa kawali",
+   "topic": "burn",
+   "emergency": false
+  },
+  {
+   "q": "natapunan ng kumukulong tubig ang kamay ko",
+   "topic": "burn",
+   "emergency": false
+  },
+  {
+   "q": "nalapnos ang balat ko",
+   "topic": "burn",
+   "emergency": false
+  },
+  {
+   "q": "I burned my hand on the exhaust pipe",
+   "topic": "burn",
+   "emergency": false
+  },
+  {
+   "q": "natalsikan ako ng mainit na mantika",
+   "topic": "burn",
+   "emergency": false
+  },
+  {
+   "q": "may paltos na sa braso ko dahil sa paso",
+   "topic": "burn",
+   "emergency": false
+  },
+  {
+   "q": "natapilok ako pababa ng hagdan",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "namamaga ang bukung-bukong ko",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "parang nabali ang braso ng anak ko",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "I twisted my ankle while jogging",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "nadulas ako sa basang sahig, masakit ang balakang",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "nakausli ang buto sa binti niya",
+   "topic": "sprain",
+   "emergency": true
+  },
+  {
+   "q": "namamanhid ang paa ko pagkatapos mahulog",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "masakit ang tuhod ko",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "nadapa si lolo, hindi niya maigalaw ang pulso",
+   "topic": "sprain",
+   "emergency": false
+  },
+  {
+   "q": "sobrang init, parang hihimatayin na ako",
+   "topic": "heat",
+   "emergency": false
+  },
+  {
+   "q": "nainitan ako nang sobra sa paglalakad",
+   "topic": "heat",
+   "emergency": false
+  },
+  {
+   "q": "I think I have heat exhaustion",
+   "topic": "heat",
+   "emergency": false
+  },
+  {
+   "q": "baka heatstroke ito, mainit ang balat at hindi pinapawisan",
+   "topic": "heat",
+   "emergency": true
+  },
+  {
+   "q": "tirik ang araw at nahihilo na ako",
+   "topic": "heat",
+   "emergency": false
+  },
+  {
+   "q": "nahimatay ang kasama ko sa pila",
+   "topic": "fainting",
+   "emergency": false
+  },
+  {
+   "q": "nahihilo ako at nandidilim ang paningin",
+   "topic": "fainting",
+   "emergency": false
+  },
+  {
+   "q": "my friend just fainted but is breathing",
+   "topic": "fainting",
+   "emergency": false
+  },
+  {
+   "q": "I feel lightheaded",
+   "topic": "fainting",
+   "emergency": false
+  },
+  {
+   "q": "nahimatay at hindi magising",
+   "topic": "fainting",
+   "emergency": true
+  },
+  {
+   "q": "nabulunan ang tatay ko sa pagkain",
+   "topic": "choking",
+   "emergency": false
+  },
+  {
+   "q": "someone is choking on food",
+   "topic": "choking",
+   "emergency": false
+  },
+  {
+   "q": "nabibilaukan siya, hindi makahinga",
+   "topic": "choking",
+   "emergency": true
+  },
+  {
+   "q": "may naipit sa lalamunan ng bata",
+   "topic": "choking",
+   "emergency": false
+  },
+  {
+   "q": "bumagsak siya at hindi humihinga",
+   "topic": "cpr",
+   "emergency": true
+  },
+  {
+   "q": "walang pulso ang lalaki sa kalsada",
+   "topic": "cpr",
+   "emergency": true
+  },
+  {
+   "q": "how do I do CPR",
+   "topic": "cpr",
+   "emergency": false
+  },
+  {
+   "q": "he collapsed and stopped breathing",
+   "topic": "cpr",
+   "emergency": true
+  },
+  {
+   "q": "namantal ako pagkatapos kumain ng hipon",
+   "topic": "allergy",
+   "emergency": false
+  },
+  {
+   "q": "namamaga ang labi ko, allergic yata",
+   "topic": "allergy",
+   "emergency": false
+  },
+  {
+   "q": "allergic reaction to peanuts, swollen tongue",
+   "topic": "allergy",
+   "emergency": false
+  },
+  {
+   "q": "nagkapantal ako buong katawan",
+   "topic": "allergy",
+   "emergency": false
+  },
+  {
+   "q": "sumisikip ang lalamunan ko pagkatapos ng kagat ng bubuyog",
+   "topic": "allergy",
+   "emergency": true
+  },
+  {
+   "q": "kinagat ako ng askal sa binti",
+   "topic": "animalBite",
+   "emergency": false
+  },
+  {
+   "q": "kinalmot ako ng pusa ng kapitbahay",
+   "topic": "animalBite",
+   "emergency": false
+  },
+  {
+   "q": "a stray dog bit my hand",
+   "topic": "animalBite",
+   "emergency": false
+  },
+  {
+   "q": "kailangan ko ba ng anti rabies?",
+   "topic": "animalBite",
+   "emergency": false
+  },
+  {
+   "q": "nakagat ako ng tuta",
+   "topic": "animalBite",
+   "emergency": false
+  },
+  {
+   "q": "natuklaw ako ng ahas sa damuhan",
+   "topic": "snakeBite",
+   "emergency": true
+  },
+  {
+   "q": "there was a snake and it bit me",
+   "topic": "snakeBite",
+   "emergency": false
+  },
+  {
+   "q": "may ahas sa daan, ano gagawin ko",
+   "topic": "snakeBite",
+   "emergency": false
+  },
+  {
+   "q": "kinagat ako ng putakti",
+   "topic": "sting",
+   "emergency": false
+  },
+  {
+   "q": "a bee stung my arm",
+   "topic": "sting",
+   "emergency": false
+  },
+  {
+   "q": "ang daming kagat ng lamok, sobrang kati",
+   "topic": "mosquito",
+   "emergency": false
+  },
+  {
+   "q": "kinagat ako ng langgam na pula",
+   "topic": "sting",
+   "emergency": false
+  },
+  {
+   "q": "nauuhaw na ako nang sobra",
+   "topic": "dehydration",
+   "emergency": false
+  },
+  {
+   "q": "tuyo ang bibig ko at madilim ang ihi",
+   "topic": "dehydration",
+   "emergency": false
+  },
+  {
+   "q": "nagtatae ako mula kanina",
+   "topic": "dehydration",
+   "emergency": false
+  },
+  {
+   "q": "I am really thirsty and tired",
+   "topic": "dehydration",
+   "emergency": false
+  },
+  {
+   "q": "kanina pa nagsusuka ang anak ko",
+   "topic": "dehydration",
+   "emergency": false
+  },
+  {
+   "q": "pwede bang kainin itong kabute sa bakuran?",
+   "topic": "wildPlants",
+   "emergency": false
+  },
+  {
+   "q": "is this wild berry safe to eat",
+   "topic": "wildPlants",
+   "emergency": false
+  },
+  {
+   "q": "nakakain ba ang prutas na ito sa gubat",
+   "topic": "wildPlants",
+   "emergency": false
+  },
+  {
+   "q": "kinain ng bata ang dahon ng halaman",
+   "topic": "wildPlants",
+   "emergency": false
+  },
+  {
+   "q": "baka nalason siya sa kinain niyang kabute",
+   "topic": "wildPlants",
+   "emergency": true
+  },
+  {
+   "q": "bumabaha na sa kalye namin",
+   "topic": "flood",
+   "emergency": false
+  },
+  {
+   "q": "kailangan ko bang lumusong sa baha pauwi",
+   "topic": "flood",
+   "emergency": false
+  },
+  {
+   "q": "the street is flooded, can I walk through",
+   "topic": "flood",
+   "emergency": false
+  },
+  {
+   "q": "may nalulunod sa baha!",
+   "topic": "cpr",
+   "emergency": true
+  },
+  {
+   "q": "kumikidlat na, nasa labas pa ako",
+   "topic": "lightning",
+   "emergency": false
+  },
+  {
+   "q": "may bagyo at malakas ang kulog",
+   "topic": "typhoon",
+   "emergency": false
+  },
+  {
+   "q": "thunderstorm while hiking, what do I do",
+   "topic": "lightning",
+   "emergency": false
+  },
+  {
+   "q": "parang may sumusunod sa akin",
+   "topic": "unsafe",
+   "emergency": false
+  },
+  {
+   "q": "naholdap ako sa jeep",
+   "topic": "unsafe",
+   "emergency": false
+  },
+  {
+   "q": "someone is following me home",
+   "topic": "unsafe",
+   "emergency": false
+  },
+  {
+   "q": "binabastos ako ng lalaki sa kanto",
+   "topic": "unsafe",
+   "emergency": false
+  },
+  {
+   "q": "tinutukan ako ng kutsilyo",
+   "topic": "unsafe",
+   "emergency": true
+  },
+  {
+   "q": "nadukutan ako ng wallet",
+   "topic": "unsafe",
+   "emergency": false
+  },
+  {
+   "q": "naligaw ako, hindi ko alam ang daan pauwi",
+   "topic": "lost",
+   "emergency": false
+  },
+  {
+   "q": "nasaan ako ngayon?",
+   "topic": "lost",
+   "emergency": false
+  },
+  {
+   "q": "I'm lost and it's getting dark",
+   "topic": "lost",
+   "emergency": false
+  },
+  {
+   "q": "lowbat na ako, paano makatipid",
+   "topic": "phoneBattery",
+   "emergency": false
+  },
+  {
+   "q": "mamamatay na phone ko",
+   "topic": "phoneBattery",
+   "emergency": false
+  },
+  {
+   "q": "my phone battery is almost dead",
+   "topic": "phoneBattery",
+   "emergency": false
+  },
+  {
+   "q": "walang signal dito sa bundok",
+   "topic": "noGPS",
+   "emergency": false
+  },
+  {
+   "q": "hindi gumagalaw yung location ko sa mapa",
+   "topic": "noGPS",
+   "emergency": false
+  },
+  {
+   "q": "GPS not updating",
+   "topic": "noGPS",
+   "emergency": false
+  },
+  {
+   "q": "tumirik ang kotse namin sa SLEX",
+   "topic": "breakdown",
+   "emergency": false
+  },
+  {
+   "q": "nasiraan kami sa gitna ng kalsada",
+   "topic": "breakdown",
+   "emergency": false
+  },
+  {
+   "q": "my car broke down on the highway",
+   "topic": "breakdown",
+   "emergency": false
+  },
+  {
+   "q": "naubusan kami ng gasolina",
+   "topic": "breakdown",
+   "emergency": false
+  },
+  {
+   "q": "nabangga kami pero okay naman kami",
+   "topic": "roadCrash",
+   "emergency": false
+  },
+  {
+   "q": "na-plat yung gulong ko",
+   "topic": "flatTire",
+   "emergency": false
+  },
+  {
+   "q": "butas ang gulong ng kotse paano magpalit",
+   "topic": "flatTire",
+   "emergency": false
+  },
+  {
+   "q": "how do I change a flat tyre",
+   "topic": "flatTire",
+   "emergency": false
+  },
+  {
+   "q": "pumutok ang gulong habang nagmamaneho",
+   "topic": "flatTire",
+   "emergency": false
+  },
+  {
+   "q": "may reserba ako pero hindi ko alam ikabit",
+   "topic": "flatTire",
+   "emergency": false
+  },
+  {
+   "q": "nag-overheat ang sasakyan",
+   "topic": "overheating",
+   "emergency": false
+  },
+  {
+   "q": "umuusok ang hood ng kotse ko",
+   "topic": "overheating",
+   "emergency": false
+  },
+  {
+   "q": "engine is overheating, temp gauge is red",
+   "topic": "overheating",
+   "emergency": false
+  },
+  {
+   "q": "kumukulo ang radiator",
+   "topic": "overheating",
+   "emergency": false
+  },
+  {
+   "q": "patay ang battery ng kotse, kailangan i-jump start",
+   "topic": "carBattery",
+   "emergency": false
+  },
+  {
+   "q": "how to jump start a car",
+   "topic": "carBattery",
+   "emergency": false
+  },
+  {
+   "q": "may jumper cable ako, paano gamitin",
+   "topic": "carBattery",
+   "emergency": false
+  },
+  {
+   "q": "ayaw mag-start ng kotse, click click lang",
+   "topic": "wontStart",
+   "emergency": false
+  },
+  {
+   "q": "hindi umaandar ang sasakyan pag pinihit ko ang susi",
+   "topic": "wontStart",
+   "emergency": false
+  },
+  {
+   "q": "my car won't start this morning",
+   "topic": "wontStart",
+   "emergency": false
+  },
+  {
+   "q": "umilaw ang check engine",
+   "topic": "warningLights",
+   "emergency": false
+  },
+  {
+   "q": "may pulang ilaw sa dashboard na parang oil",
+   "topic": "warningLights",
+   "emergency": false
+  },
+  {
+   "q": "the brake light came on while driving",
+   "topic": "warningLights",
+   "emergency": false
+  },
+  {
+   "q": "anong ibig sabihin ng battery light",
+   "topic": "warningLights",
+   "emergency": false
+  },
+  {
+   "q": "sumasakit ang dibdib ko at pinagpapawisan",
+   "topic": "heartAttack",
+   "emergency": true
+  },
+  {
+   "q": "nangingisay ang kasama ko",
+   "topic": "seizure",
+   "emergency": true
+  },
+  {
+   "q": "may na-stroke yata, tabingi ang mukha",
+   "topic": "stroke",
+   "emergency": true
+  },
+  {
+   "q": "nakuryente ang trabahador",
+   "topic": null,
+   "emergency": true
+  },
+  {
+   "q": "what is the capital of France",
+   "topic": null,
+   "emergency": false
+  },
+  {
+   "q": "saan masarap kumain dito",
+   "topic": null,
+   "emergency": false
+  },
+  {
+   "q": "anong oras na",
+   "topic": null,
+   "emergency": false
+  },
+  {
+   "q": "paano po kayo",
+   "topic": null,
+   "emergency": false
+  },
+  {
+   "q": "expired na ang lisensya ko, paso na",
+   "topic": null,
+   "emergency": false
+  },
+  {
+   "q": "nakakuha ako ng anti rabies shot kahapon",
+   "topic": "animalBite",
+   "emergency": false
+  },
+  {
+   "q": "screenshot ng mapa",
+   "topic": null,
+   "emergency": false
+  },
+  {
+   "q": "I'm tired after the walk",
+   "topic": null,
+   "emergency": false
+  }
  ]
 }
