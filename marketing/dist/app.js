@@ -91,4 +91,76 @@ if ('IntersectionObserver' in window) {
   }, { threshold: .45 });
   plannerObserver.observe(document.querySelector('.conversation'));
 }
+const carousel = document.querySelector('#feature-carousel');
+const carouselSlides = [...document.querySelectorAll('[data-carousel-slide]')];
+const carouselDots = [...document.querySelectorAll('[data-carousel-dot]')];
+const carouselPrevious = document.querySelector('#carousel-previous');
+const carouselNext = document.querySelector('#carousel-next');
+let carouselIndex = 0;
+let carouselFrame = 0;
+function setCarouselIndex(index) {
+  carouselIndex = (index + carouselSlides.length) % carouselSlides.length;
+  carouselDots.forEach((dot, dotIndex) => dot.setAttribute('aria-current', String(dotIndex === carouselIndex)));
+  carouselSlides.forEach((slide, slideIndex) => slide.classList.toggle('is-active', slideIndex === carouselIndex));
+}
+function goToCarouselSlide(index) {
+  setCarouselIndex(index);
+  const slide = carouselSlides[carouselIndex];
+  carousel.scrollTo({
+    left: slide.offsetLeft - carouselSlides[0].offsetLeft,
+    behavior: reducedMotion.matches ? 'auto' : 'smooth'
+  });
+}
+carouselPrevious.addEventListener('click', () => goToCarouselSlide(carouselIndex - 1));
+carouselNext.addEventListener('click', () => goToCarouselSlide(carouselIndex + 1));
+carouselDots.forEach(dot => dot.addEventListener('click', () => goToCarouselSlide(Number(dot.dataset.carouselDot))));
+carousel.addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault();
+  goToCarouselSlide(carouselIndex + (event.key === 'ArrowRight' ? 1 : -1));
+});
+function nearestCarouselIndex() {
+  const start = carouselSlides[0].offsetLeft + carousel.scrollLeft;
+  return carouselSlides.reduce((best, slide, index) =>
+    Math.abs(slide.offsetLeft - start) < Math.abs(carouselSlides[best].offsetLeft - start) ? index : best, 0);
+}
+carousel.addEventListener('scroll', () => {
+  cancelAnimationFrame(carouselFrame);
+  carouselFrame = requestAnimationFrame(() => {
+    setCarouselIndex(nearestCarouselIndex());
+  });
+}, { passive: true });
+const desktopCarousel = window.matchMedia('(min-width: 768px)');
+carousel.addEventListener('wheel', event => {
+  if (!desktopCarousel.matches || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+  const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+  const canMove = event.deltaY > 0 ? carousel.scrollLeft < maxScroll - 1 : carousel.scrollLeft > 1;
+  if (!canMove) return;
+  event.preventDefault();
+  carousel.scrollBy({ left: event.deltaY, behavior: 'auto' });
+}, { passive: false });
+let draggingCarousel = false;
+let carouselPointerStart = 0;
+let carouselScrollStart = 0;
+carousel.addEventListener('pointerdown', event => {
+  if (!desktopCarousel.matches || event.pointerType !== 'mouse') return;
+  draggingCarousel = true;
+  carouselPointerStart = event.clientX;
+  carouselScrollStart = carousel.scrollLeft;
+  carousel.classList.add('is-dragging');
+  carousel.setPointerCapture(event.pointerId);
+});
+carousel.addEventListener('pointermove', event => {
+  if (!draggingCarousel) return;
+  carousel.scrollLeft = carouselScrollStart - (event.clientX - carouselPointerStart);
+});
+function stopCarouselDrag(event) {
+  if (!draggingCarousel) return;
+  draggingCarousel = false;
+  carousel.classList.remove('is-dragging');
+  if (carousel.hasPointerCapture(event.pointerId)) carousel.releasePointerCapture(event.pointerId);
+  goToCarouselSlide(nearestCarouselIndex());
+}
+carousel.addEventListener('pointerup', stopCarouselDrag);
+carousel.addEventListener('pointercancel', stopCarouselDrag);
 document.querySelector('#year').textContent=new Date().getFullYear();
