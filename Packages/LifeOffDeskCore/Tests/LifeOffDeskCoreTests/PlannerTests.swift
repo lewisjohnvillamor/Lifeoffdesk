@@ -200,7 +200,7 @@ final class PlaceSearchTests: XCTestCase {
             }
             let catalog = try PlaceCatalog.decode(Data(contentsOf: placesURL))
             catalogs.append(catalog)
-            XCTAssertTrue((15...100).contains(catalog.places.count), entry.id)
+            XCTAssertTrue((15...2000).contains(catalog.places.count), entry.id)
             for place in catalog.places {
                 XCTAssertEqual(place.verificationStatus, "source-only-unreviewed")
                 XCTAssertNil(place.openingHours); XCTAssertNil(place.budgetPHP); XCTAssertNil(place.quietness)

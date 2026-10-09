@@ -109,16 +109,19 @@ class RegionTests(unittest.TestCase):
         self.assertEqual(places, [])
         self.assertEqual(len(roads['features']), 1)
 
-    def test_selection_caps_and_skips_restricted_access(self):
+    def test_selection_keeps_every_named_place_and_skips_restricted_access(self):
         def place(i, category, access=None, name=None):
             return {'id':f'osm:node:{i}','name':name or f'P{i}','latitude':14.4+i*1e-4,'longitude':121.0,
                     'category':category,'sourceTags':{'access':access} if access else {}}
         places = [place(i, 'park') for i in range(40)] + [place(100, 'park', access='private')] + \
                  [place(200+i, 'cafe', name='Same Chain') for i in range(5)] + [place(300, 'cafe', name='Other')]
         chosen = catalog.select_places(places, (14.4, 121.0), None)
-        self.assertEqual(sum(p['category']=='park' for p in chosen), catalog.MAX_NON_CAFE)
-        self.assertEqual(sum(p['category']=='cafe' for p in chosen), 2, 'one per chain name')
-        self.assertNotIn('osm:node:100', [p['id'] for p in chosen])
+        ids = [p['id'] for p in chosen]
+        self.assertEqual(sum(p['category']=='park' for p in chosen), 40, 'no city-wide cap')
+        self.assertEqual(sum(p['category']=='cafe' for p in chosen), 6, 'chain branches are separate places')
+        self.assertNotIn('osm:node:100', ids)
+        near = catalog.select_places(places, (14.4, 121.0), 200)
+        self.assertTrue(all(catalog.haversine_m((14.4, 121.0), (p['latitude'], p['longitude'])) <= 200 for p in near))
 
 class DemoWalkTests(unittest.TestCase):
     def test_generator_is_deterministic_and_labelled(self):
