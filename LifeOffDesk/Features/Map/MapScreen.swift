@@ -9,7 +9,10 @@ struct MapScreen: View {
     @State private var showPlanner = false
     @State private var showHistory = false
     @State private var showSettings = false
+    @State private var cardSession: WalkSession?
     @State private var followUser = true
+    @State private var tilted = true
+    @State private var launchScale: CGFloat?
 
     var body: some View {
         ZStack {
@@ -18,7 +21,7 @@ struct MapScreen: View {
                 FogMapView(geometry: geometry, exploration: model.displayExploration,
                            activeSegments: model.displayedTrail,
                            position: model.mapPosition, destination: model.destination,
-                           camera: $camera)
+                           camera: $camera, tilted: tilted)
                     .ignoresSafeArea()
                     .simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { _ in followUser = false })
             } else if let error = model.contentError {
@@ -29,27 +32,26 @@ struct MapScreen: View {
                 topBar
                 statusBanners
                 Spacer()
-                if !model.demoMode && model.displayExploration.paths.isEmpty && model.phase == .idle {
-                    VStack(spacing: 10) {
-                        Image(systemName: "cloud.fill").font(.largeTitle)
-                        Text("Your world is waiting").font(.title2.weight(.semibold))
-                        Text("Streets appear as you walk. Start exploring to lift the fog.")
-                            .font(.subheadline).multilineTextAlignment(.center)
-                    }
-                    .foregroundStyle(Theme.ink)
-                    .padding(24)
-                    .background(Theme.canvas.opacity(0.94), in: RoundedRectangle(cornerRadius: 24))
-                    Spacer()
-                }
                 bottomCard
             }
             .padding(.horizontal, Theme.inset)
             .padding(.bottom, 8)
         }
         .onAppear(perform: setUp)
+        #if targetEnvironment(simulator)
+        .task {
+            // Screenshot helpers that must wait for the first frame (simulator only).
+            let arguments = ProcessInfo.processInfo.arguments
+            guard arguments.contains("--open-recap") || arguments.contains("--open-card") else { return }
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard model.demoMode, let walk = model.historyWalks.first else { return }
+            if arguments.contains("--open-card") { cardSession = walk } else { model.presentedRecap = walk }
+        }
+        .sheet(item: $cardSession) { session in MemoryCardSheet(session: session).environmentObject(model) }
+        #endif
         .onChange(of: model.demoMode) { _, on in
             // Frame the sample area when entering Demo mode.
-            if on { camera = MapCamera(center: .zero, pointsPerMeter: 0.12) }
+            if on { camera = MapCamera(center: .zero, pointsPerMeter: launchScale ?? 0.12) }
         }
         .onChange(of: model.mapPosition) { _, position in
             guard followUser, let position, let geometry else { return }
@@ -76,9 +78,22 @@ struct MapScreen: View {
         geometry = MapGeometry(content: content)
         camera.center = .zero
         #if targetEnvironment(simulator)
-        if ProcessInfo.processInfo.arguments.contains("--demo-map") {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--demo-map") {
             model.setDemoMode(true)
             camera = MapCamera(center: .zero, pointsPerMeter: 0.12)
+        }
+        // Screenshot helpers for CI: --map-scale <points per metre>, --flat.
+        if let i = arguments.firstIndex(of: "--map-scale"), i + 1 < arguments.count, let scale = Double(arguments[i + 1]) {
+            launchScale = CGFloat(scale)
+            camera.pointsPerMeter = CGFloat(scale)
+        }
+        if arguments.contains("--flat") { tilted = false }
+        // More screenshot helpers (simulator only).
+        if arguments.contains("--open-planner") {
+            showPlanner = true
+            if let i = arguments.firstIndex(of: "--planner-filter"), i + 1 < arguments.count,
+               let category = PlaceCategory(rawValue: arguments[i + 1]) { model.manualSearch(category: category) }
         }
         #endif
     }
@@ -89,6 +104,9 @@ struct MapScreen: View {
         HStack {
             iconButton("clock.arrow.circlepath", label: "Past walks") { showHistory = true }
             Spacer()
+            iconButton(tilted ? "view.2d" : "view.3d", label: tilted ? "Show flat map" : "Show tilted map") {
+                tilted.toggle()
+            }
             iconButton("location", label: "Center on my location") {
                 followUser = true
                 if let position = model.currentPosition, let geometry { camera.center = geometry.point(position) }
@@ -114,18 +132,18 @@ struct MapScreen: View {
     @ViewBuilder private var statusBanners: some View {
         if model.demoMode {
             banner(icon: "sparkles", text: model.replay == nil
-                   ? "DEMO MAP: synthetic sample walks along real streets. Not real GPS or anyone's walks."
-                   : "REPLAY of a synthetic sample walk. Not real GPS.",
+                   ? "Sample walks · not real GPS"
+                   : "Replay · sample walk, not real GPS",
                    action: ("Exit demo", { model.setDemoMode(false) }))
         }
         if let problem = model.demoProblem {
             banner(icon: "exclamationmark.triangle", text: problem)
         }
         #if targetEnvironment(simulator)
-        banner(icon: "desktopcomputer", text: "Simulator · AI unavailable · locations are simulated")
+        banner(icon: "desktopcomputer", text: "Simulator · no AI · simulated GPS")
         #endif
         if model.permissionDenied {
-            banner(icon: "location.slash", text: "Location is off for Life Off Desk. Walks need it; past walks and planning still work.",
+            banner(icon: "location.slash", text: "Location is off. Turn it on to record walks.",
                    action: ("Open Settings", model.openSystemSettings))
         }
         if model.phase == .acquiringFix {
@@ -133,9 +151,9 @@ struct MapScreen: View {
         }
         switch model.coverageHere {
         case .outside?:
-            banner(icon: "map", text: "Map detail unavailable here. Your trail is still recorded.")
+            banner(icon: "map", text: "No map detail here · still recording")
         case let .mainRoadsOnly(name)?:
-            banner(icon: "map", text: "Only main roads are mapped here (\(name)). Your trail is still recorded.")
+            banner(icon: "map", text: "Main roads only (\(name)) · still recording")
         case .detailed?, nil:
             EmptyView()
         }
@@ -170,7 +188,7 @@ struct MapScreen: View {
             if let destination = model.destination { destinationRow(destination) }
             switch model.phase {
             case .idle where model.demoMode:
-                Text("This is how a well-explored map looks.")
+                Text("A well-explored map")
                     .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
                 Button(model.replay == nil ? "Replay a sample walk" : "Replay another sample walk") { model.startReplay() }
                     .buttonStyle(PrimaryButtonStyle())

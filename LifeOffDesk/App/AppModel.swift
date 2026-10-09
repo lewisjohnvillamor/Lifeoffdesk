@@ -270,6 +270,24 @@ final class AppModel: ObservableObject {
         return WalkRecap.compute(session: session, exploration: base, grid: grid, now: session.endedAt ?? Date())
     }
 
+    // MARK: Memory photos
+
+    private var samplePhotos: [UUID: UIImage] = [:]
+
+    func memoryPhoto(for session: WalkSession) -> UIImage? {
+        if isDemo(session) { return samplePhotos[session.id] }
+        return store?.loadMemoryPhoto(for: session.id).flatMap(UIImage.init(data:))
+    }
+
+    /// Real walks keep their photo on device (erased with personal data); sample walks only in memory.
+    func saveMemoryPhoto(_ image: UIImage, for session: WalkSession) {
+        if isDemo(session) { samplePhotos[session.id] = image; return }
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+        do { try store?.saveMemoryPhoto(data, for: session.id) } catch {
+            storeProblem = "Could not save the photo: \(error.localizedDescription)"
+        }
+    }
+
     // MARK: Demo mode
 
     func setDemoMode(_ on: Bool) {

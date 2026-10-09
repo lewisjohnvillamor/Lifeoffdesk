@@ -9,22 +9,41 @@ public struct WalkRecap: Hashable, Sendable {
     public var segmentCount: Int
     /// Area newly revealed by this walk compared with all other walks; revisits add nothing.
     public var newlyRevealedSquareMeters: Double
+    /// Distance walked outside every other walk's explored corridor ("new streets").
+    public var newDistanceMeters: Double
     public var destinationName: String?
     public var wasRecovered: Bool
 
     public static func compute(session: WalkSession, exploration: Exploration, grid: ExplorationGrid,
                                now: Date) -> WalkRecap {
+        // Only walks near this one can overlap it, so rasterise just that neighbourhood.
         let others = exploration.excluding(sessionID: session.id)
-        var withThis = others
-        withThis.merge(session)
-        let before = grid.cells(for: others)
-        let after = grid.cells(for: withThis)
+        var mine = Exploration(revealWidthMeters: exploration.revealWidthMeters)
+        mine.merge(session)
+        let region = grid.bounds(of: session, padding: exploration.revealWidthMeters * 2)
+        let before = region.map { grid.cells(for: others, region: $0) } ?? []
+        let after = before.union(grid.cells(for: mine))
+        var newDistance = 0.0
+        for segment in session.segments {
+            for (a, b) in zip(segment, segment.dropFirst()) {
+                // Judge short pieces so a long segment is not counted all-new or all-old.
+                let length = Geo.distanceMeters(a.coordinate, b.coordinate)
+                let pieces = max(1, Int((length / grid.cellSize).rounded(.up)))
+                for i in 0..<pieces {
+                    let t = (Double(i) + 0.5) / Double(pieces)
+                    let mid = Coordinate(latitude: a.latitude + (b.latitude - a.latitude) * t,
+                                         longitude: a.longitude + (b.longitude - a.longitude) * t)
+                    if !before.contains(grid.cell(containing: mid)) { newDistance += length / Double(pieces) }
+                }
+            }
+        }
         return WalkRecap(sessionID: session.id,
                          distanceMeters: session.distanceMeters,
                          activeDuration: session.activeDuration(at: now),
                          acceptedSamples: session.acceptedSampleCount,
                          segmentCount: session.segments.count,
                          newlyRevealedSquareMeters: grid.areaSquareMeters(after.subtracting(before)),
+                         newDistanceMeters: newDistance,
                          destinationName: session.destinationName,
                          wasRecovered: session.wasRecovered)
     }

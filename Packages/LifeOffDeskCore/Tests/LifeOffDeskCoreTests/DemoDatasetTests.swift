@@ -40,6 +40,20 @@ final class DemoDatasetTests: XCTestCase {
         XCTAssertEqual(recap.distanceMeters, demo.walks[0].distanceMeters)
     }
 
+    func testNeighbourhoodRecapMatchesFullRasterisation() throws {
+        let demo = try bundled()
+        let exploration = demo.exploration
+        let grid = ExplorationGrid(origin: Coordinate(latitude: 14.5566, longitude: 121.0244))
+        let walk = demo.walks[3]
+        let fast = WalkRecap.compute(session: walk, exploration: exploration, grid: grid, now: Date())
+        // Brute force over every other walk.
+        let others = exploration.excluding(sessionID: walk.id)
+        var with = others
+        with.merge(walk)
+        let before = grid.cells(for: others), after = grid.cells(for: with)
+        XCTAssertEqual(fast.newlyRevealedSquareMeters, grid.areaSquareMeters(after.subtracting(before)))
+    }
+
     func testReplayRevealsProgressivelyAndKeepsSegments() {
         var session = WalkSession(startedAt: Fixture.time(0))
         session.segments = [

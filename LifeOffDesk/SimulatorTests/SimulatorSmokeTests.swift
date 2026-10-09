@@ -12,7 +12,7 @@ final class SimulatorSmokeTests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
         app.buttons["Replay a sample walk"].tap()
-        XCTAssertTrue(app.staticTexts["REPLAY of a synthetic sample walk. Not real GPS."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Replay · sample walk, not real GPS"].waitForExistence(timeout: 5))
         app.buttons["Back to my map"].tap()
         XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Preview demo map"].exists)
@@ -22,7 +22,7 @@ final class SimulatorSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["Simulator · AI unavailable · locations are simulated"].exists)
+        XCTAssertTrue(app.staticTexts["Simulator · no AI · simulated GPS"].exists)
         app.buttons["Help me choose somewhere"].tap()
         let request = app.textFields["Outing request"]
         XCTAssertTrue(request.waitForExistence(timeout: 5))

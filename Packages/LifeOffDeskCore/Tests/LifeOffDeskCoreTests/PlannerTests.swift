@@ -128,6 +128,16 @@ final class PlaceSearchTests: XCTestCase {
         XCTAssertTrue(results.allSatisfy { $0.uncertainties.contains { if case .hoursUnverified = $0 { return true }; return false } })
     }
 
+    func testCompactCopyKeepsEveryCaveat() {
+        let results = PlaceSearch.suggest(OutingPreferences(durationMinutes: 20, budgetPHP: 150, categories: [.cafe]),
+                                          catalog: catalog, origin: origin)
+        let unknown = try! XCTUnwrap(results.first { $0.id == "cafe-unknown" })
+        let caveat = PlannerCopy.caveat(unknown)
+        XCTAssertTrue(caveat.contains("Hours & access unverified"))
+        XCTAssertTrue(caveat.contains("price unknown"))
+        XCTAssertEqual(PlannerCopy.reason(unknown), "Café · 100 m")
+    }
+
     func testNoMatchIsEmpty() {
         XCTAssertTrue(PlaceSearch.suggest(OutingPreferences(categories: [.library]), catalog: catalog, origin: origin).isEmpty)
     }
@@ -203,7 +213,7 @@ final class PlannerFlowTests: XCTestCase {
         guard case let .suggestions(_, intro, suggestions) = response else { return XCTFail("\(response)") }
         XCTAssertEqual(trace.attempts.count, 1)
         XCTAssertTrue(suggestions.allSatisfy { catalog.place(id: $0.id) != nil })
-        XCTAssertTrue(intro.contains("Straight-line"))
+        XCTAssertTrue(intro.contains("straight-line"))
         XCTAssertTrue(intro.contains("wala pang GPS fix"))
     }
 

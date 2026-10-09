@@ -28,10 +28,8 @@ final class MapGeometry {
         for pack in content.packs {
             for road in pack.roads.roads {
                 let points = road.coordinates.map { projection.project($0) }
-                guard let first = points.first else { continue }
-                var line = Path()
-                line.move(to: CGPoint(x: first.x, y: first.y))
-                for point in points.dropFirst() { line.addLine(to: CGPoint(x: point.x, y: point.y)) }
+                guard points.count >= 2 else { continue }
+                let line = PaperStyle.inkedLine(points)
                 let box = line.boundingRect
                 let key = GridKey(x: Int((box.midX / Self.tileSize).rounded(.down)),
                                   y: Int((box.midY / Self.tileSize).rounded(.down)))
@@ -107,8 +105,9 @@ struct MapCamera: Equatable {
     }
 }
 
-/// Ivory fog over the starter map. Only the accepted corridor (revealWidthMeters wide)
-/// shows road detail; the trail, live position and chosen destination draw on top.
+/// Paper-and-ink map. Unexplored areas sit under fibrous paper fog with streets only faintly
+/// showing; the accepted corridor (revealWidthMeters wide) is a raised torn-paper island with
+/// inked roads. Trail, live position and chosen destination draw on top.
 struct FogMapView: View {
     let geometry: MapGeometry
     let exploration: Exploration
@@ -116,56 +115,95 @@ struct FogMapView: View {
     let position: Coordinate?
     let destination: Place?
     @Binding var camera: MapCamera
+    var tilted: Bool = true
 
     @State private var dragStart: CGPoint?
     @State private var zoomStart: CGFloat?
+    @State private var islands = IslandCache()
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         Canvas { context, size in
             let transform = camera.transform(in: size)
             let ppm = camera.pointsPerMeter
+            let screen = CGRect(origin: .zero, size: size)
+            let visible = screen.applying(transform.inverted()).insetBy(dx: -40, dy: -40)
 
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.canvas))
-            drawClouds(in: &context, size: size)
-
-            // Revealed layer: ground + roads, kept only where the corridor was walked. Only tiles that are
-            // both on screen and under explored paths are drawn, so city-scale packs stay cheap.
-            let explored = geometry.path(for: exploration)
-            let visible = CGRect(origin: .zero, size: size).applying(transform.inverted())
-            let areas = geometry.exploredRects(for: exploration).compactMap { rect -> CGRect? in
-                let clipped = rect.intersection(visible)
-                return clipped.isNull ? nil : clipped
+            // 1. Paper and a faint world-anchored grid.
+            context.fill(Path(screen), with: .color(PaperStyle.paper))
+            let gridPath = grid(in: visible)
+            if PaperStyle.gridMeters * ppm >= 12 {
+                context.stroke(gridPath.applying(transform), with: .color(PaperStyle.grid), lineWidth: 0.6)
             }
-            let screenExplored = explored.applying(transform)
-            context.drawLayer { layer in
-                // Clip before painting. A destinationIn stroke does not clear pixels
-                // outside its bounds, and an empty stroke leaves the whole ground visible.
-                let corridor = screenExplored.strokedPath(StrokeStyle(
-                    lineWidth: max(2, CGFloat(exploration.revealWidthMeters) * ppm),
-                    lineCap: .round, lineJoin: .round))
-                layer.clip(to: corridor)
-                layer.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.revealedGround))
-                if !areas.isEmpty {
-                    for tile in geometry.tiles where areas.contains(where: tile.bounds.intersects) {
-                        layer.stroke(tile.minor.applying(transform), with: .color(Theme.border),
-                                     style: StrokeStyle(lineWidth: max(1, 6 * ppm), lineCap: .round, lineJoin: .round))
-                        layer.stroke(tile.major.applying(transform), with: .color(Theme.secondaryInk.opacity(0.45)),
-                                     style: StrokeStyle(lineWidth: max(1.5, 12 * ppm), lineCap: .round, lineJoin: .round))
-                        layer.stroke(tile.footways.applying(transform), with: .color(Theme.primary.opacity(0.55)),
-                                     style: StrokeStyle(lineWidth: max(1, 2 * ppm), lineCap: .round, dash: [3, 3]))
-                        layer.stroke(tile.restricted.applying(transform), with: .color(Theme.border.opacity(0.6)),
-                                     style: StrokeStyle(lineWidth: max(0.5, 2 * ppm), dash: [2, 4]))
+
+            let visibleTiles = geometry.tiles.filter { $0.bounds.intersects(visible) }
+
+            // 2. Island geometry for what was actually walked (only pieces near the screen).
+            var island = Path()
+            for piece in islands.islands(for: exploration, geometry: geometry) where piece.bounds.intersects(visible) {
+                island.addPath(piece.path)
+            }
+            let screenIsland = island.applying(transform)
+            let lift = max(2, min(7, 9 * ppm))
+
+            // 3. Fibrous paper fog everywhere except the island.
+            context.drawLayer { fog in
+                fog.clip(to: screenIsland, options: .inverse)
+                fog.fill(Path(screen), with: .color(PaperStyle.paper.opacity(reduceTransparency ? 0.92 : PaperStyle.fogOpacity)))
+                let anchor = CGPoint(x: 0, y: 0).applying(transform)
+                fog.fill(Path(screen), with: .tiledImage(PaperStyle.fiberTile, origin: anchor, scale: 0.5))
+            }
+
+            // Ghost streets: faint ink over the fog, so the city is hinted but not revealed.
+            context.drawLayer { ghostLayer in
+                ghostLayer.clip(to: screenIsland, options: .inverse)
+                let detailed = ppm >= 0.03
+                for tile in visibleTiles {
+                    ghostLayer.stroke(tile.major.applying(transform), with: .color(PaperStyle.ghostInk),
+                                      lineWidth: detailed ? 0.9 : 0.6)
+                    if detailed {
+                        ghostLayer.stroke(tile.minor.applying(transform), with: .color(PaperStyle.ghostInk.opacity(0.7)),
+                                          lineWidth: 0.5)
                     }
                 }
             }
 
-            // Region outlines so coverage limits are visible.
-            context.stroke(geometry.detailedCoverage.applying(transform), with: .color(Theme.secondaryInk.opacity(0.35)),
+            // Region outlines so coverage limits stay visible through the fog.
+            context.stroke(geometry.detailedCoverage.applying(transform), with: .color(PaperStyle.ink.opacity(0.25)),
                            style: StrokeStyle(lineWidth: 1, dash: [6, 6]))
-            context.stroke(geometry.contextCoverage.applying(transform), with: .color(Theme.secondaryInk.opacity(0.18)),
+            context.stroke(geometry.contextCoverage.applying(transform), with: .color(PaperStyle.ink.opacity(0.12)),
                            style: StrokeStyle(lineWidth: 1, dash: [2, 6]))
 
-            // Current walk trail, segment by segment (never joined across gaps).
+            if !island.isEmpty {
+                // 4. Raised paper: soft shadow, visible thickness, then the white sheet.
+                context.drawLayer { shadow in
+                    shadow.addFilter(.shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: lift + 4))
+                    shadow.fill(screenIsland.offsetBy(dx: 0, dy: lift), with: .color(PaperStyle.edge))
+                }
+                context.fill(screenIsland.offsetBy(dx: 0, dy: lift), with: .color(PaperStyle.edge))
+                context.fill(screenIsland, with: .color(PaperStyle.island))
+
+                // 5. Ink roads and grid on the island only.
+                context.drawLayer { sheet in
+                    sheet.clip(to: screenIsland)
+                    if PaperStyle.gridMeters * ppm >= 12 {
+                        sheet.stroke(gridPath.applying(transform), with: .color(PaperStyle.grid.opacity(1.4)), lineWidth: 0.6)
+                    }
+                    let islandBounds = island.boundingRect
+                    for tile in visibleTiles where tile.bounds.intersects(islandBounds) {
+                        sheet.stroke(tile.restricted.applying(transform), with: .color(PaperStyle.ink.opacity(0.35)),
+                                     style: StrokeStyle(lineWidth: max(0.4, 1.5 * ppm), lineCap: .round, dash: [2, 3]))
+                        sheet.stroke(tile.footways.applying(transform), with: .color(PaperStyle.ink.opacity(0.8)),
+                                     style: StrokeStyle(lineWidth: max(0.5, 1.6 * ppm), lineCap: .round, lineJoin: .round))
+                        sheet.stroke(tile.minor.applying(transform), with: .color(PaperStyle.ink),
+                                     style: StrokeStyle(lineWidth: max(0.8, 3.5 * ppm), lineCap: .round, lineJoin: .round))
+                        sheet.stroke(tile.major.applying(transform), with: .color(PaperStyle.ink),
+                                     style: StrokeStyle(lineWidth: max(1.4, 7 * ppm), lineCap: .round, lineJoin: .round))
+                    }
+                }
+            }
+
+            // 6. Current walk trail, segment by segment (never joined across gaps).
             var trail = Path()
             for segment in activeSegments {
                 guard let first = segment.first else { continue }
@@ -178,44 +216,36 @@ struct FogMapView: View {
                 let p = geometry.point(destination.coordinate).applying(transform)
                 let pin = Path(ellipseIn: CGRect(x: p.x - 9, y: p.y - 9, width: 18, height: 18))
                 context.fill(pin, with: .color(Theme.surface))
-                context.stroke(pin, with: .color(Theme.ink), lineWidth: 3)
-                context.fill(Path(ellipseIn: CGRect(x: p.x - 3, y: p.y - 3, width: 6, height: 6)), with: .color(Theme.ink))
+                context.stroke(pin, with: .color(PaperStyle.ink), lineWidth: 3)
+                context.fill(Path(ellipseIn: CGRect(x: p.x - 3, y: p.y - 3, width: 6, height: 6)), with: .color(PaperStyle.ink))
             }
 
             if let position {
                 let p = geometry.point(position).applying(transform)
+                let halo = Path(ellipseIn: CGRect(x: p.x - 16, y: p.y - 16, width: 32, height: 32))
+                context.fill(halo, with: .color(Theme.primary.opacity(0.18)))
                 let dot = Path(ellipseIn: CGRect(x: p.x - 8, y: p.y - 8, width: 16, height: 16))
                 context.fill(dot, with: .color(Theme.primary))
                 context.stroke(dot, with: .color(Theme.surface), lineWidth: 3)
             }
         }
+        // Gentle 3D tilt like a sheet of paper on a desk; the canvas is oversized so corners stay covered.
+        .scaleEffect(tilted ? 1.45 : 1)
+        .rotation3DEffect(.degrees(tilted ? 32 : 0), axis: (x: 1, y: 0, z: 0), anchor: .center, perspective: 0.55)
         .gesture(dragGesture.simultaneously(with: zoomGesture))
         .accessibilityElement()
         .accessibilityLabel(accessibilitySummary)
     }
 
-    /// Static, soft cloud banks: no animation, so Reduce Motion is respected.
-    /// Decorative only; cloud shapes never add exploration or invented geography.
-    private func drawClouds(in context: inout GraphicsContext, size: CGSize) {
-        let spacing: CGFloat = 165
-        let offsetX = (-camera.center.x * camera.pointsPerMeter * 0.15).truncatingRemainder(dividingBy: spacing)
-        let offsetY = (camera.center.y * camera.pointsPerMeter * 0.15).truncatingRemainder(dividingBy: spacing)
-        for row in -2...Int(size.height / spacing) + 2 {
-            for column in -2...Int(size.width / spacing) + 2 {
-                let x = CGFloat(column) * spacing + (row.isMultiple(of: 2) ? 0 : 80) + offsetX
-                let y = CGFloat(row) * spacing + offsetY
-                let bank = CGRect(x: x - 110, y: y - 42, width: 225, height: 100)
-                var cloud = Path(ellipseIn: bank)
-                cloud.addEllipse(in: CGRect(x: x - 85, y: y - 80, width: 115, height: 115))
-                cloud.addEllipse(in: CGRect(x: x - 15, y: y - 66, width: 95, height: 100))
-                context.drawLayer { layer in
-                    layer.addFilter(.shadow(color: Theme.secondaryInk.opacity(0.09), radius: 14, y: 7))
-                    layer.fill(cloud, with: .linearGradient(
-                        Gradient(colors: [Theme.surface.opacity(0.9), Theme.canvas]),
-                        startPoint: CGPoint(x: x, y: y - 80), endPoint: CGPoint(x: x, y: y + 58)))
-                }
-            }
-        }
+    private func grid(in rect: CGRect) -> Path {
+        var path = Path()
+        let step = PaperStyle.gridMeters
+        guard rect.width / step < 400, rect.height / step < 400 else { return path }
+        var x = (rect.minX / step).rounded(.down) * step
+        while x <= rect.maxX { path.move(to: CGPoint(x: x, y: rect.minY)); path.addLine(to: CGPoint(x: x, y: rect.maxY)); x += step }
+        var y = (rect.minY / step).rounded(.down) * step
+        while y <= rect.maxY { path.move(to: CGPoint(x: rect.minX, y: y)); path.addLine(to: CGPoint(x: rect.maxX, y: y)); y += step }
+        return path
     }
 
     private var dragGesture: some Gesture {
