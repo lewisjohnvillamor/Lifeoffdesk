@@ -41,13 +41,15 @@ Tune during an outdoor walk and keep replay fixtures for stale fixes, large jump
 
 ## AI contract
 
+The current expansion contract is [LOCAL-AI-MVP.md](LOCAL-AI-MVP.md), covering separate versioned history, recap, preference and adaptive-suggestion schemas behind one serialized inference coordinator. [ACCESSIBILITY-AND-SAFETY.md](ACCESSIBILITY-AND-SAFETY.md) specifies fact-level provenance, scope, review and eligibility. AI interprets requests and selects supported fact/template IDs; deterministic services own search, numerical calculations and hard constraints. These contracts are planned additions, not a description of completed code.
+
 The model extracts intent. App code finds actual places. Begin with one short turn and this proposed schema:
 
 ```json
-{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":["quiet"],"travelMode":"walk","needsClarification":false}
+{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":["quiet"],"keywords":[],"travelMode":"walk","needsClarification":false}
 ```
 
-Proposed initial bounds: duration 5–120 minutes or null; budget 0–10000 PHP or null; travelMode must be walk; categories allow park/cafe/museum/library/scenic/other, at most three; moodTags allow quiet/nature/curious/relax/active, at most three. Use a proposed 2 km initial straight-line search radius, adjustable explicitly up to 5 km. These are product defaults to confirm, not model capability claims. Validate bounds, enums, array sizes and types. Treat null as unknown. If needsClarification is true or the request cannot be interpreted, ask one short clarification before searching rather than fabricate preferences. Reject malformed output; one bounded repair attempt is permissible, then a clear retry/manual-filter state. Manual filters keep the app usable but are not proof of Local AI.
+Proposed initial bounds: duration 5–120 minutes or null; budget 0–10000 PHP or null; travelMode must be walk; categories allow park/cafe/food/museum/library/scenic/other, at most three; keywords allow at most three strings of 2–24 characters; moodTags allow quiet/nature/curious/relax/active, at most three. Use a proposed 2 km initial straight-line search radius, adjustable explicitly up to 5 km. These are product defaults to confirm, not model capability claims. Validate bounds, enums, array sizes and types. Treat null as unknown. If needsClarification is true or the request cannot be interpreted, ask one short clarification before searching rather than fabricate preferences. Reject malformed output; one bounded repair attempt is permissible, then a clear retry/manual-filter state. Manual filters keep the app usable but are not proof of Local AI.
 
 Use a constrained output grammar if supported by the pinned runtime, short context (initial trial 1024–2048 tokens) and bounded output (initial trial 128–192 tokens). Those are trial settings; compare quality and memory on the actual phone. Apply the model's correct chat template. Treat catalog/user text as data, not executable instructions.
 
@@ -57,7 +59,7 @@ Rank deterministically using supported categories, selected maximum radius and v
 
 Gather 15–30 real nearby places for one chosen area. Record provenance and retrieval date for every record. Missing matches must produce a useful empty state. Prepare small road/path data separately. If using OpenStreetMap-derived content, preserve source attribution and required license notices; verify dataset distribution terms. Do not scrape public map tiles for an offline pack.
 
-Track app binary, runtime, model, map/catalog and personal photos as separate byte counts. The Qwen publisher's Qwen3-0.6B GGUF Q8 listing shows approximately 639 MB; that is model storage, not peak RAM or total app size. Prefer a smaller compatible quantization only after provenance, license and quality testing. No full Luzon storage estimate is justified until boundaries, detail level and sources are chosen.
+Track app binary, runtime, model, map/catalog and personal photos as separate byte counts. The selected Qwen3-1.7B Q4_K_M artifact has approximately 1,282,439,264 bytes recorded in the materials lock; that is model storage, not peak RAM or total app size. Phone performance remains to be verified. A model change requires an explicit decision and fresh quality/device evidence. No full Luzon storage estimate is justified until boundaries, detail level and sources are chosen.
 
 Privacy intent: no account, analytics upload or cloud inference in this slice. No cloud-sync capability added by default. Describe OS backup behavior honestly; do not promise that device data can never enter a user's backups. Erase personal data without accidentally deleting reusable model/map assets. Provide export before wider use as a P1 protection against device loss.
 
