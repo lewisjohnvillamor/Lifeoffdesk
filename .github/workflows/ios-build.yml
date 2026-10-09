@@ -7,6 +7,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "Only capture screenshots whose name starts with this (e.g. m9); empty = all"
+        required: false
+        default: ""
 # A newer push replaces a run still in progress for the same branch/PR.
 concurrency:
   group: ios-build-${{ github.event.pull_request.number || github.ref }}
@@ -72,8 +77,10 @@ jobs:
           xcrun simctl location "$UDID" set 14.55420,121.02170 || true
           mkdir -p screenshots
           EXTRA=""
+          ONLY="${{ github.event.inputs.only }}"
           shoot() {
             name=$1; shift
+            if [ -n "$ONLY" ] && [[ "$name" != "$ONLY"* ]]; then return 0; fi
             xcrun simctl terminate "$UDID" com.lifeoffdesk.simulator 2>/dev/null || true
             xcrun simctl launch "$UDID" com.lifeoffdesk.simulator "$@" $EXTRA
             sleep 8
@@ -109,9 +116,13 @@ jobs:
           shoot m6-route --marketing --route-to osm:way:777918859
           shoot m7-card-sticker --demo-map --marketing --open-card --seed-photo --card-style Sticker
           shoot m8-recap --demo-map --marketing --open-recap
+          shoot m9-help-chat-emergency --marketing --help-chat "may nahimatay, hindi humihinga si lola"
+          shoot m10-help-chat-tire --marketing --help-chat "nasira gulong ko sa EDSA, paano magpalit?"
+          shoot m11-help-chat-bite --marketing --help-chat "nakagat ako ng aso habang naglalakad"
           shoot 10-walks-tab --demo-map --tab walks
           shoot 12-preferences --tab me --open-settings
           shoot 11-me-tab --demo-map --tab me
+          if [ -n "$ONLY" ]; then ls -la screenshots; exit 0; fi
           # Simulated GPS walk through the real tracking pipeline (simulator location, labelled in-app).
           xcrun simctl privacy "$UDID" grant location-always com.lifeoffdesk.simulator || xcrun simctl privacy "$UDID" grant location com.lifeoffdesk.simulator || true
           # Route follows real Makati street geometry from the bundled road data (~550 m).

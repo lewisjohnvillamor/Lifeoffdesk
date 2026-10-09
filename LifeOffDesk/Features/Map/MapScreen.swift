@@ -11,6 +11,8 @@ struct MapScreen: View {
     @State private var simCard: SimCard?
     @State private var showCamera = false
     @State private var showHelp = false
+    /// Simulator screenshot helper: opens the help chat with a question.
+    @State private var simHelpQuestion: SimQuestion?
     /// Photo pin the user tapped on the map.
     @State private var openedMoment: WalkMemory?
     @State private var followUser = true
@@ -106,6 +108,9 @@ struct MapScreen: View {
         }
         .sheet(isPresented: $showPlanner) { PlannerSheet().environmentObject(model) }
         .sheet(isPresented: $showHelp) { HelpSheet().environmentObject(model) }
+        .sheet(item: $simHelpQuestion) { question in
+            NavigationStack { SafetyChatView(initialQuestion: question.text) }.environmentObject(model)
+        }
         .sheet(item: $openedMoment) { memory in
             MomentSheet(memory: memory) { session in
                 openedMoment = nil
@@ -150,6 +155,9 @@ struct MapScreen: View {
         if arguments.contains("--flat") { tilted = false }
         if arguments.contains("--start-walk") { model.startWalking() } // simulator GPS route is supplied by simctl
         if arguments.contains("--open-help") { showHelp = true }
+        if let i = arguments.firstIndex(of: "--help-chat"), i + 1 < arguments.count {
+            simHelpQuestion = SimQuestion(text: arguments[i + 1])
+        }
         // Draws the street route to a bundled place (simulated GPS position from simctl).
         if let i = arguments.firstIndex(of: "--route-to"), i + 1 < arguments.count,
            let place = model.content?.catalog.place(id: arguments[i + 1]) { model.choose(place) }
@@ -483,4 +491,10 @@ private struct SimCard: Identifiable {
     let session: WalkSession
     let style: CardStyle
     var id: UUID { session.id }
+}
+
+/// Simulator screenshot helper item for the help chat sheet.
+struct SimQuestion: Identifiable {
+    let text: String
+    var id: String { text }
 }

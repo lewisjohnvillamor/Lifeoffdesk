@@ -63,6 +63,8 @@ final class SafetyChat: ObservableObject {
 
 struct SafetyChatView: View {
     @EnvironmentObject private var model: AppModel
+    /// Screenshot helper (simulator only): questions asked on appear.
+    var initialQuestion: String?
     @StateObject private var chat = SafetyChat()
     @StateObject private var speech = SpeechInput()
     @State private var text = ""
@@ -101,6 +103,11 @@ struct SafetyChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: speech.transcript) { _, value in if speech.state == .listening { text = value } }
         .onDisappear { speech.cancel() }
+        .task {
+            guard let initialQuestion, chat.messages.isEmpty else { return }
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            chat.ask(initialQuestion, ai: model.ai)
+        }
     }
 
     private var intro: some View {
