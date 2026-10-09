@@ -1,5 +1,17 @@
 # Life Off Desk — build status
 
+## SOS help assistant: offline first-aid and safety chat (2026-10-09, founder request)
+
+- **Where:** SOS → "Ask the help assistant". Type or speak (on-device speech) in Taglish or English. Quick chips cover common cases (sugat, natapilok, sobrang init, nahimatay, kagat ng aso, baha, lowbat, naligaw).
+- **How it answers:** the on-device model (`SafetyPrompt` v1) **only routes** the question to one of 19 bundled cards and flags emergencies, as grammar-constrained, validated JSON. A deterministic keyword check can raise the emergency flag and covers the model being unavailable. Emergencies show "Call 911 now" first.
+- **The cards** (`StarterData/safety-guide.json`) are short paraphrases of linked public sources: NHS, St John Ambulance, WHO, US NWS, Apple. The unsafe, lost and noGPS cards are app guidance only. See `docs/SAFETY-GUIDE.md`.
+- **Limits:**
+  - The model never writes medical advice.
+  - No plant or mushroom identification (the card says a description isn't enough).
+  - The cards have not been reviewed by a clinician; founder review is recommended.
+  - Mayo, Red Cross and DOH were not fetchable.
+- **Tests:** 3 new tests (Taglish routing, the emergency net cannot be lowered, an unknown card is rejected, every topic has a sourced card). 145 Swift tests pass. **Not yet on the phone; no model eval of this prompt.**
+
 ## Tappable photo pins, pin clustering, scale notes (2026-10-09, founder request)
 
 - **Tap a photo pin** on the map (or a photo in Me → Spots): a sheet shows the photo, date and time, and "Open this adventure" (its recap). Sample captures say they are illustrations.

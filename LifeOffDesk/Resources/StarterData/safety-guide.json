@@ -1,0 +1,336 @@
+{
+ "schemaVersion": 1,
+ "note": "Steps are short paraphrases of the linked public sources (fetched 2026-10-09), not medical advice. UK sources say 999; the app shows 911, the Philippine emergency hotline. 'Life Off Desk app guidance' cards describe app features only. Founder review recommended before release.",
+ "cards": [
+  {
+   "topic": "bleeding",
+   "title": "Cuts and bleeding",
+   "steps": [
+    "Wash and dry your hands; wear disposable gloves if you have them.",
+    "Press on the wound with a bandage or clean folded cloth.",
+    "If something is stuck in it, leave it in and press firmly on either side.",
+    "Raise an injured arm above head level; for a leg, lie down and raise it above the heart.",
+    "If blood soaks through, add another pad on top and keep pressing.",
+    "Every 10 minutes check the bandage isn't too tight."
+   ],
+   "callNow": [
+    "The bleeding won't stop",
+    "Bright red blood spurts out",
+    "Numbness near the wound or trouble moving it",
+    "A very large or deep wound, or one on the face or palm",
+    "An object like glass is stuck in it"
+   ],
+   "sourceTitle": "Cuts and grazes - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/cuts-and-grazes/"
+  },
+  {
+   "topic": "burn",
+   "title": "Burns and scalds",
+   "steps": [
+    "Cool the burn under cool running water for 20 minutes.",
+    "No tap? Use cool bottled water or a wet towel.",
+    "Remove clothing or jewellery near the burn, but not anything stuck to it.",
+    "Once cooled, lay cling film loosely over it; don't wrap it around.",
+    "Don't use creams, oil, butter, plasters or sticky dressings; don't burst blisters."
+   ],
+   "callNow": [
+    "The burn is very large or deep",
+    "It is on the face, genitals or bottom",
+    "It was caused by acid, chemicals or electricity"
+   ],
+   "sourceTitle": "Burns and scalds - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/burns-and-scalds/"
+  },
+  {
+   "topic": "sprain",
+   "title": "Sprains and twisted ankles",
+   "steps": [
+    "Protect: support the injury, for example with supportive shoes.",
+    "Rest: stop and avoid putting weight on it.",
+    "Ice: a wrapped ice pack for up to 20 minutes, every 2–3 hours.",
+    "Compression: wrap a bandage around it for support during the day.",
+    "Elevate: keep it raised on a pillow as much as possible.",
+    "For the first couple of days avoid heat, alcohol and massage."
+   ],
+   "callNow": [
+    "You heard a crack when it happened",
+    "The limb looks misshapen or at an odd angle",
+    "It is numb or tingling",
+    "The skin is blue, grey or cold"
+   ],
+   "sourceTitle": "Sprains and strains - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/sprains-and-strains/"
+  },
+  {
+   "topic": "heat",
+   "title": "Heat exhaustion and heatstroke",
+   "steps": [
+    "Move the person somewhere cool.",
+    "Remove unnecessary clothing like jackets or socks.",
+    "Give plenty of water; a sports drink or oral rehydration solution also helps.",
+    "Spray or sponge with cool water and fan them; put wrapped cold packs on armpits or neck.",
+    "Stay with them; they should feel better within 30 minutes.",
+    "If unconscious, use the recovery position; give CPR if there are no signs of life."
+   ],
+   "callNow": [
+    "Still unwell after 30 minutes of cooling and fluids",
+    "Hot skin that isn't sweating",
+    "Fast heartbeat or fast breathing",
+    "Confusion or poor coordination",
+    "A seizure or loss of consciousness"
+   ],
+   "sourceTitle": "Heat exhaustion and heatstroke - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/heat-exhaustion-heatstroke/"
+  },
+  {
+   "topic": "fainting",
+   "title": "Fainting and feeling faint",
+   "steps": [
+    "Feeling faint? Lie down with legs raised, or sit with your head between your knees.",
+    "Drink some water; cross your legs, rock on your toes or clench your fists.",
+    "If someone faints, gently shake their shoulders and ask loudly if they're OK.",
+    "No response: shout for help, tilt the head back and lift the chin.",
+    "Check breathing for 10 seconds; if normal, lay them on their back with legs raised.",
+    "Most people wake within 30 seconds."
+   ],
+   "callNow": [
+    "They are not breathing",
+    "They can't be woken within 1 minute",
+    "Trouble speaking or moving, chest pain or palpitations",
+    "A seizure, a serious injury, or fainting while exercising or lying down"
+   ],
+   "sourceTitle": "Fainting - NHS",
+   "sourceURL": "https://www.nhs.uk/symptoms/fainting/"
+  },
+  {
+   "topic": "choking",
+   "title": "Choking (adult)",
+   "steps": [
+    "Ask \"are you choking?\" If they can breathe, speak or cough, let them cough.",
+    "Remove any obvious blockage from the mouth.",
+    "If coughing fails, lean them forward and give five sharp back blows between the shoulder blades.",
+    "Check the mouth after each back blow.",
+    "Still blocked: stand behind, fist between belly button and chest, pull sharply in and up, up to five times.",
+    "Keep repeating five back blows and five thrusts until help arrives."
+   ],
+   "callNow": [
+    "The blockage hasn't cleared after back blows and thrusts",
+    "They become unresponsive (start CPR)"
+   ],
+   "sourceTitle": "Choking | St John Ambulance",
+   "sourceURL": "https://www.sja.org.uk/first-aid-advice/choking/"
+  },
+  {
+   "topic": "cpr",
+   "title": "CPR (adult, not breathing)",
+   "steps": [
+    "Make sure it's safe; shake their shoulders and ask loudly \"are you OK?\"",
+    "No response: shout for help, tilt the head back, check normal breathing for up to 10 seconds.",
+    "Not breathing normally: have someone call 911 on speaker and find a defibrillator.",
+    "Heel of your hand mid-chest, other hand on top, arms straight, press down 5–6 cm.",
+    "Push 100–120 times a minute. Not trained? Keep giving continuous chest compressions.",
+    "Continue until help takes over, they breathe normally, or you are exhausted."
+   ],
+   "callNow": [
+    "An adult is unresponsive and not breathing normally (occasional gasps are not normal breathing)"
+   ],
+   "sourceTitle": "How to do CPR | St John Ambulance",
+   "sourceURL": "https://www.sja.org.uk/get-advice/first-aid-advice/unresponsive-casualty/how-to-do-cpr-on-an-adult/"
+  },
+  {
+   "topic": "allergy",
+   "title": "Severe allergic reaction (anaphylaxis)",
+   "steps": [
+    "Use an adrenaline auto-injector (e.g. EpiPen) if there is one; instructions are on the side.",
+    "Call 911 and say you think it's anaphylaxis.",
+    "Lie down with legs raised; if breathing is hard, sit up slowly.",
+    "If stung, remove the sting if it's still in the skin.",
+    "No improvement after 5 minutes: use a second auto-injector.",
+    "Never stand or walk, even if feeling better."
+   ],
+   "callNow": [
+    "Lips, mouth, throat or tongue suddenly swell",
+    "Breathing is fast or a struggle, or the throat feels tight",
+    "Skin, tongue or lips turn blue, grey or pale",
+    "Sudden confusion, drowsiness, or fainting"
+   ],
+   "sourceTitle": "Anaphylaxis - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/anaphylaxis/"
+  },
+  {
+   "topic": "animalBite",
+   "title": "Dog or cat bite or scratch (rabies risk)",
+   "steps": [
+    "Wash the wound right away with soap or detergent.",
+    "Flush it with plenty of water for about 15 minutes.",
+    "Then apply an iodine-containing or antiviral antiseptic if you have one.",
+    "Don't put chili, plant juices, acids or alkalis on it.",
+    "Go to a health facility for assessment and rabies treatment; don't wait.",
+    "If it's safe, keep the animal confined and watch it for 10 days."
+   ],
+   "callNow": [
+    "Any bite or scratch from an animal that could have rabies: get medical care today",
+    "A large or deep wound, or bleeding that won't stop"
+   ],
+   "sourceTitle": "Rabies - World Health Organization",
+   "sourceURL": "https://www.who.int/health-topics/rabies"
+  },
+  {
+   "topic": "dehydration",
+   "title": "Dehydration",
+   "steps": [
+    "Drink fluids if you are thirsty, dizzy, tired, or your pee is dark.",
+    "If you feel sick, start with small sips and slowly drink more.",
+    "Avoid caffeine and alcohol.",
+    "With vomiting or diarrhoea, use oral rehydration solution.",
+    "Drink more in hot weather or when exercising; aim for pale pee."
+   ],
+   "callNow": [
+    "Blue, grey, pale or blotchy skin, lips or tongue, or cold skin",
+    "Difficulty breathing or rapid breaths",
+    "Confusion, or being unusually sleepy or hard to wake"
+   ],
+   "sourceTitle": "Dehydration - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/dehydration/"
+  },
+  {
+   "topic": "sting",
+   "title": "Insect and bee stings",
+   "steps": [
+    "Scrape the stinger out sideways with a fingernail or card edge.",
+    "Don't use tweezers; squeezing can push in more venom.",
+    "Wash the area with soap and water.",
+    "Hold a wrapped ice pack or cold wet cloth on it for at least 20 minutes; raise it.",
+    "Don't scratch."
+   ],
+   "callNow": [
+    "Stung in the mouth, throat or near the eyes",
+    "Stung many times, or a serious reaction before",
+    "Any sign of anaphylaxis: swelling of lips or throat, trouble breathing"
+   ],
+   "sourceTitle": "Insect bites and stings - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/insect-bites-and-stings/"
+  },
+  {
+   "topic": "snakeBite",
+   "title": "Snake bite",
+   "steps": [
+    "Treat every snake bite as an emergency: call 911 or go to a hospital.",
+    "Stay calm and keep the bitten part as still as possible.",
+    "Remove jewellery and loosen clothing near the bite.",
+    "Remember the snake's colour and pattern, or photograph it from a safe distance.",
+    "Don't catch or kill the snake, suck or cut the bite, or tie anything tight around it."
+   ],
+   "callNow": [
+    "Any snake bite"
+   ],
+   "sourceTitle": "Snake bites - NHS (UK page; outside the UK use local emergency services)",
+   "sourceURL": "https://www.nhs.uk/conditions/snake-bites/"
+  },
+  {
+   "topic": "wildPlants",
+   "title": "Wild plants, berries and mushrooms",
+   "steps": [
+    "This app cannot identify plants or mushrooms, and a description is not enough to know one is safe.",
+    "Some plants and mushrooms are poisonous; if someone may have eaten one, call 911 or go to a hospital.",
+    "Don't make them vomit, and don't give them anything to eat or drink.",
+    "Keep a sample of what was eaten to show the doctors.",
+    "If unconscious but breathing, use the recovery position; if not breathing, start CPR."
+   ],
+   "callNow": [
+    "Something harmful may have been eaten (symptoms can take hours or days)",
+    "Unconscious, not breathing, or breathing is very difficult",
+    "A seizure"
+   ],
+   "sourceTitle": "Poisoning - NHS",
+   "sourceURL": "https://www.nhs.uk/conditions/poisoning/"
+  },
+  {
+   "topic": "flood",
+   "title": "Floods (baha)",
+   "steps": [
+    "Don't walk or drive through flooded areas or standing water.",
+    "Hidden dangers include fallen power lines and chemicals; currents can sweep people away.",
+    "Know your community's evacuation route and flood-prone areas.",
+    "Wash hands with soap after touching floodwater; never use it for food, dishes or teeth.",
+    "Throw away food that touched floodwater; boil or chlorinate drinking water."
+   ],
+   "callNow": [
+    "Someone is trapped or swept away by water",
+    "Live wires are down in or near the water"
+   ],
+   "sourceTitle": "Floods: How to protect your health - WHO",
+   "sourceURL": "https://www.who.int/news-room/questions-and-answers/item/how-do-i-protect-my-health-in-a-flood"
+  },
+  {
+   "topic": "lightning",
+   "title": "Lightning and thunderstorms",
+   "steps": [
+    "When thunder roars, go indoors: hearing thunder means you're within striking distance.",
+    "Only an enclosed building or a car is safe; tents and open shelters are not.",
+    "Wait 30 minutes after the last thunder before going back outside.",
+    "If stuck outside, avoid open fields, hilltops and tall isolated trees.",
+    "Groups should spread out; stay away from water and metal fences or poles."
+   ],
+   "callNow": [],
+   "sourceTitle": "Lightning Safety - US National Weather Service",
+   "sourceURL": "https://www.weather.gov/safety/lightning-safety"
+  },
+  {
+   "topic": "unsafe",
+   "title": "Feeling unsafe, followed or threatened",
+   "steps": [
+    "If you are in danger now, call 911.",
+    "Go towards people and lit, busy places such as a store, guard post or police station.",
+    "In this Help screen, the nearest police stations have a Route button (offline).",
+    "Copy or text your location from this screen to someone you trust (SMS works without data)."
+   ],
+   "callNow": [
+    "You or someone else is in immediate danger"
+   ],
+   "sourceTitle": "Life Off Desk app guidance (not medical)",
+   "sourceURL": "https://github.com/lewisjohnvillamor/Lifeoffdesk/blob/main/docs/SAFETY-GUIDE.md"
+  },
+  {
+   "topic": "lost",
+   "title": "Lost or not sure where you are",
+   "steps": [
+    "Stay calm and stop walking for a moment.",
+    "Tap Locate on the map; your position works offline while GPS has a fix.",
+    "Copy or text your location from this Help screen to someone you trust.",
+    "Pick a place on the map and follow the dashed suggested route along mapped streets."
+   ],
+   "callNow": [
+    "You are hurt, in danger, or it is getting dark somewhere unsafe"
+   ],
+   "sourceTitle": "Life Off Desk app guidance (not medical)",
+   "sourceURL": "https://github.com/lewisjohnvillamor/Lifeoffdesk/blob/main/docs/SAFETY-GUIDE.md"
+  },
+  {
+   "topic": "phoneBattery",
+   "title": "Phone battery running low",
+   "steps": [
+    "Turn on Low Power Mode: Settings › Battery (or Control Center, battery icon).",
+    "Low Power Mode dims the screen and pauses background tasks to save battery.",
+    "With no signal, Airplane Mode stops the phone searching for a network, which drains battery.",
+    "Before it runs out, text your location to someone you trust."
+   ],
+   "callNow": [],
+   "sourceTitle": "Use Low Power Mode to save battery life on your iPhone - Apple Support",
+   "sourceURL": "https://support.apple.com/en-us/101604"
+  },
+  {
+   "topic": "noGPS",
+   "title": "Location not updating",
+   "steps": [
+    "This app works without data; GPS itself needs no signal or internet.",
+    "If the app says \"Finding your location…\", move to an open area away from tall buildings and wait a moment.",
+    "Check Settings › Privacy & Security › Location Services is on for Life Off Desk.",
+    "Your last saved adventure and the map still work while the location catches up."
+   ],
+   "callNow": [],
+   "sourceTitle": "Life Off Desk app guidance (not medical)",
+   "sourceURL": "https://github.com/lewisjohnvillamor/Lifeoffdesk/blob/main/docs/SAFETY-GUIDE.md"
+  }
+ ]
+}
