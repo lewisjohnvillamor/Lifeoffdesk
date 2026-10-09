@@ -1,6 +1,6 @@
 # Submission pack — AppBuildersPH Hackathon 2026 (Local AI)
 
-Deadline **10:00 AM, October 10, 2026 (Asia/Manila)** on https://cerebralvalley.ai/e/appbuildersph-hackathon-2026. One submission only, no edits, code freezes at 10:00 AM (judges review the repository as of the deadline). Repository: https://github.com/lewisjohnvillamor/Lifeoffdesk (public).
+Deadline **10:00 AM, October 10, 2026 (Asia/Manila)**. Submit once, only on Cerebral Valley: https://cerebralvalley.ai/e/appbuildersph-hackathon-2026/hackathon/submit. appbuildersph.com/hackathon/#submission just points there. One submission only, no edits, code freezes at 10:00 AM (judges review the repository as of the deadline). Repository: https://github.com/lewisjohnvillamor/Lifeoffdesk (public).
 
 Fields marked **FOUNDER** must be filled by the team; nothing here is invented on their behalf.
 
@@ -17,7 +17,7 @@ Fields marked **FOUNDER** must be filled by the team; nothing here is invented o
 
 ## The proof
 
-- **Demo video (~1 min):** **FOUNDER**. Use a real iPhone screen recording in Airplane Mode for the product demo (shot list below). The launch film `marketing/life-off-desk-launch-square.mp4` (56 s) is a promo built from labelled demo-world Simulator captures plus stock footage, so label it a promo if you use it here.
+- **Demo video (~1 min):** https://youtu.be/FkGO5FMHM50
 - **Screenshots:**
   - App Store-style panels: `marketing/mockups/store-1.jpg` … `store-7.jpg`.
   - Per-feature panels: `marketing/mockups/*-portrait.jpg` (map, route, coach, help chat, recap, card).
