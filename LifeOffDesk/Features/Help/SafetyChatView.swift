@@ -11,7 +11,9 @@ final class SafetyChat: ObservableObject {
         enum Kind: Equatable {
             case question(String, photo: UIImage?)
             /// `seen`: what Apple's on-device image recognition named in the photo, if any.
-            case answer(SafetyCard?, emergency: Bool, routedByAI: Bool, seen: [String])
+            /// `suggestions`: offered when no card matched, instead of a dead end.
+            case answer(SafetyCard?, emergency: Bool, routedByAI: Bool, seen: [String], photoUnclear: Bool = false,
+                        continued: Bool = false, suggestions: [SafetyCard] = [])
         }
         let id = UUID()
         let kind: Kind
@@ -19,6 +21,8 @@ final class SafetyChat: ObservableObject {
 
     @Published var messages: [Message] = []
     @Published var thinking = false
+    /// Last question asked, so a short follow-up ("paano na?") continues it.
+    private var lastQuestion: String?
     let guide: SafetyGuide?
     let loadProblem: String?
 
@@ -39,25 +43,33 @@ final class SafetyChat: ObservableObject {
         guard !text.isEmpty || photo != nil, !thinking else { return }
         messages.append(Message(kind: .question(text.isEmpty ? "(photo)" : text, photo: photo)))
         thinking = true
+        let followUp = SafetyPrompt.followUp(text, previous: lastQuestion)
+        let routedText = followUp ?? text
         Task {
-            // Apple's on-device image recognition names what is in the photo; the model reads those
-            // names as context. Nothing is diagnosed from the image.
-            var labels: [String] = []
-            if let photo { labels = await PhotoClassifier.labels(for: photo) }
+            // Apple's on-device image recognition names what is in the photo; generic labels
+            // ("structure", "wood") are dropped. The model reads the rest as context only.
+            var all: [String] = []
+            if let photo { all = await PhotoClassifier.labels(for: photo) }
+            let labels = PhotoHints.useful(all)
             var routed: SafetyAnswer?
-            if let result = try? await ai.run({ await SafetyPrompt.classify(text, photoLabels: labels, engine: $0) }),
+            if let result = try? await ai.run({ await SafetyPrompt.classify(routedText, photoLabels: labels, engine: $0) }),
                case let .valid(answer) = result.0 {
                 routed = answer
             }
-            let final = SafetyPrompt.combine(model: routed, question: text, photoLabels: labels)
-            messages.append(Message(kind: .answer(final.topic.flatMap { guide?.card($0) }, emergency: final.emergency,
-                                                  routedByAI: routed != nil, seen: labels)))
+            let final = SafetyPrompt.combine(model: routed, question: routedText, photoLabels: labels)
+            let card = final.topic.flatMap { guide?.card($0) }
+            let suggestions = card == nil ? SafetyKeywords.suggestions(for: routedText).compactMap { guide?.card($0) } : []
+            messages.append(Message(kind: .answer(card, emergency: final.emergency, routedByAI: routed != nil, seen: labels,
+                                                  photoUnclear: photo != nil && labels.isEmpty, continued: followUp != nil,
+                                                  suggestions: suggestions)))
+            if !text.isEmpty { lastQuestion = routedText }
             thinking = false
         }
     }
 
     func show(_ topic: SafetyTopic) {
         messages.append(Message(kind: .answer(guide?.card(topic), emergency: false, routedByAI: false, seen: [])))
+        lastQuestion = nil
     }
 }
 
@@ -143,8 +155,16 @@ struct SafetyChatView: View {
                         .padding(12).background(Theme.primary, in: RoundedRectangle(cornerRadius: 16))
                 }
             }
-        case let .answer(card, emergency, routedByAI, seen):
+        case let .answer(card, emergency, routedByAI, seen, photoUnclear, continued, suggestions):
             VStack(alignment: .leading, spacing: 10) {
+                if continued {
+                    Label("Tuloy sa huling tanong mo", systemImage: "arrow.turn.down.right")
+                        .font(.caption).foregroundStyle(Theme.secondaryInk)
+                }
+                if photoUnclear {
+                    Label("Hindi malinaw kung ano ang nasa photo; sinunod ko ang tanong mo.", systemImage: "eye.slash")
+                        .font(.caption).foregroundStyle(Theme.secondaryInk)
+                }
                 if !seen.isEmpty {
                     Label("Nakikita sa photo: \(PhotoHints.describe(seen))", systemImage: "eye")
                         .font(.caption).foregroundStyle(Theme.secondaryInk)
@@ -177,10 +197,24 @@ struct SafetyChatView: View {
                         Link("Source: \(card.sourceTitle)", destination: url).font(.caption).foregroundStyle(Theme.primary)
                     }
                 } else {
-                    Text("Wala akong reviewed na gabay para diyan. Kung delikado o may nasaktan, tumawag sa 911. Puwede mo ring subukan ang ibang salita o pumili sa mga button sa itaas.")
+                    Text("Wala akong reviewed na gabay para diyan. Kung delikado o may nasaktan, tumawag sa 911.")
                         .font(.subheadline).foregroundStyle(Theme.ink)
+                    if !suggestions.isEmpty {
+                        Text("Baka ito ang hinahanap mo:").font(.footnote.bold()).foregroundStyle(Theme.ink)
+                        ForEach(suggestions) { suggestion in
+                            Button { chat.show(suggestion.topic) } label: {
+                                Label(suggestion.title, systemImage: "arrow.right.circle")
+                                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.primary)
+                                    .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
-                Text(routedByAI ? "On-device AI chose this card · text from the linked source" : "Matched by keywords (no AI) · text from the linked source")
+                Text(card == nil
+                     ? (routedByAI ? "On-device AI found no matching card" : "No matching card (keywords)")
+                     : (routedByAI ? "On-device AI chose this card · text from the linked source"
+                                   : "Matched by keywords (no AI) · text from the linked source"))
                     .font(.caption2).foregroundStyle(Theme.secondaryInk)
             }
             .padding(14)

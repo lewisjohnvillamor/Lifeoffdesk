@@ -26,8 +26,26 @@ final class SafetyGuideTests: XCTestCase {
         XCTAssertEqual(attempts.count, 2, "an unknown card name is rejected")
         let final = SafetyPrompt.combine(model: answer, question: "hindi humihinga ang lola ko")
         XCTAssertTrue(final.emergency, "keyword net raises the emergency flag the model missed")
-        XCTAssertEqual(final.topic, .fainting)
+        XCTAssertEqual(final.topic, .cpr, "the user's words (not breathing) outrank the model's fainting")
         XCTAssertEqual(SafetyPrompt.combine(model: nil, question: "nabulunan ang anak ko").topic, .choking)
+    }
+
+    func testFounderPhoneCasesGetAnAnswer() {
+        // Open fracture: emergency + broken-bone guidance.
+        let bone = SafetyPrompt.combine(model: SafetyAnswer(topic: nil, emergency: false), question: "lumabas ang buto")
+        XCTAssertTrue(bone.emergency)
+        XCTAssertEqual(bone.topic, .sprain)
+        // Follow-up continues the previous question.
+        XCTAssertEqual(SafetyKeywords.topic(in: "numbing"), .sprain, "numbness is on the injury card")
+        XCTAssertEqual(SafetyPrompt.followUp("paano na?", previous: "lumabas ang buto"), "lumabas ang buto paano na?")
+        XCTAssertNil(SafetyPrompt.followUp("nasira gulong ko", previous: "lumabas ang buto"), "a new topic is not a follow-up")
+        // Foot photo with "okay pa ba paa ko": generic labels dropped, routed to the injury card.
+        XCTAssertEqual(PhotoHints.useful(["structure", "wood processed", "foot"]), ["foot"])
+        XCTAssertEqual(SafetyPrompt.combine(model: nil, question: "okay pa ba paa ko", photoLabels: ["structure"]).topic, .sprain)
+        // A swollen ankle is not an allergy.
+        XCTAssertEqual(SafetyKeywords.topic(in: "namamaga ang paa ko"), .sprain)
+        // No match: suggestions instead of a dead end.
+        XCTAssertEqual(SafetyKeywords.suggestions(for: "may problema sa kotse").first, .breakdown)
     }
 
     func testPhotoLabelsAddContextButNeverDiagnose() async {

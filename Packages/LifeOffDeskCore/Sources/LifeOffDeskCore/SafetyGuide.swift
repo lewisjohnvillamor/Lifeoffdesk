@@ -47,7 +47,9 @@ public enum SafetyKeywords {
                                  "kombulsyon", "nangingisay", "heavy bleeding", "dugo nang dugo", "dugo ng dugo",
                                  "hindi tumitigil ang dugo", "can't breathe", "cannot breathe", "hirap huminga",
                                  "di makahinga", "hindi makahinga", "choking", "nabubulunan", "stroke", "snake bite",
-                                 "tinuklaw", "nakagat ng ahas", "anaphylaxis", "namamaga ang lalamunan"]
+                                 "tinuklaw", "nakagat ng ahas", "anaphylaxis", "namamaga ang lalamunan",
+                                 "lumabas ang buto", "lumalabas ang buto", "nakausli ang buto", "bone sticking out",
+                                 "bone is sticking out", "open fracture", "kita ang buto"]
 
     static let topicWords: [(SafetyTopic, [String])] = [
         (.flatTire, ["flat tire", "flat tyre", "flat na gulong", "na-flat", "naflat", "butas ang gulong", "butas na gulong",
@@ -61,10 +63,13 @@ public enum SafetyKeywords {
         (.choking, ["choking", "nabubulunan", "bulunan", "nabulunan"]),
         (.bleeding, ["bleed", "dugo", "sugat", "cut", "hiwa", "laceration"]),
         (.burn, ["burn", "paso", "napaso", "nasunog"]),
-        (.sprain, ["sprain", "pilay", "napilay", "twisted ankle", "natapilok", "tapilok"]),
+        (.sprain, ["sprain", "pilay", "napilay", "twisted ankle", "natapilok", "tapilok", "bali", "nabali", "nabalian",
+                   "broken bone", "fracture", "lumabas ang buto", "nakausli ang buto", "manhid", "namamanhid", "numb",
+                   "tingling", "namamaga ang paa", "namamaga ang tuhod", "nadapa", "nahulog", "fell", "tripped"]),
         (.heat, ["heat", "init", "heatstroke", "heat stroke", "sobrang init", "nahihilo sa init", "sunstroke"]),
         (.fainting, ["faint", "nahimatay", "himatay", "hilo", "dizzy", "nahilo"]),
-        (.allergy, ["allerg", "anaphyla", "namamaga", "pantal", "hives", "swelling"]),
+        (.allergy, ["allerg", "anaphyla", "namamaga ang labi", "namamaga ang mukha", "namamaga ang lalamunan", "pantal",
+                    "hives", "swollen lips", "swollen face"]),
         (.animalBite, ["dog bite", "kagat ng aso", "nakagat ng aso", "cat bite", "kagat ng pusa", "kalmot", "rabies", "aso", "pusa"]),
         (.snakeBite, ["snake", "ahas", "tinuklaw"]),
         (.sting, ["sting", "bee", "bubuyog", "putakti", "wasp", "kagat ng insekto", "insect"]),
@@ -78,14 +83,32 @@ public enum SafetyKeywords {
         (.noGPS, ["gps", "location", "signal", "walang signal", "no signal", "lokasyon"]),
     ]
 
+    /// Topics to offer as buttons when nothing matched, instead of a dead end.
+    public static func suggestions(for text: String) -> [SafetyTopic] {
+        let t = text.lowercased()
+        let body = ["katawan", "body", "masakit", "sakit", "pain", "kamay", "hand", "ulo", "head", "likod", "back", "dibdib"]
+        let vehicle = ["kotse", "car", "sasakyan", "motor", "makina", "engine", "drive"]
+        if vehicle.contains(where: t.contains) { return [.breakdown, .flatTire, .wontStart, .overheating] }
+        if body.contains(where: t.contains) { return [.sprain, .bleeding, .fainting, .heat] }
+        return [.bleeding, .sprain, .heat, .fainting, .breakdown, .lost]
+    }
+
     public static func emergency(in text: String) -> Bool {
         let t = text.lowercased()
         return emergencyWords.contains { t.contains($0) }
     }
 
+    /// Body parts alone ("paa ko", "tuhod") point to the injury card, but only when no specific
+    /// topic matched ("nakagat ng ahas sa paa" stays a snake bite).
+    static let bodyWords = ["paa", "foot", "ankle", "bukung-bukong", "tuhod", "knee", "binti", "leg", "braso", "arm",
+                            "pulso", "wrist", "buto", "bone", "daliri", "finger", "toe"]
+
     public static func topic(in text: String) -> SafetyTopic? {
         let t = text.lowercased()
-        return topicWords.first { $0.1.contains { t.contains($0) } }?.0
+        if let topic = topicWords.first(where: { $0.1.contains { t.contains($0) } })?.0 { return topic }
+        // Whole words only: "paano" (how) must not match "paa" (foot).
+        let words = Set(t.split { !$0.isLetter && $0 != "-" }.map(String.init))
+        return bodyWords.contains { words.contains($0) } ? .sprain : nil
     }
 }
 
@@ -151,8 +174,17 @@ public enum SafetyPrompt {
     /// emergency flag and to fill in a topic the model missed.
     public static func combine(model: SafetyAnswer?, question: String, photoLabels: [String] = []) -> SafetyAnswer {
         let emergency = (model?.emergency ?? false) || SafetyKeywords.emergency(in: question)
-        let topic = model?.topic ?? SafetyKeywords.topic(in: question) ?? PhotoHints.topic(for: photoLabels)
+        // The user's own words outrank the model when the keyword net is sure (it holds the Taglish
+        // phrases the small model misses), then the model, then what the photo shows.
+        let topic = SafetyKeywords.topic(in: question) ?? model?.topic ?? PhotoHints.topic(for: photoLabels)
         return SafetyAnswer(topic: topic, emergency: emergency)
+    }
+
+    /// A short follow-up ("numbing", "paano?") continues the previous question when it matches nothing alone.
+    public static func followUp(_ question: String, previous: String?) -> String? {
+        guard let previous, question.split(separator: " ").count <= 4,
+              SafetyKeywords.topic(in: question) == nil else { return nil }
+        return previous + " " + question
     }
 }
 
@@ -161,6 +193,7 @@ public enum SafetyPrompt {
 public enum PhotoHints {
     static let map: [(SafetyTopic, [String])] = [
         (.flatTire, ["tire", "tyre", "wheel", "rim"]),
+        (.sprain, ["foot", "feet", "leg", "ankle", "knee", "arm", "hand", "toe", "finger", "wrist"]),
         (.breakdown, ["car", "automobile", "vehicle", "motorcycle", "scooter", "motorbike", "truck", "engine"]),
         (.animalBite, ["dog", "cat", "puppy", "kitten"]),
         (.snakeBite, ["snake", "serpent"]),
@@ -174,7 +207,18 @@ public enum PhotoHints {
     public static let friendly: [String: String] = [
         "tire": "gulong", "wheel": "gulong", "car": "kotse", "motorcycle": "motor", "dog": "aso", "cat": "pusa",
         "snake": "ahas", "mushroom": "kabute", "plant": "halaman", "flower": "bulaklak", "bee": "bubuyog", "fire": "apoy",
+        "foot": "paa", "feet": "paa", "leg": "binti", "hand": "kamay", "arm": "braso", "knee": "tuhod",
     ]
+
+    /// Labels that say nothing useful about a problem ("structure", "wood processed", "indoor").
+    static let generic = ["structure", "wood", "material", "indoor", "outdoor", "floor", "wall", "room", "furniture",
+                          "textile", "interior", "building", "architecture", "ceiling", "tile", "machine", "people",
+                          "adult", "clothing", "document", "screenshot", "consumer electronics", "container"]
+
+    /// Only labels worth showing or routing on.
+    public static func useful(_ labels: [String]) -> [String] {
+        labels.filter { label in !generic.contains { label.lowercased().contains($0) } }
+    }
 
     public static func topic(for labels: [String]) -> SafetyTopic? {
         let lower = labels.map { $0.lowercased() }

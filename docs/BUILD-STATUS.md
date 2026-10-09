@@ -6,6 +6,16 @@
   - Six car cards: breakdown safety (GOV.UK), flat tire, overheating, jump start, won't start, warning lights (The AA). They are adapted to 911 and right-hand traffic: UK motorway specifics are dropped.
   - Attach a photo: Apple Vision's on-device classifier names the objects (e.g. tire, wheel), which become context for the router. It never diagnoses damage or edibility.
   - 25 cards total; 146 Swift tests pass.
+- **Fine-tuning from founder phone tests (same night):**
+  - "lumabas ang buto" (bone sticking out) is now an emergency (Call 911) and shows the sprain/broken-bone card. That card is retitled "Sprains, twisted ankles and possible broken bones".
+  - Short follow-ups ("paano na?") continue the previous question, marked "Tuloy sa huling tanong mo".
+  - Numbness words (manhid, numb, tingling) and body parts route to the injury card. Body parts match whole words only ("paano" ≠ "paa") and rank below specific topics, so "nakagat ng ahas sa paa" stays a snake bite.
+  - "namamaga" alone no longer means allergy.
+  - Generic Vision labels ("structure", "wood processed") are dropped. A photo with nothing useful says so; foot, leg and hand labels point to the injury card.
+  - The user's own Taglish keywords now outrank the model's topic.
+  - No match shows "Baka ito ang hinahanap mo" buttons instead of a dead end. The caption no longer claims a card was chosen when none was.
+  - The card generator is now in the repo: `scripts/build_safety_guide.py`.
+  - 147 Swift tests pass.
 - **Where:** SOS → "Ask the help assistant". Type or speak (on-device speech) in Taglish or English. Quick chips cover common cases (sugat, natapilok, sobrang init, nahimatay, kagat ng aso, baha, lowbat, naligaw).
 - **How it answers:** the on-device model (`SafetyPrompt` v1) **only routes** the question to one of 19 bundled cards and flags emergencies, as grammar-constrained, validated JSON. A deterministic keyword check can raise the emergency flag and covers the model being unavailable. Emergencies show "Call 911 now" first.
 - **The cards** (`StarterData/safety-guide.json`) are short paraphrases of linked public sources: NHS, St John Ambulance, WHO, US NWS, Apple. The unsafe, lost and noGPS cards are app guidance only. See `docs/SAFETY-GUIDE.md`.
