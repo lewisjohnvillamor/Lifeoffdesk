@@ -143,6 +143,7 @@ struct WalksView: View {
         return VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("This week").font(.headline)
+                if model.statsPending { ProgressView().controlSize(.small).accessibilityLabel("Calculating") }
                 Spacer()
                 Text("\(start.formatted(.dateTime.month(.defaultDigits).day())) – \(end.addingTimeInterval(-1).formatted(.dateTime.month(.defaultDigits).day()))")
                     .font(.footnote).foregroundStyle(Theme.secondaryInk)

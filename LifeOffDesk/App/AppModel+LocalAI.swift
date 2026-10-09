@@ -189,6 +189,9 @@ extension AppModel {
         plannerState = .answered(response, usedAI: usedAI)
     }
 
+    /// Totals are still being computed for the adventures shown (sample sets take a few seconds).
+    var statsPending: Bool { stats.walkCount != historyWalks.count }
+
     /// Off-street part of all adventures (raw trail not matched to a mapped street), for Me.
     var offStreetMeters: Double {
         stats.unmatchedByWalk.values.flatMap { $0 }.reduce(0) { total, line in
