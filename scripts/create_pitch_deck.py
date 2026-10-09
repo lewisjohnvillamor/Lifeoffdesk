@@ -143,10 +143,14 @@ def slide_2():
         text(d, (x + 34, 414), body, 29, MUTED, spacing=10)
         if x < 1230:
             arrow(d, (x + 514, 420), (x + 548, 420))
-    d.rounded_rectangle((90, 650, 1830, 914), radius=38, fill=PALE)
+    d.rounded_rectangle((90, 650, 1175, 914), radius=38, fill=PALE)
     text(d, (135, 696), "What makes it different", 25, GREEN, True)
-    text(d, (135, 754), "The AI interprets. The app verifies.", 48, INK, True)
-    text(d, (135, 824), "Real GPS, local places, computed distances, and honest unknowns stay deterministic.", 28, MUTED)
+    text(d, (135, 754), "The AI interprets.\nThe app verifies.", 43, INK, True, spacing=5)
+    text(d, (135, 866), "GPS, places, routes, and numbers stay deterministic.", 23, MUTED)
+    d.rounded_rectangle((1215, 650, 1830, 914), radius=38, fill="#FFF1EF", outline="#D9A19C", width=2)
+    text(d, (1260, 696), "OFFLINE SAFETY HELP", 22, DANGER, True)
+    text(d, (1260, 748), "Ask in Taglish.\nGet reviewed steps.", 36, INK, True, spacing=5)
+    text(d, (1260, 850), "Urgent language brings Call 911 forward.", 22, MUTED)
     footer(d, 2, "Solution")
     return save(im, 2, "solution")
 
@@ -182,9 +186,10 @@ def slide_4():
         if x < 1210:
             arrow(d, (x + 514, 445), (x + 548, 445))
     d.rounded_rectangle((90, 710, 1710, 930), radius=34, fill=INK)
-    text(d, (130, 752), "FAIL-SAFE", 20, "#BFD5C4", True)
-    text(d, (130, 802), "AI unavailable? Walking, map, history, and safety cards still work.", 38, SURFACE, True)
-    text(d, (130, 861), "Malformed output is rejected; GPS, calculations, access rules, and safety prose never depend on it.", 24, "#DDE6DF")
+    text(d, (130, 748), "OFFLINE SAFETY ASSISTANT", 20, "#F2B7B1", True)
+    text(d, (130, 792), "Taglish question  |  keyword guard  |  reviewed card + local hotlines", 34, SURFACE, True)
+    text(d, (130, 850), "AI only routes among 28 bundled topics. It cannot lower a detected emergency or write medical advice.", 23, "#DDE6DF")
+    text(d, (130, 887), "The 911 button works without mobile data, but the call still needs cellular signal.", 21, "#F2B7B1")
     footer(d, 4, "Implementation")
     return save(im, 4, "implementation")
 

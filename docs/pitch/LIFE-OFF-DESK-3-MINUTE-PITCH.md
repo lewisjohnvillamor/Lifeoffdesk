@@ -8,7 +8,7 @@ Target runtime: **2:45–2:55**, leaving a few seconds for slide transitions.
 
 ## Slide 2 — Solution · 0:25–0:55
 
-“You can ask naturally in Taglish—‘Tahimik na park, thirty minutes lang.’ The app finds grounded local options, tracks the real walk, reveals only the streets you covered, then saves the route, photos, and an honest recap. The AI interprets the request. Deterministic code verifies every place, distance, route decision, and number.”
+“You can ask naturally in Taglish—‘Tahimik na park, thirty minutes lang.’ The app finds grounded local options, tracks the real walk, reveals only the streets you covered, then saves the route, photos, and an honest recap. The same phone also keeps offline safety help close: ask in Taglish and it surfaces reviewed steps, with urgent language bringing Call 911 forward.”
 
 ## Slide 3 — ICP · 0:55–1:15
 
@@ -16,7 +16,7 @@ Target runtime: **2:45–2:55**, leaving a few seconds for slide transitions.
 
 ## Slide 4 — Technical implementation · 1:15–1:50
 
-“Everything important runs on the phone. Core Location records movement. A quantized Qwen3 1.7B model through llama.cpp converts Taglish into constrained JSON. Swift engines then search bundled place and street data, enforce accessibility rules, calculate statistics, and persist the walk. There is no backend, account, or cloud inference. If AI is unavailable, walking, maps, history, and safety guidance still work.”
+“Everything important runs on the phone. Core Location records movement. A quantized Qwen3 1.7B model through llama.cpp converts Taglish into constrained JSON. Swift engines search local data and calculate every result. For safety, AI can only route among twenty-eight bundled topics; a deterministic keyword guard can raise an emergency and the model cannot lower it. Reviewed cards and official hotline records stay available offline. The app does not diagnose or generate medical advice, and an actual 911 call still needs cellular signal.”
 
 ## Slide 5 — Phone proof and limitation · 1:50–2:25
 
@@ -32,4 +32,5 @@ Target runtime: **2:45–2:55**, leaving a few seconds for slide transitions.
 - The phone was charging at 65% throughout, so this run does not establish battery consumption.
 - The 60 requests were a sustained stress-style sequence; ordinary use is expected to be much shorter, but that expectation still needs measurement.
 - “Intent pass” uses the repository’s held-out expected intents. Schema validity does not imply perfect interpretation.
+- Offline safety help is decision support, not an emergency service or diagnosis. Bundled guidance can be read without internet; placing a call requires cellular service.
 - Architecture details: `docs/TECHNICAL-ARCHITECTURE-REVIEW.md`.
