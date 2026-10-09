@@ -66,3 +66,18 @@ final class PlaceNameSearchTests: XCTestCase {
         XCTAssertTrue(PlaceNameSearch.find("gusto kong pumunta", in: catalog, from: origin).isEmpty)
     }
 }
+
+final class NearestHelpRequestTests: XCTestCase {
+    func testPlaceRequestsAreRecognised() {
+        XCTAssertEqual(NearestHelpRequest.kinds(in: "nearest hospital"), [.hospital])
+        XCTAssertEqual(NearestHelpRequest.kinds(in: "pinakamalapit na hospital"), [.hospital])
+        XCTAssertEqual(NearestHelpRequest.kinds(in: "saan ang pinakamalapit na pulis?"), [.police])
+        XCTAssertEqual(NearestHelpRequest.kinds(in: "ospital"), [.hospital])
+        XCTAssertEqual(NearestHelpRequest.kinds(in: "where is the nearest fire station"), [.fireStation])
+    }
+
+    func testOtherMessagesAreNotPlaceRequests() {
+        XCTAssertTrue(NearestHelpRequest.kinds(in: "na-flat gulong ko").isEmpty)
+        XCTAssertTrue(NearestHelpRequest.kinds(in: "galing ako sa hospital kahapon at masakit pa rin ang paa ko").isEmpty)
+    }
+}
