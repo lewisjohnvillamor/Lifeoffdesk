@@ -3,15 +3,15 @@ import Foundation
 /// Prompt and output grammar for intent extraction. The model only fills the preference
 /// schema; app code finds places, computes distances and writes the user-facing reply.
 public enum PlannerPrompt {
-    /// v5 adds novelty, accessNeeds and routeAccess.
-    public static let promptVersion = 5
+    /// v5 added novelty, accessNeeds and routeAccess; v6 adds sports/shopping/landmark categories.
+    public static let promptVersion = 6
     public static let maxRequestCharacters = 280
 
     public static let systemPrompt = """
     You turn a short outing request (English, Tagalog or Taglish) into one JSON object. Output only JSON with these keys:
     durationMinutes: integer minutes the user has, or null if not stated ("isang oras"/"one hour"/"1 hr" = 60, "20 mins" = 20).
     budgetPHP: integer pesos the user can spend, or null if not stated. Copy the number as written, even if negative ("minus 50" = -50).
-    categories: up to 3 of "park","cafe","food","museum","library","scenic","other". Only kinds the user named: kape/coffee/milk tea = "cafe"; kain/pagkain/restaurant/pizza/ramen/burger = "food". Empty if none.
+    categories: up to 3 of "park","cafe","food","museum","library","scenic","sports","shopping","landmark","other". Only kinds the user named: kape/coffee/milk tea = "cafe"; kain/pagkain/restaurant/pizza/ramen/burger = "food"; golf/tennis/pickleball/basketball/gym/swimming = "sports"; mall/grocery/palengke/shop = "shopping"; church/simbahan/monument/city hall = "landmark". Empty if none.
     moodTags: up to 3 of "quiet","nature","curious","relax","active" (tahimik = "quiet"). Only moods the user expressed; never add your own. Empty if none.
     keywords: up to 3 lowercase words for the specific thing wanted, e.g. "pizza", "ramen", "milk tea", "siomai". Not generic words like "place" or "good". Empty if none.
     novelty: "new" for somewhere new/hindi ko pa napupuntahan/bago, "familiar" for a usual or favourite place/dati/suki, else "any".
@@ -47,6 +47,8 @@ public enum PlannerPrompt {
          #"{"durationMinutes":null,"budgetPHP":null,"categories":["cafe"],"moodTags":[],"keywords":[],"novelty":"new","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":false}"#),
         ("Museum na wheelchair accessible, kasama ko si lola",
          #"{"durationMinutes":null,"budgetPHP":null,"categories":["museum"],"moodTags":[],"keywords":[],"novelty":"any","accessNeeds":["wheelchair"],"routeAccess":false,"travelMode":"walk","needsClarification":false}"#),
+        ("Laro tayo ng badminton mamaya, 1 hour",
+         #"{"durationMinutes":60,"budgetPHP":null,"categories":["sports"],"moodTags":["active"],"keywords":["badminton"],"novelty":"any","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":false}"#),
         ("Ewan ko, bahala ka na.",
          #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"novelty":"any","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":true}"#),
     ]
@@ -57,7 +59,7 @@ public enum PlannerPrompt {
     root ::= "{" "\"durationMinutes\":" ws nint "," ws "\"budgetPHP\":" ws nint "," ws "\"categories\":" ws cats "," ws "\"moodTags\":" ws moods "," ws "\"keywords\":" ws kws "," ws "\"novelty\":" ws novelty "," ws "\"accessNeeds\":" ws access "," ws "\"routeAccess\":" ws bool "," ws "\"travelMode\":" ws "\"walk\"" "," ws "\"needsClarification\":" ws bool "}"
     nint ::= "null" | "-"? [0-9] [0-9]? [0-9]? [0-9]? [0-9]?
     cats ::= "[" ( cat ( "," ws cat )? ( "," ws cat )? )? "]"
-    cat ::= "\"park\"" | "\"cafe\"" | "\"food\"" | "\"museum\"" | "\"library\"" | "\"scenic\"" | "\"other\""
+    cat ::= "\"park\"" | "\"cafe\"" | "\"food\"" | "\"museum\"" | "\"library\"" | "\"scenic\"" | "\"sports\"" | "\"shopping\"" | "\"landmark\"" | "\"other\""
     moods ::= "[" ( mood ( "," ws mood )? ( "," ws mood )? )? "]"
     mood ::= "\"quiet\"" | "\"nature\"" | "\"curious\"" | "\"relax\"" | "\"active\""
     kws ::= "[" ( kw ( "," ws kw )? ( "," ws kw )? )? "]"

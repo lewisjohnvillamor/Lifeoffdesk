@@ -1,5 +1,14 @@
 # Life Off Desk — build status
 
+## Broader place coverage: sports, shopping, landmarks and every named OSM place (2026-10-09)
+
+The catalog used to be built from a 5-kind whitelist (food, café, park, museum/library, viewpoint). It now supports everything OSM maps that someone can walk to:
+- `prepare_makati.py` queries every named `amenity`, `shop`, `leisure`, `tourism` and `historic` feature, plus sports facilities even when unnamed (labelled from their tags, e.g. "Pickleball court"); parking, ATMs, benches, toilets and similar are excluded. `--places-only` refreshes places and keeps the existing roads, so street matching is unchanged.
+- New categories **sports**, **shopping**, **landmark** (planner prompt v6; grammar, copy and icons updated). Each place keeps its OSM kind (`sourceKind`), and keyword search matches the kind plus everyday English/Taglish words (`PlaceKindWords`: simbahan, botika, palengke, pickleball…). These are descriptions of the tag, not facts about a place.
+- Dev-CPU spot check (not a benchmark): 6/6 prompts parsed as intended (pickleball/golf → sports, mall → shopping, simbahan → landmark, café, quiet park); `eval/results/category-spotcheck-v6-1.7b-linux.json`.
+
+**Not done yet: the download.** This environment's network policy blocks the OSM servers (Overpass mirrors and Geofabrik), so the bundled packs still contain only the earlier whitelist kinds, and sports/mall/church requests correctly return "no match" for now. Run `scripts/refresh_places.sh` on the Mac (or allow those hosts here), then rebuild the app. 116 Swift and 12 Python tests pass.
+
 ## Catalog coverage fix: every named café and food place (2026-10-09, founder report)
 
 Founder report: "Kape muna, 30 mins" returned "Walang matching place" although a Starbucks is nearby. The AI extracted `cafe` correctly; the bundled catalog was the problem. `build_starter_catalog.py` still applied hackathon-start caps (3 cafés per region, one branch per chain, 27 parks, 60 food, chosen nearest to the region anchor), so Muntinlupa shipped 3 cafés of the 137 in the prepared OSM data. The builder now keeps **every named, non-restricted source place** inside the region box (Makati CBD keeps its 2.5 km radius). Packs rebuilt offline from the already-prepared `local-data`: Makati CBD 882 places (175 cafés, 679 food, 22 parks, 4 museums, 2 libraries), Muntinlupa 941 (137 cafés incl. 27 Starbucks branches, 758 food, 44 parks); about 0.4 MB each. The synthetic demo walks were regenerated from the same generator (still labelled sample data). All places remain `source-only-unreviewed`. Python and Swift tests updated (no city-wide cap; chain branches kept; restricted access excluded; places inside the region box). Not yet re-checked on the phone.

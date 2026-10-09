@@ -1,0 +1,69 @@
+{
+  "status": "Spot check after adding sports/shopping/landmark (prompt v6), written before the run. Small sanity check, not a held-out benchmark.",
+  "cases": [
+    {
+      "id": 801,
+      "prompt": "Pickleball tayo mamaya",
+      "expectedConstraints": {
+        "categories": [
+          "sports"
+        ],
+        "keywords": [
+          "pickleball"
+        ]
+      }
+    },
+    {
+      "id": 802,
+      "prompt": "Golf muna this weekend",
+      "expectedConstraints": {
+        "categories": [
+          "sports"
+        ],
+        "keywords": [
+          "golf"
+        ]
+      }
+    },
+    {
+      "id": 803,
+      "prompt": "Punta tayo sa mall",
+      "expectedConstraints": {
+        "categories": [
+          "shopping"
+        ]
+      }
+    },
+    {
+      "id": 804,
+      "prompt": "Simbahan na malapit dito",
+      "expectedConstraints": {
+        "categories": [
+          "landmark"
+        ]
+      }
+    },
+    {
+      "id": 805,
+      "prompt": "Kape muna, 30 mins",
+      "expectedConstraints": {
+        "categories": [
+          "cafe"
+        ],
+        "durationMinutes": 30
+      }
+    },
+    {
+      "id": 806,
+      "prompt": "Tahimik na park sana",
+      "expectedConstraints": {
+        "categories": [
+          "park"
+        ],
+        "moodTags": [
+          "quiet"
+        ]
+      }
+    }
+  ]
+}

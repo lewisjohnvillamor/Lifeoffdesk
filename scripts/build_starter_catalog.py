@@ -49,6 +49,11 @@ def select_places(places, anchor, max_radius_m=MAX_RADIUS_M):
         chosen.append(place)
     return chosen
 
+def legacy_kind(place):
+    """Kind for places prepared before `kind` was recorded (whitelist-era local-data)."""
+    tags = place.get('sourceTags', {})
+    return tags.get('amenity') or tags.get('leisure') or tags.get('tourism') or tags.get('shop')
+
 def app_place(place):
     tags = place.get('sourceTags', {})
     return {
@@ -70,6 +75,7 @@ def app_place(place):
         'sourceFee': tags.get('fee'),
         'sourceLevel': tags.get('level'),
         'sourceCuisine': tags.get('cuisine'),
+        'sourceKind': place.get('kind') or legacy_kind(place),
     }
 
 def compact_roads(roads):

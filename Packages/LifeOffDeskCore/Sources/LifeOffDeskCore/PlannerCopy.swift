@@ -24,6 +24,9 @@ public enum PlannerCopy {
         case .museum: return "museum"
         case .library: return "library"
         case .scenic: return "scenic spot"
+        case .sports: return "sports"
+        case .shopping: return "shopping"
+        case .landmark: return "landmark"
         case .other: return "lugar"
         }
     }

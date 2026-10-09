@@ -285,3 +285,36 @@ final class FailureReasonTests: XCTestCase {
         XCTAssertTrue(trace2.failureReason?.contains("rejected") == true, trace2.failureReason ?? "nil")
     }
 }
+
+/// Broader OSM coverage: kinds and Taglish words are searchable without hand-written place lists.
+final class PlaceKindSearchTests: XCTestCase {
+    private func place(_ id: String, _ category: PlaceCategory, kind: String, name: String) -> Place {
+        var p = Fixture.place(id, category, east: 100, north: 0)
+        p.name = name
+        p.sourceKind = kind
+        return p
+    }
+
+    func testTaglishWordsFindPlacesByOSMKind() {
+        let catalog = Fixture.catalog([
+            place("church", .landmark, kind: "place_of_worship", name: "St. Jerome Parish"),
+            place("court", .sports, kind: "pickleball", name: "Pickleball court"),
+            place("drug", .other, kind: "pharmacy", name: "Mercury Drug"),
+        ])
+        let origin = DistanceOrigin.currentLocation(Fixture.origin)
+        func ids(_ words: [String]) -> [String] {
+            PlaceSearch.suggest(OutingPreferences(keywords: words), catalog: catalog, origin: origin).map(\.place.id)
+        }
+        XCTAssertEqual(ids(["simbahan"]), ["church"])
+        XCTAssertEqual(ids(["pickleball"]), ["court"])
+        XCTAssertEqual(ids(["botika"]), ["drug"])
+        XCTAssertEqual(PlaceSearch.suggest(OutingPreferences(categories: [.sports]), catalog: catalog, origin: origin)
+                        .map(\.place.id), ["court"])
+    }
+
+    func testOlderPacksWithoutKindStillDecode() throws {
+        let json = #"{"id":"x","name":"Old","latitude":14.5,"longitude":121.0,"category":"park","tags":[],"sourceURL":"https://www.openstreetmap.org/node/1","retrievedAt":"t","verificationStatus":"source-only-unreviewed"}"#
+        let p = try JSONDecoder().decode(Place.self, from: Data(json.utf8))
+        XCTAssertNil(p.sourceKind)
+    }
+}

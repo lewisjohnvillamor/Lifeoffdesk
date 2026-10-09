@@ -123,6 +123,17 @@ class RegionTests(unittest.TestCase):
         near = catalog.select_places(places, (14.4, 121.0), 200)
         self.assertTrue(all(catalog.haversine_m((14.4, 121.0), (p['latitude'], p['longitude'])) <= 200 for p in near))
 
+    def test_classifier_covers_businesses_sports_and_landmarks(self):
+        c = makati.classify
+        self.assertEqual(c({'leisure':'pitch','sport':'pickleball'}), ('sports', 'pickleball', 'Pickleball court'))
+        self.assertEqual(c({'leisure':'golf_course','name':'Alabang Golf'})[0], 'sports')
+        self.assertEqual(c({'shop':'mall','name':'Festival Mall'}), ('shopping', 'mall', 'Festival Mall'))
+        self.assertEqual(c({'amenity':'place_of_worship','name':'St. Jerome'})[0], 'landmark')
+        self.assertEqual(c({'amenity':'pharmacy','name':'Mercury Drug'}), ('other', 'pharmacy', 'Mercury Drug'))
+        self.assertEqual(c({'amenity':'cafe','name':'Starbucks'})[0], 'cafe')
+        self.assertIsNone(c({'amenity':'parking','name':'Lot A'}), 'parking is not an outing')
+        self.assertIsNone(c({'amenity':'pharmacy'}), 'unnamed non-sports places are skipped')
+
 class DemoWalkTests(unittest.TestCase):
     def test_generator_is_deterministic_and_labelled(self):
         import json, subprocess, sys
