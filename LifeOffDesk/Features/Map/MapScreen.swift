@@ -9,6 +9,7 @@ struct MapScreen: View {
     @State private var showPlanner = false
     @State private var showHistory = false
     @State private var showSettings = false
+    @State private var cardSession: WalkSession?
     @State private var followUser = true
     @State private var tilted = true
     @State private var launchScale: CGFloat?
@@ -37,6 +38,17 @@ struct MapScreen: View {
             .padding(.bottom, 8)
         }
         .onAppear(perform: setUp)
+        #if targetEnvironment(simulator)
+        .task {
+            // Screenshot helpers that must wait for the first frame (simulator only).
+            let arguments = ProcessInfo.processInfo.arguments
+            guard arguments.contains("--open-recap") || arguments.contains("--open-card") else { return }
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard model.demoMode, let walk = model.historyWalks.first else { return }
+            if arguments.contains("--open-card") { cardSession = walk } else { model.presentedRecap = walk }
+        }
+        .sheet(item: $cardSession) { session in MemoryCardSheet(session: session).environmentObject(model) }
+        #endif
         .onChange(of: model.demoMode) { _, on in
             // Frame the sample area when entering Demo mode.
             if on { camera = MapCamera(center: .zero, pointsPerMeter: launchScale ?? 0.12) }
@@ -82,9 +94,6 @@ struct MapScreen: View {
             showPlanner = true
             if let i = arguments.firstIndex(of: "--planner-filter"), i + 1 < arguments.count,
                let category = PlaceCategory(rawValue: arguments[i + 1]) { model.manualSearch(category: category) }
-        }
-        if arguments.contains("--open-recap"), model.demoMode, let walk = model.historyWalks.first {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { model.presentedRecap = walk }
         }
         #endif
     }
