@@ -234,4 +234,17 @@ final class SafetyGuideTests: XCTestCase {
         let guide = try SafetyGuide.decode(Data(contentsOf: Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/safety-guide.json")))
         for topic in SafetyTopic.allCases { XCTAssertNotNil(guide.card(topic), topic.rawValue) }
     }
+
+    func testCarOverheatingPhrasesOpenTheOverheatingCard() {
+        for q in ["how about overheat of car", "nag-overheat ang kotse ko", "nag ooverheat sasakyan", "umiinit ang makina",
+                  "mainit na makina", "mainit ang kotse", "usok sa hood", "umuusok kotse ko sa NLEX", "pumula ang temp",
+                  "engine is too hot", "steam coming from the engine", "red temperature light", "walang coolant"] {
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .overheating, q)
+        }
+        // People overheating stay on the heat card.
+        for q in ["sobrang init, nahihilo ako", "nainitan ako sa loob ng kotse", "heat stroke yata", "mainit ang panahon"] {
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .heat, q)
+        }
+        XCTAssertNotEqual(SafetyKeywords.topic(in: "may lagnat, temp 39"), .overheating)
+    }
 }

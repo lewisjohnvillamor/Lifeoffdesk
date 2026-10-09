@@ -145,7 +145,13 @@ TOPICS = {
                  "spare tyre", "vulcanizing", "vulcanize", "tire", "tires", "tyre", "tyres", "blowout"],
     "overheating": ["overheat*", "nag overheat", "umuusok ang makina", "umuusok ang hood", "usok sa makina",
                     "mainit ang makina", "kumukulo ang radiator", "radiator", "coolant", "temperature gauge",
-                    "temp gauge", "temperature needle", "needle in the red"],
+                    "temp gauge", "temperature needle", "needle in the red", "ooverheat*", "mag overheat",
+                    "mainit na makina", "umiinit ang makina", "uminit ang makina", "init ng makina", "makina",
+                    "mainit ang kotse", "mainit ang sasakyan", "umiinit ang kotse", "umiinit ang sasakyan",
+                    "engine too hot", "engine is too hot", "engine hot", "hot engine", "steam from the engine",
+                    "steam coming from", "steam from the hood", "steaming", "umuusok ang kotse", "umuusok kotse",
+                    "umuusok ang sasakyan", "usok sa hood", "usok ang hood", "red temperature", "temperature light",
+                    "temp light", "pula ang temp", "pumula ang temp"],
     "carBattery": ["jump start", "jumpstart", "jump start*", "jumper cable*", "jumper", "battery ng kotse",
                    "battery ng sasakyan", "battery ng motor", "baterya ng kotse", "baterya ng sasakyan",
                    "patay ang battery ng kotse", "car battery", "dead battery", "flat battery", "drained battery"],
@@ -153,7 +159,7 @@ TOPICS = {
                   "hindi umandar", "won't start", "wont start", "not starting", "doesn't start", "clicking", "click lang",
                   "nag click lang", "pinihit ang susi", "pinihit ko ang susi", "pihit ang susi", "turn the key", "key wont turn"],
     "warningLights": ["warning light*", "check engine", "ilaw sa dashboard", "umilaw sa dashboard", "nag ilaw sa dashboard",
-                      "dashboard light*", "oil light", "brake light", "abs light", "battery light", "temperature light"],
+                      "dashboard light*", "oil light", "brake light", "abs light", "battery light"],
 }
 
 # Body parts alone point to the injury card, at half weight.

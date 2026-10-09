@@ -870,7 +870,36 @@
    "temperature gauge",
    "temp gauge",
    "temperature needle",
-   "needle in the red"
+   "needle in the red",
+   "ooverheat*",
+   "mag overheat",
+   "mainit na makina",
+   "umiinit ang makina",
+   "uminit ang makina",
+   "init ng makina",
+   "makina",
+   "mainit ang kotse",
+   "mainit ang sasakyan",
+   "umiinit ang kotse",
+   "umiinit ang sasakyan",
+   "engine too hot",
+   "engine is too hot",
+   "engine hot",
+   "hot engine",
+   "steam from the engine",
+   "steam coming from",
+   "steam from the hood",
+   "steaming",
+   "umuusok ang kotse",
+   "umuusok kotse",
+   "umuusok ang sasakyan",
+   "usok sa hood",
+   "usok ang hood",
+   "red temperature",
+   "temperature light",
+   "temp light",
+   "pula ang temp",
+   "pumula ang temp"
   ],
   "carBattery": [
    "jump start",
@@ -920,8 +949,7 @@
    "oil light",
    "brake light",
    "abs light",
-   "battery light",
-   "temperature light"
+   "battery light"
   ]
  },
  "body": {

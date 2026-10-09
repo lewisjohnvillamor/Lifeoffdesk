@@ -347,7 +347,7 @@ cards = [
   "Don't remove the radiator or coolant cap unless the engine is cold: pressurised hot water can scald.",
   "When cold, check the coolant tank is between min and max; water only as an emergency top-up.",
   "Have the car checked at a garage: coolant should not drop."],
-  ["Steam or smoke from the engine: keep away from the bonnet; cooling fans can start even with the key out"],
+  ["Steam or smoke from the engine: keep away from the hood (bonnet); cooling fans can start even with the key out"],
   "How to check your engine coolant - The AA","https://www.theaa.com/breakdown-cover/advice/how-to-check-your-engine-coolant"),
  ("carBattery","Dead car battery: jump-starting",[
   "Park the cars close without touching; handbrakes on, ignitions off.",
