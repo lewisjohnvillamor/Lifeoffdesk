@@ -76,6 +76,11 @@ final class RegionLibrary: @unchecked Sendable {
         return (RegionPack(region: region, roads: roads, catalog: catalog, evidence: evidence), issues)
     }
 
+    /// The detailed city pack covering a point (for "your city" hotlines), if any.
+    func detailedRegionID(at coordinate: Coordinate) -> String? {
+        manifests.first { $0.hasFullDetail && $0.bounds.contains(coordinate) }?.id
+    }
+
     /// Coverage from manifests, so it is right even for cities not loaded yet.
     func coverage(at coordinate: Coordinate) -> StarterContent.Coverage {
         if let region = manifests.first(where: { $0.hasFullDetail && $0.bounds.contains(coordinate) }) {

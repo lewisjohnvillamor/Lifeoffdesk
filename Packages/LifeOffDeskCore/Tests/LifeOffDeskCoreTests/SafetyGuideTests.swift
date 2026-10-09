@@ -172,4 +172,29 @@ final class SafetyGuideTests: XCTestCase {
         XCTAssertFalse(other.isEmpty)
         XCTAssertFalse(other.contains(.heat))
     }
+
+    // MARK: Founder phone test, 2026-10-10
+
+    func testTagalogAffixedFormsReachTheirRoot() {
+        XCTAssertEqual(SafetyKeywords.topic(in: "May metal sheet na nakasugat sa akin"), .bleeding)
+        XCTAssertEqual(SafetyKeywords.topic(in: "sinugatan ako ng yero"), .bleeding)
+        XCTAssertTrue(SafetyLexicon.roots(of: "dumudugo").contains("dugo"))
+        XCTAssertFalse(SafetyLexicon.roots(of: "nasa").contains("sa"), "roots under 4 letters are ignored")
+    }
+
+    func testPrefixTermsDoNotSwallowUnrelatedWords() {
+        XCTAssertNil(SafetyKeywords.topic(in: "Ano ang number ng highway patrol"), "numb* matched 'number'")
+        XCTAssertNil(SafetyKeywords.topic(in: "bagong pantalon ko"), "pantal* matched 'pantalon'")
+        XCTAssertNil(SafetyKeywords.topic(in: "fit ako sa damit"))
+    }
+
+    func testEmergencyWordsGetTheirOwnCardNotThePreviousOne() throws {
+        XCTAssertEqual(SafetyKeywords.topic(in: "stroke"), .stroke)
+        XCTAssertEqual(SafetyKeywords.topic(in: "inatake sa puso si papa"), .heartAttack)
+        XCTAssertEqual(SafetyKeywords.topic(in: "nangingisay siya"), .seizure)
+        XCTAssertEqual(SafetyKeywords.topic(in: "heat stroke yata"), .heat)
+        XCTAssertNil(SafetyPrompt.followUp("stroke", previous: "natapilok ako"), "an emergency is a new question")
+        let guide = try SafetyGuide.decode(Data(contentsOf: Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/safety-guide.json")))
+        for topic in [SafetyTopic.stroke, .heartAttack, .seizure] { XCTAssertNotNil(guide.card(topic)) }
+    }
 }
