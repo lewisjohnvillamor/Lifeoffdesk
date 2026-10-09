@@ -70,6 +70,15 @@ final class SafetyChat: ObservableObject {
             }
         }
         awaitingDestination = false
+        // "nearest hospital" / "pinakamalapit na pulis": nearest places from the offline map (lookup,
+        // never a card and never a follow-up of the previous question). Emergencies keep the 911 path.
+        let placeKinds = NearestHelpRequest.kinds(in: text)
+        if photo == nil, !placeKinds.isEmpty, hotlines?.isAsking(text) != true, !SafetyKeywords.emergency(in: text),
+           SafetyKeywords.topic(in: text) == nil {
+            lastQuestion = nil
+            showNearestHelp(placeKinds, query: text, model: model, sayWhenNone: true)
+            return
+        }
         // "Ano ang number ng highway patrol / NLEX / Makati rescue?": a lookup in the bundled
         // directory, never the model. Emergencies still go through the card path (911 first).
         if photo == nil, let directory = hotlines, directory.isAsking(text), !SafetyKeywords.emergency(in: text),
@@ -77,7 +86,7 @@ final class SafetyChat: ObservableObject {
             let found = directory.answer(for: text, regionID: model.regionIDHere)
             messages.append(Message(kind: .hotlines(found, title: directory.named(in: text).isEmpty
                 ? "Emergency hotlines (offline copy)" : "Hotlines na nahanap")))
-            showNearestHelp(for: text, model: model)
+            showNearestHelp(NearestHelpRequest.kinds(in: text), query: text, model: model, sayWhenNone: false)
             lastQuestion = nil
             return
         }
@@ -123,18 +132,20 @@ final class SafetyChat: ObservableObject {
     }
 
     /// "Nearest police / hospital / fire station": the closest ones in the loaded offline map.
-    private func showNearestHelp(for text: String, model: AppModel) {
-        let words = SafetyLexicon.normalize(text)
-        let wanted: [HelpKind] = [
-            (HelpKind.police, ["pulis", "police", "presinto", "istasyon ng pulis", "highway patrol", "hpg"]),
-            (.hospital, ["ospital", "hospital", "clinic", "klinika", "ambulansya", "ambulance"]),
-            (.fireStation, ["bumbero", "fire", "sunog"]),
-        ].filter { $0.1.contains { SafetyLexicon.matches(SafetyLexicon.normalize($0), in: words) } }.map { $0.0 }
-        guard !wanted.isEmpty else { return }
+    private func showNearestHelp(_ kinds: [HelpKind], query: String, model: AppModel, sayWhenNone: Bool) {
+        guard !kinds.isEmpty else { return }
+        thinking = true
         Task {
             let snapshot = await model.nearbyHelp()
-            let places = wanted.flatMap { (snapshot.places[$0] ?? []).prefix(2).map(\.place) }
-            if !places.isEmpty { messages.append(Message(kind: .places(places, query: text))) }
+            let places = kinds.flatMap { (snapshot.places[$0] ?? []).prefix(3).map(\.place) }
+            if !places.isEmpty {
+                messages.append(Message(kind: .places(places, query: query)))
+            } else if sayWhenNone {
+                messages.append(Message(kind: .say(snapshot.position == nil
+                    ? "Wala pang GPS fix, kaya hindi ko mahanap ang pinakamalapit. Kung emergency, tumawag sa 911."
+                    : "Walang ganyang lugar sa offline map na malapit sa iyo. Kung emergency, tumawag sa 911.")))
+            }
+            thinking = false
         }
     }
 
@@ -374,7 +385,7 @@ struct SafetyChatView: View {
                     }
                     if !card.callNow.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(card.topic.isVehicle ? "Safety warnings:" : "Call 911 if:").font(.footnote.bold()).foregroundStyle(Theme.danger)
+                            Text(card.topic.warningsHeading).font(.footnote.bold()).foregroundStyle(Theme.danger)
                             ForEach(card.callNow, id: \.self) { Text("• " + $0).font(.footnote).foregroundStyle(Theme.ink) }
                         }
                     }

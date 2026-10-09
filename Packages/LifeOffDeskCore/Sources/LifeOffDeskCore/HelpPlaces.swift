@@ -97,3 +97,25 @@ public enum PlaceNameSearch {
         return scored.filter { $0.1 == best }.sorted { ($0.2, $0.0.id) < ($1.2, $1.0.id) }.prefix(limit).map(\.0)
     }
 }
+
+/// "nearest hospital", "pinakamalapit na pulis", "saan ang ospital?": a request for help places
+/// from the offline map, answered by lookup (never a card, never a follow-up of the last question).
+/// Founder phone test: "nearest hospital" after a flat-tire question showed the flat-tire card.
+public enum NearestHelpRequest {
+    static let kindTerms: [(HelpKind, [String])] = [
+        (.hospital, ["hospital", "hospitals", "ospital", "clinic", "klinika", "emergency room", "er", "ambulance", "ambulansya", "health center"]),
+        (.police, ["police", "pulis", "pulisya", "presinto", "police station", "istasyon ng pulis", "barangay hall", "tanod"]),
+        (.fireStation, ["fire station", "bumbero", "istasyon ng bumbero", "firefighter", "firefighters"]),
+    ]
+    static let askTerms = ["nearest", "closest", "nearby", "near", "pinakamalapit", "malapit", "saan", "nasaan", "where",
+                           "hanap", "hanapin", "find", "kailangan", "need", "punta", "pumunta", "dalhin", "route"]
+
+    /// The kinds of help place the message asks for, in a fixed order; empty if it isn't a place request.
+    public static func kinds(in text: String) -> [HelpKind] {
+        let words = SafetyLexicon.normalize(text)
+        let kinds = kindTerms.filter { $0.1.contains { SafetyLexicon.matches(SafetyLexicon.normalize($0), in: words) } }.map { $0.0 }
+        guard !kinds.isEmpty else { return [] }
+        let asks = askTerms.contains { SafetyLexicon.matches([$0], in: words) }
+        return asks || words.count <= 3 ? kinds : []
+    }
+}

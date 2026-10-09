@@ -197,4 +197,54 @@ final class SafetyGuideTests: XCTestCase {
         let guide = try SafetyGuide.decode(Data(contentsOf: Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/safety-guide.json")))
         for topic in [SafetyTopic.stroke, .heartAttack, .seizure] { XCTAssertNotNil(guide.card(topic)) }
     }
+
+    func testDrowningIsAnEmergencyWithTheCPRCardAndNeverAFollowUp() {
+        for q in ["nalunod sa ilog", "drowning", "may nalulunod sa pool"] {
+            XCTAssertTrue(SafetyKeywords.emergency(in: q), q)
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .cpr, q)
+            XCTAssertNil(SafetyPrompt.followUp(q, previous: "nakagat ako ng aso"), q)
+        }
+    }
+
+    func testShortNewComplaintsAreNotFollowUps() {
+        XCTAssertNil(SafetyPrompt.followUp("eyes sore", previous: "natapilok ako"))
+        XCTAssertNil(SafetyPrompt.followUp("migrain", previous: "natapilok ako"))
+        XCTAssertNotNil(SafetyPrompt.followUp("tapos?", previous: "natapilok ako"))
+        XCTAssertNotNil(SafetyPrompt.followUp("what if namamaga", previous: "natapilok ako"))
+    }
+
+    func testTheftGoesToTheUnsafeCard() {
+        for q in ["theif", "may magnanakaw", "na-snatch phone ko", "my wallet was stolen", "naagawan ako ng bag"] {
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .unsafe, q)
+        }
+    }
+
+    func testCommonTravelProblemsHaveCards() throws {
+        let cases: [(String, SafetyTopic)] = [
+            ("there is fire", .fire), ("may sunog sa building", .fire), ("napaso ang kamay ko", .burn),
+            ("lumilindol!", .earthquake), ("may bagyo, signal number 3", .typhoon), ("brownout dito", .powerOutage),
+            ("nabangga ang motor", .roadCrash), ("nasagasaan ng kotse", .roadCrash),
+            ("dumudugo ang ilong ko", .nosebleed), ("sakit ng ulo ko", .headache), ("migrain", .headache),
+            ("napuwing ako", .eyeInjury), ("eyes sore", .eyeInjury), ("may paltos ang paa ko", .blisters),
+            ("pinulikat ako", .cramps), ("food poisoning yata", .foodPoisoning), ("inaatake ng hika", .asthma),
+            ("bumaba ang sugar niya, may diabetes", .lowBloodSugar), ("ang daming lamok, baka dengue", .mosquito),
+            ("sunburn", .sunburn), ("how to change spark plug", .sparkPlug), ("napaso ng mainit na kape", .burn),
+        ]
+        for (q, topic) in cases { XCTAssertEqual(SafetyKeywords.topic(in: q), topic, q) }
+        let guide = try SafetyGuide.decode(Data(contentsOf: Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/safety-guide.json")))
+        for topic in SafetyTopic.allCases { XCTAssertNotNil(guide.card(topic), topic.rawValue) }
+    }
+
+    func testCarOverheatingPhrasesOpenTheOverheatingCard() {
+        for q in ["how about overheat of car", "nag-overheat ang kotse ko", "nag ooverheat sasakyan", "umiinit ang makina",
+                  "mainit na makina", "mainit ang kotse", "usok sa hood", "umuusok kotse ko sa NLEX", "pumula ang temp",
+                  "engine is too hot", "steam coming from the engine", "red temperature light", "walang coolant"] {
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .overheating, q)
+        }
+        // People overheating stay on the heat card.
+        for q in ["sobrang init, nahihilo ako", "nainitan ako sa loob ng kotse", "heat stroke yata", "mainit ang panahon"] {
+            XCTAssertEqual(SafetyKeywords.topic(in: q), .heat, q)
+        }
+        XCTAssertNotEqual(SafetyKeywords.topic(in: "may lagnat, temp 39"), .overheating)
+    }
 }
