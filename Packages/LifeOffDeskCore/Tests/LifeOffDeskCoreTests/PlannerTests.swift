@@ -2,7 +2,7 @@ import XCTest
 @testable import LifeOffDeskCore
 
 final class PreferenceValidatorTests: XCTestCase {
-    private let valid = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":["quiet"],"keywords":[],"travelMode":"walk","needsClarification":false}"#
+    private let valid = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":["quiet"],"keywords":[],"novelty":"any","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":false}"#
 
     func testValidOutput() {
         XCTAssertEqual(PreferenceValidator.validate(valid),
@@ -42,12 +42,12 @@ final class PreferenceValidatorTests: XCTestCase {
         // Model says "ask" but extracted usable preferences: search with them instead.
         let askedWithData = valid.replacingOccurrences(of: "false", with: "true")
         guard case .valid = PreferenceValidator.validate(askedWithData) else { return XCTFail() }
-        let askedEmpty = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":true}"#
+        let askedEmpty = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"novelty":"any","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":true}"#
         guard case .needsClarification(_, .modelAsked) = PreferenceValidator.validate(askedEmpty) else { return XCTFail() }
     }
 
     func testEmptyRequestAsksInsteadOfListingEverything() {
-        let empty = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":false}"#
+        let empty = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"novelty":"any","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":false}"#
         guard case .needsClarification(_, .nothingToSearch) = PreferenceValidator.validate(empty) else { return XCTFail() }
     }
 
@@ -155,7 +155,7 @@ final class PlaceSearchTests: XCTestCase {
         let caveat = PlannerCopy.caveat(unknown)
         XCTAssertTrue(caveat.contains("Hours & access unverified"))
         XCTAssertTrue(caveat.contains("price unknown"))
-        XCTAssertEqual(PlannerCopy.reason(unknown), "Café · 100 m")
+        XCTAssertEqual(PlannerCopy.reason(unknown), "Café · 100 m straight-line")
     }
 
     func testKeywordFindsPlacesByNameOrCuisineOnly() {
@@ -244,7 +244,7 @@ struct ScriptedEngine: IntentEngine {
 
 final class PlannerFlowTests: XCTestCase {
     private let catalog = Fixture.catalog([Fixture.place("park-a", .park, east: 400, north: 0)])
-    private let good = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":false}"#
+    private let good = #"{"durationMinutes":30,"budgetPHP":null,"categories":["park"],"moodTags":[],"keywords":[],"novelty":"any","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":false}"#
 
     func testValidReplyProducesGroundedSuggestions() async {
         let planner = Planner(engine: ScriptedEngine(replies: [good]))
@@ -278,7 +278,7 @@ final class PlannerFlowTests: XCTestCase {
     }
 
     func testClarificationAndNoMatch() async {
-        let ask = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"travelMode":"walk","needsClarification":true}"#
+        let ask = #"{"durationMinutes":null,"budgetPHP":null,"categories":[],"moodTags":[],"keywords":[],"novelty":"any","accessNeeds":[],"routeAccess":false,"travelMode":"walk","needsClarification":true}"#
         let (clarify, _) = await Planner(engine: ScriptedEngine(replies: [ask])).plan("kahit saan", catalog: catalog, origin: .areaCenter(Fixture.origin))
         guard case .clarify = clarify else { return XCTFail() }
         let museum = good.replacingOccurrences(of: "park", with: "museum")

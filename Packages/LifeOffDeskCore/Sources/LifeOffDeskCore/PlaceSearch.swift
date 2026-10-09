@@ -25,6 +25,8 @@ public enum Uncertainty: Hashable, Sendable {
     case noKeywordMatch([String])
     /// A keyword matched the OSM cuisine tag, which nobody has reviewed.
     case cuisineFromSource
+    /// The shortest mapped-street path passes a way OSM marks private or no-access.
+    case routeThroughRestricted
 }
 
 public struct Suggestion: Hashable, Identifiable, Sendable {
@@ -35,8 +37,16 @@ public struct Suggestion: Hashable, Identifiable, Sendable {
     public var matchedKeywords: [String] = []
     public var withinKnownBudget: Bool
     public var uncertainties: [Uncertainty]
+    /// Distance along bundled streets, when both ends are near a mapped street.
+    public var street: StreetDistance? = nil
+    /// Whether an earlier adventure passed within 40 m (computed; not proof of a visit).
+    public var passedBefore: Bool? = nil
+    /// Evidence labels for requested access needs, e.g. "Step-free entrance: not verified".
+    public var accessLabels: [String] = []
 
     public var id: String { place.id }
+    /// Street distance when known, otherwise straight-line.
+    public var walkMeters: Double { street?.meters ?? straightLineMeters }
 }
 
 public struct SearchOptions: Hashable, Sendable {
@@ -51,6 +61,11 @@ public struct SearchOptions: Hashable, Sendable {
         self.limit = limit
     }
 
+    /// One-way reach along streets for a round trip at a relaxed pace (4.5 km/h).
+    public static func approximateOneWayStreetMeters(minutes: Int) -> Double {
+        Double(minutes) * 75.0 / 2
+    }
+
     /// Rough one-way straight-line reach for a round trip at a relaxed pace. Used only to
     /// warn that a place may not fit, never to promise a travel time.
     public static func approximateOneWayReachMeters(minutes: Int) -> Double {
@@ -59,10 +74,22 @@ public struct SearchOptions: Hashable, Sendable {
     }
 }
 
+/// Exploration and evidence used for adaptive ranking and hard eligibility (all computed).
+public struct SearchContext: Sendable {
+    public var passedPlaceIDs: Set<String>
+    public var evidence: [EvidenceFactV1]
+    public var now: Date
+
+    public init(passedPlaceIDs: Set<String> = [], evidence: [EvidenceFactV1] = [], now: Date = Date()) {
+        self.passedPlaceIDs = passedPlaceIDs; self.evidence = evidence; self.now = now
+    }
+}
+
 /// Deterministic catalog search. The model never sees or produces place records.
 public enum PlaceSearch {
     public static func suggest(_ prefs: OutingPreferences, catalog: PlaceCatalog, origin: DistanceOrigin,
-                               options: SearchOptions = SearchOptions()) -> [Suggestion] {
+                               options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil,
+                               context: SearchContext = SearchContext()) -> [Suggestion] {
         let reach = prefs.durationMinutes.map(SearchOptions.approximateOneWayReachMeters)
         // Specific words ("pizza") narrow results to places whose name or OSM cuisine mentions them.
         let keywordMatches: (Place) -> [String] = { place in
@@ -81,6 +108,15 @@ public enum PlaceSearch {
             let distance = Geo.distanceMeters(origin.coordinate, place.coordinate)
             guard distance <= options.radiusMeters else { continue }
             if !useKeywords && !prefs.categories.isEmpty && !prefs.categories.contains(place.category) { continue }
+            // Hard access requirements: only evidence-backed eligible places, never relaxed to fill cards.
+            var accessLabels: [String] = []
+            if !prefs.accessNeeds.isEmpty {
+                guard EligibilityPolicy.evaluate(prefs.accessNeeds, place: place, facts: context.evidence,
+                                                 now: context.now).isEligible else { continue }
+                accessLabels = prefs.accessNeeds.map {
+                    EligibilityPolicy.label($0, EligibilityPolicy.evaluate($0, place: place, facts: context.evidence, now: context.now))
+                }
+            }
 
             var uncertainties: [Uncertainty] = []
             var withinBudget = false
@@ -97,11 +133,6 @@ public enum PlaceSearch {
             for mood in prefs.moodTags where !place.tags.contains(mood) {
                 uncertainties.append(.moodUnverified(mood))
             }
-            var fitsTime = true
-            if let reach, let minutes = prefs.durationMinutes, distance > reach {
-                fitsTime = false
-                uncertainties.append(.mayExceedTime(minutes: minutes))
-            }
             if place.openingHours == nil { uncertainties.append(.hoursUnverified(sourceClaim: place.sourceOpeningHours)) }
             if !place.isReviewed { uncertainties.append(.accessUnverified) }
             if place.positionMethod == "bounds-midpoint" { uncertainties.append(.approximatePosition) }
@@ -115,13 +146,41 @@ public enum PlaceSearch {
                                         matchedMoods: matchedMoods, withinKnownBudget: withinBudget,
                                         uncertainties: uncertainties)
             suggestion.matchedKeywords = matchedKeywords
-            results.append((suggestion, fitsTime))
+            suggestion.accessLabels = accessLabels
+            if prefs.novelty != .any { suggestion.passedBefore = context.passedPlaceIDs.contains(place.id) }
+            results.append((suggestion, true))
+        }
+        // One street search from the origin covers every candidate.
+        if let graph, !results.isEmpty {
+            let streets = graph.distances(from: origin.coordinate, to: results.map(\.0.place.coordinate))
+            for i in results.indices {
+                results[i].0.street = streets[i]
+                if streets[i]?.throughRestricted == true { results[i].0.uncertainties.append(.routeThroughRestricted) }
+            }
+        }
+        if let minutes = prefs.durationMinutes {
+            for i in results.indices {
+                let tooFar: Bool
+                if let street = results[i].0.street {
+                    tooFar = street.meters > SearchOptions.approximateOneWayStreetMeters(minutes: minutes)
+                } else {
+                    tooFar = results[i].0.straightLineMeters > (reach ?? .infinity)
+                }
+                if tooFar {
+                    results[i].fitsTime = false
+                    results[i].0.uncertainties.append(.mayExceedTime(minutes: minutes))
+                }
+            }
         }
         results.sort { a, b in
+            // Novelty intent: "new" prefers places no adventure passed; "familiar" the opposite.
+            if prefs.novelty != .any, a.0.passedBefore != b.0.passedBefore {
+                return (a.0.passedBefore == true) == (prefs.novelty == .familiar)
+            }
             if a.0.withinKnownBudget != b.0.withinKnownBudget { return a.0.withinKnownBudget }
             if a.0.matchedMoods.count != b.0.matchedMoods.count { return a.0.matchedMoods.count > b.0.matchedMoods.count }
             if a.fitsTime != b.fitsTime { return a.fitsTime }
-            if a.0.straightLineMeters != b.0.straightLineMeters { return a.0.straightLineMeters < b.0.straightLineMeters }
+            if a.0.walkMeters != b.0.walkMeters { return a.0.walkMeters < b.0.walkMeters }
             return a.0.place.id < b.0.place.id
         }
         return Array(results.prefix(options.limit).map(\.0))

@@ -22,6 +22,8 @@ public struct PlannerAttempt: Hashable, Sendable {
 public struct PlannerTrace: Hashable, Sendable {
     public var attempts: [PlannerAttempt] = []
     public var engineError: String?
+    /// Fields filled from saved preferences (shown to the user; the request always wins).
+    public var appliedSaved: [String] = []
 }
 
 /// Runs: model intent extraction → validation (one bounded repair) → deterministic search.
@@ -62,7 +64,8 @@ public struct Planner: Sendable {
     }
 
     public func plan(_ request: String, catalog: PlaceCatalog, origin: DistanceOrigin,
-                     options: SearchOptions = SearchOptions()) async -> (PlannerResponse, PlannerTrace) {
+                     options: SearchOptions = SearchOptions(), graph: WalkingGraph? = nil,
+                     context: SearchContext = SearchContext(), saved: PreferenceProfile? = nil) async -> (PlannerResponse, PlannerTrace) {
         let (outcome, trace) = await extract(request)
         switch outcome {
         case nil, .invalid?:
@@ -70,16 +73,28 @@ public struct Planner: Sendable {
         case let .needsClarification(prefs, reason)?:
             return (.clarify(prefs, question: PlannerCopy.clarification(reason)), trace)
         case let .valid(prefs)?:
-            return (Self.respond(prefs, catalog: catalog, origin: origin, options: options), trace)
+            // A radius left at the default is not an explicit choice, so a saved radius may apply.
+            let explicit = options.radiusMeters == SearchOptions.defaultRadiusMeters ? nil : options.radiusMeters
+            let resolved = PreferenceResolver.resolve(request: prefs, saved: saved, radiusMeters: explicit)
+            var trace = trace
+            trace.appliedSaved = resolved.fromSaved
+            let resolvedOptions = SearchOptions(radiusMeters: resolved.radiusMeters, limit: options.limit)
+            return (Self.respond(resolved.prefs, catalog: catalog, origin: origin, options: resolvedOptions, graph: graph,
+                                 context: context), trace)
         }
     }
 
     /// Deterministic part, also used by manual filters (which are not Local AI evidence).
     public static func respond(_ prefs: OutingPreferences, catalog: PlaceCatalog, origin: DistanceOrigin,
-                               options: SearchOptions) -> PlannerResponse {
-        let suggestions = PlaceSearch.suggest(prefs, catalog: catalog, origin: origin, options: options)
+                               options: SearchOptions, graph: WalkingGraph? = nil,
+                               context: SearchContext = SearchContext()) -> PlannerResponse {
+        // The path itself cannot be checked (no routing): explain, and let the user choose a venue-only filter.
+        if prefs.routeAccess { return .clarify(prefs, question: PlannerCopy.routeAccessUnsupported) }
+        let suggestions = PlaceSearch.suggest(prefs, catalog: catalog, origin: origin, options: options, graph: graph,
+                                              context: context)
         guard !suggestions.isEmpty else { return .noMatch(prefs) }
         return .suggestions(prefs, intro: PlannerCopy.intro(prefs: prefs, count: suggestions.count, origin: origin,
-                                                            radiusMeters: options.radiusMeters), suggestions)
+                                                            radiusMeters: options.radiusMeters,
+                                                            byStreets: suggestions.contains { $0.street != nil }), suggestions)
     }
 }

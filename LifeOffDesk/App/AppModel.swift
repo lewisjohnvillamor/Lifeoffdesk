@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
     let grid: ExplorationGrid
 
     // Personal data
-    private let store: LocalStore?
+    let store: LocalStore?
     @Published private(set) var storeProblem: String?
     @Published private(set) var exploration = Exploration()
     @Published private(set) var finishedWalks: [WalkSession] = []
@@ -37,7 +37,7 @@ final class AppModel: ObservableObject {
     // Walking
     @Published private(set) var recorder: WalkRecorder?
     @Published private(set) var phase: WalkPhase = .idle
-    @Published private(set) var lastFix: TrackSample?
+    @Published private(set) var lastFix: TrackSample? { didSet { refreshDestinationStreet() } }
     @Published private(set) var lastFixReceivedAt: Date?
     @Published private(set) var lastRejection: RejectionReason?
     @Published var permissionDenied = false
@@ -46,9 +46,9 @@ final class AppModel: ObservableObject {
     @Published var presentedRecap: WalkSession?
 
     // Planner
-    @Published var destination: Place?
+    @Published var destination: Place? { didSet { refreshDestinationStreet() } }
     @Published var plannerText = ""
-    @Published private(set) var plannerState: PlannerState = .idle
+    @Published var plannerState: PlannerState = .idle
     @Published private(set) var lastTrace: PlannerTrace?
     @Published var searchRadiusMeters: Double = SearchOptions.defaultRadiusMeters
     private var plannerTask: Task<Void, Never>?
@@ -63,6 +63,17 @@ final class AppModel: ObservableObject {
     private var replayIndex = 0
 
     @Published var selectedTab: AppTab = .map
+
+    // MARK: Local AI features (P0-12–15); logic lives in AppModel+LocalAI.swift
+    /// Saved preferences (nil = none saved). Only changed by an explicit user action.
+    @Published var preferenceProfile: PreferenceProfile?
+    /// Set when preferences.json was written by a newer app version; editing is disabled.
+    @Published var preferencesLocked: String?
+    @Published var preferencesProblem: String?
+    @Published var historyQuery: HistoryQueryV1?
+    @Published var historyState: HistoryState = .idle
+    @Published var narrations: [UUID: NarrationState] = [:]
+    var historyTask: Task<Void, Never>?
 
     let ai = AIService()
     private let location = LocationService()
@@ -101,6 +112,7 @@ final class AppModel: ObservableObject {
         }
         loadPersonalData()
         refreshStats()
+        buildStreetNetwork()
         refreshIdleLocation()
     }
 
@@ -111,6 +123,12 @@ final class AppModel: ObservableObject {
         exploration = store.loadExploration() ?? Exploration()
         finishedWalks = store.loadFinishedWalks()
         moments = store.loadMoments()
+        switch store.loadPreferences() {
+        case .none: preferenceProfile = nil
+        case let .loaded(profile): preferenceProfile = profile
+        case let .newerSchema(version):
+            preferencesLocked = "Saved by a newer app version (schema \(version)); kept untouched."
+        }
         if let active = store.loadActiveSession() {
             if finishedWalks.contains(where: { $0.id == active.id }) {
                 // Crashed between saving the finished walk and clearing the active file.
@@ -135,7 +153,88 @@ final class AppModel: ObservableObject {
 
     /// Saved exploration plus the walk in progress, for rendering. In Demo mode: the sample
     /// walks plus any replay in progress, and nothing personal.
+    // MARK: Street matching
+
+    /// Built once in the background from bundled roads; nil until ready (legacy strip until then).
+    private(set) var streetNetwork: StreetNetwork?
+    /// Street graph for "how far along streets"; nil until built (distances fall back to straight-line).
+    private(set) var walkingGraph: WalkingGraph?
+
+    /// Street distance from here to the chosen destination, recomputed when either moves 40 m.
+    @Published private(set) var destinationStreet: StreetDistance?
+    private var destinationStreetKey: (id: String, from: Coordinate)?
+
+    private func refreshDestinationStreet() {
+        guard let graph = walkingGraph, let place = destination, let from = currentPosition else {
+            if destination == nil { destinationStreet = nil; destinationStreetKey = nil }
+            return
+        }
+        if let key = destinationStreetKey, key.id == place.id, Geo.distanceMeters(key.from, from) < 40 { return }
+        if destinationStreetKey?.id != place.id { destinationStreet = nil }
+        destinationStreetKey = (place.id, from)
+        let target = place.coordinate
+        Task { [weak self] in
+            let result = await Task.detached(priority: .utility) { graph.distance(from: from, to: target) }.value
+            guard self?.destination?.id == place.id else { return }
+            self?.destinationStreet = result
+        }
+    }
+    /// Matched-street reveal of the shown history (from `stats`), used for the paper island.
+    @Published private(set) var streetReveal: Exploration?
+    private var liveCache: (key: String, reveal: [ExploredPath], runs: [TrailRun])?
+
+    private func buildStreetNetwork() {
+        guard let content else { return }
+        Task { [weak self] in
+            // Walking graph over every bundled road (context trunk roads included), for distances.
+            let graph = await Task.detached(priority: .utility) {
+                WalkingGraph(roads: content.packs.flatMap(\.roads.roads))
+            }.value
+            self?.walkingGraph = graph
+            self?.refreshDestinationStreet()
+            self?.refreshAdventureIdeas()
+        }
+        Task { [weak self] in
+            let network = await Task.detached(priority: .utility) {
+                StreetNetwork(roads: content.matchingRoads, origin: content.region.center)
+            }.value
+            self?.streetNetwork = network
+            self?.refreshStats()
+        }
+    }
+
+    /// Street match of the live adventure (or replay), cached until it gains samples.
+    private func liveMatch() -> (reveal: [ExploredPath], runs: [TrailRun])? {
+        guard let network = streetNetwork else { return nil }
+        let segments = displayedTrail
+        guard let id = replay?.source.id ?? recorder?.session.id, !segments.isEmpty else { return nil }
+        let count = segments.reduce(0) { $0 + $1.count }
+        let key = "\(id)-\(count)-\(segments.last?.last?.timestamp.timeIntervalSinceReferenceDate ?? 0)"
+        if let liveCache, liveCache.key == key { return (liveCache.reveal, liveCache.runs) }
+        var prior = StreetCoverage()
+        for (walkID, coverage) in stats.coverageByWalk where walkID != id { prior.merge(coverage) }
+        let matched = StreetMatcher.match(segments, network: network)
+        let reveal = matched.coverage.pieces(in: network).map {
+            ExploredPath(sessionID: id, points: $0.points.map(network.projection.unproject))
+        } + matched.unmatched.map { ExploredPath(sessionID: id, points: $0) }
+        let runs = matched.coverage.pieces(in: network, prior: prior).map {
+            TrailRun(points: $0.points.map(network.projection.unproject), isNew: $0.isNew)
+        } + matched.unmatched.map { TrailRun(points: $0, isNew: true) }
+        liveCache = (key, reveal, runs)
+        return (reveal, runs)
+    }
+
+    /// What the map reveals: matched streets (paper ribbons along real streets) once the street
+    /// network is ready, otherwise the raw GPS corridor.
     var displayExploration: Exploration {
+        guard streetNetwork != nil, let reveal = streetReveal else { return rawDisplayExploration }
+        var base = timelapseBase ?? reveal
+        if timelapseBase == nil, let replay { base = base.excluding(sessionID: replay.source.id) }
+        if let live = liveMatch() { base.paths += live.reveal }
+        return base
+    }
+
+    private var rawDisplayExploration: Exploration {
         if var base = timelapseBase {
             if let replay { base.merge(replay.partialSession) }
             return base
@@ -155,7 +254,7 @@ final class AppModel: ObservableObject {
     /// Trail drawn on top of the fog: the live walk, or the replay in Demo mode.
     /// Trail split into new ground (drawn dotted) and revisits (drawn solid grey).
     var displayedTrailRuns: [TrailRun] {
-        grid.trailRuns(for: displayedTrail, prior: priorCells)
+        liveMatch()?.runs ?? grid.trailRuns(for: displayedTrail, prior: priorCells)
     }
 
     var displayedTrail: [[TrackSample]] {
@@ -330,16 +429,22 @@ final class AppModel: ObservableObject {
         let walks = historyWalks
         let grid = self.grid
         let catalog = content?.catalog
+        let network = streetNetwork
         statsTask = Task { [weak self] in
-            let (computed, found) = await Task.detached(priority: .utility) { () -> (WalkStats, [UUID: [Place]]) in
-                let stats = WalkStats.compute(walks: walks, grid: grid)
+            let (computed, found, reveal) = await Task.detached(priority: .utility) { () -> (WalkStats, [UUID: [Place]], Exploration?) in
+                let stats = WalkStats.compute(walks: walks, grid: grid, network: network)
                 var found: [UUID: [Place]] = [:]
                 if let catalog { for walk in walks { found[walk.id] = Discovery.placesPassed(by: walk, in: catalog) } }
-                return (stats, found)
+                let reveal = network.map {
+                    StreetReveal.exploration(coverage: stats.coverageByWalk, unmatched: stats.unmatchedByWalk, network: $0)
+                }
+                return (stats, found, reveal)
             }.value
             guard !Task.isCancelled else { return }
             self?.stats = computed
             self?.discoveries = found
+            self?.streetReveal = reveal
+            self?.liveCache = nil
         }
     }
 
@@ -354,7 +459,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var adventureIdeas: [AdventureIdea] = []
 
     /// Real targets only: undiscovered catalogue places matching the user's taste, and computed
-    /// street frontiers (unexplored street length near them). Distances are straight-line.
+    /// street frontiers (unexplored street length near them). Distances follow streets once the graph is ready.
     func refreshAdventureIdeas() {
         guard let content else { return }
         let origin = currentPosition ?? historyWalks.max(by: { $0.startedAt < $1.startedAt })?.lastSample?.coordinate
@@ -365,16 +470,32 @@ final class AppModel: ObservableObject {
         let taste = AdventureSuggester.favouriteCategories(discoveries.values.flatMap { $0 } + (destination.map { [$0] } ?? []))
         let roadContexts = content.packs.map(\.roads)
         let catalog = content.catalog
-        Task { [weak self] in
-            let ideas = await Task.detached(priority: .userInitiated) { () -> [AdventureIdea] in
-                let center = grid.projection.project(origin)
-                let region = MeterRect(minX: center.x - 2000, minY: center.y - 2000, maxX: center.x + 2000, maxY: center.y + 2000)
-                let explored = grid.cells(for: exploration, region: region)
-                let roads = roadContexts.flatMap(\.roads).map(\.coordinates)
-                    .filter { road in road.contains { Geo.distanceMeters($0, origin) < 1800 } }
-                return AdventureSuggester.frontiers(from: origin, roads: roads, explored: explored, grid: grid, limit: 1)
+        let network = streetNetwork
+        let walkedStreets = stats.streetCoverage
+        let graph = walkingGraph
+        let suggest: @Sendable () -> [AdventureIdea] = {
+            if let network {
+                return AdventureSuggester.frontiers(from: origin, network: network, coverage: walkedStreets, limit: 1)
                     + AdventureSuggester.undiscoveredPlaces(from: origin, catalog: catalog, discoveredIDs: discoveredIDs,
                                                             preferred: taste, limit: 2)
+            }
+            let center = grid.projection.project(origin)
+            let region = MeterRect(minX: center.x - 2000, minY: center.y - 2000, maxX: center.x + 2000, maxY: center.y + 2000)
+            let explored = grid.cells(for: exploration, region: region)
+            let roads = roadContexts.flatMap(\.roads).map(\.coordinates)
+                .filter { road in road.contains { Geo.distanceMeters($0, origin) < 1800 } }
+            return AdventureSuggester.frontiers(from: origin, roads: roads, explored: explored, grid: grid, limit: 1)
+                + AdventureSuggester.undiscoveredPlaces(from: origin, catalog: catalog, discoveredIDs: discoveredIDs,
+                                                        preferred: taste, limit: 2)
+        }
+        Task { [weak self] in
+            let ideas = await Task.detached(priority: .userInitiated) { () -> [AdventureIdea] in
+                var ideas = suggest()
+                if let graph {
+                    let streets = graph.distances(from: origin, to: ideas.map(\.target))
+                    for i in ideas.indices { ideas[i].street = streets[i] }
+                }
+                return ideas
             }.value
             self?.adventureIdeas = ideas
         }
@@ -404,7 +525,7 @@ final class AppModel: ObservableObject {
         return finished.reduce(0) { $0 + $1.newDistanceMeters } + (demoMode ? 0 : liveNewDistanceMeters)
     }
 
-    // MARK: Timelapse ("Watch your map grow")
+    // MARK: Timelapse ("Watch your world grow")
 
     @Published private(set) var timelapseBase: Exploration?
 
@@ -415,8 +536,13 @@ final class AppModel: ObservableObject {
         stopReplay()
         replayTask = Task { [weak self] in
             var base = Exploration()
+            var shown = Set<UUID>()
             for walk in ordered {
                 guard let self, !Task.isCancelled else { return }
+                if let network = self.streetNetwork {
+                    base = StreetReveal.exploration(coverage: self.stats.coverageByWalk, unmatched: self.stats.unmatchedByWalk,
+                                                    network: network, include: shown)
+                }
                 self.timelapseBase = base
                 var current = WalkReplay(source: walk)
                 let step = max(1, current.totalSamples / 40)
@@ -425,7 +551,12 @@ final class AppModel: ObservableObject {
                     self.replay = current
                     try? await Task.sleep(nanoseconds: 16_000_000)
                 }
-                base.merge(walk)
+                if self.streetNetwork == nil { base.merge(walk) }
+                shown.insert(walk.id)
+            }
+            if let self, let network = self.streetNetwork {
+                base = StreetReveal.exploration(coverage: self.stats.coverageByWalk, unmatched: self.stats.unmatchedByWalk,
+                                                network: network, include: shown)
             }
             self?.timelapseBase = base
             try? await Task.sleep(nanoseconds: 1_500_000_000)
@@ -633,21 +764,26 @@ final class AppModel: ObservableObject {
                 }
             }
             guard let origin = self.distanceOrigin else { return }
-            self.plannerState = .loadingModel
-            guard let engine = await self.ai.ensureLoaded() else {
+            self.plannerState = self.ai.state == .ready ? .thinking : .loadingModel
+            let catalog = content.catalog, graph = self.walkingGraph
+            let context = self.searchContext, saved = self.preferenceProfile
+            do {
+                let (response, trace) = try await self.ai.run { engine in
+                    await Planner(engine: engine).plan(request, catalog: catalog, origin: origin,
+                                                       options: options, graph: graph, context: context, saved: saved)
+                }
+                guard !Task.isCancelled else { return }
+                self.lastTrace = trace
+                self.plannerState = .answered(response, usedAI: true)
+            } catch InferenceError.stale, InferenceError.cancelled {
+                if !Task.isCancelled { self.plannerState = .idle }
+            } catch {
                 switch self.ai.state {
                 case .missing: self.plannerState = .modelUnavailable(PlannerCopy.modelMissing)
                 case let .failed(message): self.plannerState = .modelUnavailable("\(PlannerCopy.modelFailure) (\(message))")
-                default: self.plannerState = .idle
+                default: self.plannerState = .modelUnavailable("\(PlannerCopy.modelFailure) (\(error))")
                 }
-                return
             }
-            self.plannerState = .thinking
-            let (response, trace) = await Planner(engine: engine).plan(request, catalog: content.catalog,
-                                                                       origin: origin, options: options)
-            guard !Task.isCancelled else { return }
-            self.lastTrace = trace
-            self.plannerState = .answered(response, usedAI: true)
         }
     }
 
@@ -660,8 +796,11 @@ final class AppModel: ObservableObject {
     /// Manual fallback. Keeps the app usable without AI but is labelled as such and is not Local AI evidence.
     func manualSearch(category: PlaceCategory) {
         guard let content, let origin = distanceOrigin else { return }
-        let response = Planner.respond(OutingPreferences(categories: [category]), catalog: content.catalog,
-                                       origin: origin, options: SearchOptions(radiusMeters: searchRadiusMeters))
+        let response = Planner.respond(OutingPreferences(categories: [category],
+                                                         accessNeeds: preferenceProfile?.accessNeeds ?? []),
+                                       catalog: content.catalog,
+                                       origin: origin, options: SearchOptions(radiusMeters: searchRadiusMeters),
+                                       graph: walkingGraph, context: searchContext)
         plannerState = .answered(response, usedAI: false)
     }
 
@@ -674,6 +813,37 @@ final class AppModel: ObservableObject {
         destination = nil
     }
 
+    // MARK: Delete one adventure
+
+    /// Permanently removes a finished adventure: its trail, photos and the streets it uncovered.
+    func deleteAdventure(_ session: WalkSession) {
+        guard !isDemo(session), let store else { return }
+        do {
+            try store.deleteFinished(session.id)
+            finishedWalks.removeAll { $0.id == session.id }
+            narrations[session.id] = nil
+            if let query = historyQuery { applyHistoryQuery(query) }
+            moments.removeAll { $0.sessionID == session.id }
+            exploration.paths.removeAll { $0.sessionID == session.id }
+            try store.saveExploration(exploration)
+            if presentedRecap?.id == session.id { presentedRecap = nil }
+            refreshStats()
+        } catch {
+            storeProblem = "Could not delete the adventure: \(error.localizedDescription)"
+        }
+    }
+
+    /// Route for cards: matched street pieces (clean lines on real streets) plus off-street
+    /// stretches; falls back to the raw accepted trail before street data is ready.
+    func cardRoute(for session: WalkSession) -> [[Coordinate]] {
+        if let network = streetNetwork, let coverage = stats.coverageByWalk[session.id] {
+            let pieces = coverage.pieces(in: network).map { $0.points.map(network.projection.unproject) }
+            let off = stats.unmatchedByWalk[session.id] ?? []
+            if !pieces.isEmpty || !off.isEmpty { return pieces + off }
+        }
+        return session.segments.map { $0.map(\.coordinate) }
+    }
+
     // MARK: Privacy
 
     var canErase: Bool { recorder == nil }
@@ -681,6 +851,7 @@ final class AppModel: ObservableObject {
     func erasePersonalData() {
         guard canErase, let store else { return }
         do {
+            ai.unload() // cancels in-flight AI so nothing regenerates from erased data
             try store.erasePersonalData()
             exploration = Exploration()
             finishedWalks = []
@@ -689,6 +860,10 @@ final class AppModel: ObservableObject {
             lastFix = nil
             lastFixReceivedAt = nil
             moments = []
+            preferenceProfile = nil
+            preferencesLocked = nil
+            narrations = [:]
+            clearHistorySearch()
             storeProblem = nil
         } catch {
             storeProblem = "Erase failed: \(error.localizedDescription)"

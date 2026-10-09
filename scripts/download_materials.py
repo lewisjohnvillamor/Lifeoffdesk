@@ -40,7 +40,7 @@ def main():
     args = parser.parse_args()
     lock = json.loads((ROOT / 'config/materials-lock.json').read_text())
     for artifact in lock['artifacts']:
-        if args.group == 'required' and artifact['group'] not in ('model', 'runtime'):
+        if args.group == 'required' and artifact['group'] not in ('model-large', 'runtime'):
             continue
         if args.group not in ('all', 'required') and artifact['group'] != args.group:
             continue

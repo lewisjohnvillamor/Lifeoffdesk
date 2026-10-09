@@ -30,6 +30,14 @@ struct MeView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView().environmentObject(model) }
+            #if targetEnvironment(simulator)
+            .task {
+                // Screenshot helper (simulator only).
+                guard ProcessInfo.processInfo.arguments.contains("--open-settings") else { return }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                showSettings = true
+            }
+            #endif
         }
     }
 
@@ -48,7 +56,12 @@ struct MeView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(String(format: "%.2f km", stats.totalNewDistanceMeters / 1000))
                     .font(.system(size: 52, weight: .bold, design: .rounded).monospacedDigit())
-                Text("Total new streets").font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                Text(model.statsPending ? "Calculating your totals…" : "Total new streets")
+                    .font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                if model.offStreetMeters >= 10 {
+                    Text("+ \(Format.distance(model.offStreetMeters)) off mapped streets (counts toward area, not streets)")
+                        .font(.caption).foregroundStyle(Theme.secondaryInk).padding(.top, 2)
+                }
             }
             HStack(spacing: 0) {
                 total("\(stats.walkCount)", "Adventures")

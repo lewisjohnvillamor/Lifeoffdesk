@@ -89,6 +89,22 @@ public final class LocalStore: @unchecked Sendable {
         try clearActiveSession()
     }
 
+    /// Permanently removes one finished adventure and its captured photos.
+    public func deleteFinished(_ sessionID: UUID) throws {
+        let url = walksDirectory.appendingPathComponent("\(sessionID.uuidString).json")
+        try removeWithBackup(url)
+        var moments = loadMoments()
+        for memory in moments where memory.sessionID == sessionID {
+            try? fileManager.removeItem(at: memoriesDirectory.appendingPathComponent(memory.fileName))
+        }
+        moments.removeAll { $0.sessionID == sessionID }
+        if fileManager.fileExists(atPath: memoriesDirectory.path) {
+            try encoder.encode(moments).write(to: momentsIndexURL, options: .atomic)
+        }
+        try? fileManager.removeItem(at: memoriesDirectory.appendingPathComponent("\(sessionID.uuidString).jpg"))
+        try removeNarrations(for: sessionID)
+    }
+
     public func loadFinishedWalks() -> [WalkSession] {
         let urls = (try? fileManager.contentsOfDirectory(at: walksDirectory, includingPropertiesForKeys: nil)) ?? []
         return urls.filter { $0.pathExtension == "json" }
@@ -108,10 +124,13 @@ public final class LocalStore: @unchecked Sendable {
 
     // MARK: Erase
 
-    /// Removes personal walks and exploration only. Model, catalog and map assets live elsewhere.
+    /// Removes personal walks, exploration, saved preferences and AI caches. Model, catalog and
+    /// map assets live elsewhere.
     public func erasePersonalData() throws {
         lock.lock(); defer { lock.unlock() }
-        for url in [activeSessionURL, explorationURL] {
+        let preferences = directory.appendingPathComponent("preferences.json")
+        let narrations = directory.appendingPathComponent("narrations.json")
+        for url in [activeSessionURL, explorationURL, preferences, narrations] {
             for candidate in [url, backupURL(url)] where fileManager.fileExists(atPath: candidate.path) {
                 try fileManager.removeItem(at: candidate)
             }
@@ -128,6 +147,9 @@ public final class LocalStore: @unchecked Sendable {
     }
 
     // MARK: Primitives
+
+    func writeJSON<T: Encodable>(_ value: T, to url: URL) throws { try write(value, to: url) }
+    func removeJSON(_ url: URL) throws { try removeWithBackup(url) }
 
     private func backupURL(_ url: URL) -> URL { url.appendingPathExtension("bak") }
 

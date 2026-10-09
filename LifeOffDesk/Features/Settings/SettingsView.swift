@@ -22,6 +22,7 @@ struct SettingsView: View {
                         Text("Finish the current adventure before erasing.").font(.footnote).foregroundStyle(Theme.secondaryInk)
                     }
                 }
+                PreferencesSection()
                 Section("Starter maps") {
                     ForEach(model.content?.packs ?? [], id: \.region.id) { pack in
                         VStack(alignment: .leading, spacing: 4) {
@@ -78,6 +79,7 @@ struct AIDiagnosticsView: View {
     @State private var runSeconds: Double?
     @State private var firstRequestSeconds: Double?
     @State private var copied = false
+    @State private var runError: String?
 
     var body: some View {
         List {
@@ -98,6 +100,10 @@ struct AIDiagnosticsView: View {
                     row("Context / threads / GPU layers", "\(info.contextLength) / \(info.threads) / \(info.gpuLayers)")
                 }
                 row("State", "\(ai.state)")
+                Text("The model loads only when needed (planner, search, recap or this button) and unloads when an adventure starts.")
+                    .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                Button(ai.state == .loading ? "Loading…" : "Load model now") { Task { await ai.preload() } }
+                    .disabled(ai.state == .loading || ai.state == .ready || model.activeSession != nil)
                 Button("Verify SHA-256") { Task { await ai.verifyModelHash() } }
                 if let hash = ai.hashResult { Text(hash).font(.footnote.monospaced()) }
             }
@@ -106,6 +112,7 @@ struct AIDiagnosticsView: View {
                     .disabled(running)
                 Button("Run 60 held-out cases") { Task { await runEvaluation("taglish-heldout") } }
                     .disabled(running)
+                if let runError { Text(runError).font(.footnote).foregroundStyle(Theme.danger) }
                 if let first = firstRequestSeconds { row("First request after load", String(format: "%.2f s", first)) }
                 if !results.isEmpty {
                     row("Schema-valid", "\(results.filter(\.schemaValid).count)/\(results.count)")
@@ -143,16 +150,21 @@ struct AIDiagnosticsView: View {
               let cases = try? JSONDecoder().decode(PlannerEvaluation.CaseFile.self, from: data).cases else { return }
         running = true
         defer { running = false }
-        guard let engine = await ai.ensureLoaded() else { return }
-        let planner = Planner(engine: engine)
-        let warm = Date()
-        _ = await planner.extract("Warm-up: gusto ko ng park.")
-        firstRequestSeconds = Date().timeIntervalSince(warm)
-        let start = Date()
-        // Same origin as the development run so results are comparable.
-        results = await PlannerEvaluation.run(cases: cases, planner: planner, catalog: content.catalog,
-                                              origin: .areaCenter(content.region.center))
-        runSeconds = Date().timeIntervalSince(start)
+        let catalog = content.catalog, center = content.region.center
+        do {
+            let warm = Date()
+            _ = try await ai.run { await Planner(engine: $0).extract("Warm-up: gusto ko ng park.") }
+            firstRequestSeconds = Date().timeIntervalSince(warm)
+            let start = Date()
+            // Same origin as the development run so results are comparable.
+            results = try await ai.run { engine in
+                await PlannerEvaluation.run(cases: cases, planner: Planner(engine: engine), catalog: catalog,
+                                            origin: .areaCenter(center))
+            }
+            runSeconds = Date().timeIntervalSince(start)
+        } catch {
+            runError = "\(error)"
+        }
     }
 
     private func copyReport() {
@@ -205,4 +217,108 @@ final class NetworkStatus: ObservableObject {
     }
 
     deinit { monitor.cancel() }
+}
+
+/// P0-14: explicit, editable preferences. Nothing is saved unless the user taps Save.
+struct PreferencesSection: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var draft = PreferenceProfile()
+    @State private var loaded = false
+    @State private var saved = false
+
+    var body: some View {
+        Section {
+            if let locked = model.preferencesLocked {
+                Text(locked).font(.footnote).foregroundStyle(Theme.danger)
+            } else {
+                categoryPicker
+                Picker("Usual time", selection: Binding(get: { draft.durationMinutes ?? 0 },
+                                                        set: { draft.durationMinutes = $0 == 0 ? nil : $0 })) {
+                    Text("Not set").tag(0)
+                    ForEach([15, 30, 45, 60, 90, 120], id: \.self) { Text("\($0) min").tag($0) }
+                }
+                Picker("Search radius", selection: Binding(get: { Int(draft.radiusMeters ?? 0) },
+                                                           set: { draft.radiusMeters = $0 == 0 ? nil : Double($0) })) {
+                    Text("Default (2 km)").tag(0)
+                    ForEach([500, 1000, 2000, 3000, 5000], id: \.self) { Text(Format.distance(Double($0))).tag($0) }
+                }
+                Picker("Prefer", selection: $draft.novelty) {
+                    Text("Anything").tag(PreferenceProfile.Novelty.any)
+                    Text("New places").tag(PreferenceProfile.Novelty.new)
+                    Text("Familiar places").tag(PreferenceProfile.Novelty.familiar)
+                }
+                Toggle("Step-free entrance required", isOn: need(.stepFreeEntrance))
+                Toggle("Wheelchair access required", isOn: need(.wheelchair))
+                if !draft.accessNeeds.isEmpty {
+                    Text("Hard filter: only places with a reviewed, current record qualify. Few or none may show. The path to a place is never verified. Stored only on this iPhone; remove anytime.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryInk)
+                }
+                HStack {
+                    Button(saved ? "Saved" : "Save preferences") { saved = model.savePreferences(draft) }
+                        .buttonStyle(.borderedProminent)
+                    Spacer()
+                    Button("Reset", role: .destructive) {
+                        model.resetPreferences()
+                        draft = PreferenceProfile()
+                        saved = false
+                    }
+                    .disabled(model.preferenceProfile == nil)
+                }
+                if let problem = model.preferencesProblem {
+                    Text(problem).font(.footnote).foregroundStyle(Theme.danger)
+                } else if !saved && draft != savedComparable {
+                    Text("Unsaved changes").font(.footnote).foregroundStyle(Theme.secondaryInk)
+                }
+            }
+        } header: {
+            Text("My preferences")
+        } footer: {
+            Text("Used to fill gaps in a planner request; what you type always wins. Never learned from your routes or photos.")
+        }
+        .onAppear {
+            guard !loaded else { return }
+            loaded = true
+            draft = model.preferenceProfile ?? PreferenceProfile()
+            draft.updatedAt = nil
+        }
+        .onChange(of: draft) { _, _ in saved = false }
+    }
+
+    /// The saved profile without its timestamp, to detect unsaved edits.
+    private var savedComparable: PreferenceProfile {
+        var p = model.preferenceProfile ?? PreferenceProfile()
+        p.updatedAt = nil
+        return p
+    }
+
+    private var categoryPicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Favourite kinds of places (up to 3)").font(.subheadline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(PlaceCategory.allCases, id: \.self) { category in
+                        let on = draft.categories.contains(category)
+                        Button(PlannerCopy.categoryWord(category).capitalized) {
+                            if on { draft.categories.removeAll { $0 == category } }
+                            else if draft.categories.count < 3 { draft.categories.append(category) }
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(on ? Theme.primary : Theme.surface, in: Capsule())
+                        .foregroundStyle(on ? Theme.canvas : Theme.ink)
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                    }
+                }
+            }
+        }
+    }
+
+    private func need(_ need: AccessNeed) -> Binding<Bool> {
+        Binding(get: { draft.accessNeeds.contains(need) },
+                set: { on in
+                    if on { if !draft.accessNeeds.contains(need) { draft.accessNeeds.append(need) } }
+                    else { draft.accessNeeds.removeAll { $0 == need } }
+                })
+    }
 }

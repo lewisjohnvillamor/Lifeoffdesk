@@ -22,21 +22,42 @@ struct MemoryCardView: View {
     var sticker: UIImage?
     let isSample: Bool
     var placesFound: Int = 0
+    /// Route to draw (matched streets); nil = raw accepted trail.
+    var route: [[Coordinate]]? = nil
 
-    private var textColor: Color { style == .sticker ? PaperStyle.ink : .white }
+    /// No photo to show: use the paper-map look with an inked route instead of an empty backdrop.
+    private var onPaper: Bool {
+        switch style {
+        case .sticker: return true
+        case .photo: return !photos.indices.contains(selected)
+        case .collage: return photos.isEmpty
+        }
+    }
+    private var textColor: Color { onPaper ? PaperStyle.ink : .white }
+    private var routeLines: [[Coordinate]] { (route ?? session.segments.map { $0.map(\.coordinate) }).filter { $0.count > 1 } }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             background
-            if style != .sticker {
+            if !onPaper {
                 LinearGradient(colors: [.black.opacity(0.35), .clear, .clear, .black.opacity(0.65)],
                                startPoint: .top, endPoint: .bottom)
             }
-            RouteOverlay(segments: session.segments, label: session.destinationName,
-                         color: style == .sticker ? PaperStyle.ink : .white)
-                .padding(.horizontal, 44)
-                .padding(.top, style == .sticker ? 70 : 110)
-                .padding(.bottom, style == .sticker ? 330 : 220)
+            if routeLines.isEmpty {
+                // Nothing to draw: say why instead of showing an empty card.
+                Text("No GPS trail recorded for this adventure.\nWalk outdoors with Location on to draw your route.")
+                    .font(.system(size: 14, weight: .medium)).multilineTextAlignment(.center)
+                    .foregroundStyle(textColor.opacity(0.8))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(40)
+            } else {
+                RouteOverlay(lines: routeLines,
+                             start: session.segments.first?.first?.coordinate, end: session.lastSample?.coordinate,
+                             label: session.destinationName, color: onPaper ? PaperStyle.ink : .white)
+                    .padding(.horizontal, 44)
+                    .padding(.top, style == .sticker ? 70 : 110)
+                    .padding(.bottom, style == .sticker ? 330 : 220)
+            }
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Text(Self.dateText(session.startedAt)).font(.system(size: 15, weight: .semibold))
@@ -63,7 +84,7 @@ struct MemoryCardView: View {
                             .font(.system(size: 11)).opacity(0.85).padding(.top, 2)
                     }
                     Spacer()
-                    BrandBadge(onPaper: style == .sticker)
+                    BrandBadge(onPaper: onPaper)
                 }
             }
             .foregroundStyle(textColor)
@@ -76,9 +97,9 @@ struct MemoryCardView: View {
     @ViewBuilder private var background: some View {
         switch style {
         case .photo:
-            if photos.indices.contains(selected) { fill(photos[selected]) } else { forest }
+            if photos.indices.contains(selected) { fill(photos[selected]) } else { paper }
         case .collage:
-            if photos.isEmpty { forest } else { collage }
+            if photos.isEmpty { paper } else { collage }
         case .sticker:
             ZStack {
                 PaperStyle.island
@@ -93,10 +114,10 @@ struct MemoryCardView: View {
         }
     }
 
-    private var forest: some View {
+    private var paper: some View {
         ZStack {
-            LinearGradient(colors: [Color(hex: 0x46785B), Color(hex: 0x283A31)], startPoint: .top, endPoint: .bottom)
-            Rectangle().fill(ImagePaint(image: PaperStyle.fiberTile, scale: 0.5)).opacity(0.35)
+            PaperStyle.island
+            Rectangle().fill(ImagePaint(image: PaperStyle.fiberTile, scale: 0.5)).opacity(0.6)
         }
     }
 
@@ -210,28 +231,32 @@ extension UIImage {
 
 /// The accepted route fitted into the card as dots, with start/end markers and a place pill.
 struct RouteOverlay: View {
-    let segments: [[TrackSample]]
+    /// Matched street pieces (or the raw trail), plus where the adventure started and ended.
+    let lines: [[Coordinate]]
+    let start: Coordinate?
+    let end: Coordinate?
     let label: String?
     var color: Color = .white
 
     var body: some View {
         GeometryReader { proxy in
-            let fitted = fit(in: proxy.size)
+            let fit = Fit(lines: lines + [start, end].compactMap { $0.map { [$0] } }, size: proxy.size)
             ZStack {
                 Path { path in
-                    for segment in fitted {
-                        guard let first = segment.first else { continue }
-                        path.move(to: first)
-                        for p in segment.dropFirst() { path.addLine(to: p) }
+                    for line in lines {
+                        guard let first = line.first else { continue }
+                        path.move(to: fit.point(first))
+                        for c in line.dropFirst() { path.addLine(to: fit.point(c)) }
                     }
                 }
                 .stroke(color, style: StrokeStyle(lineWidth: 4.5, lineCap: .round, lineJoin: .round, dash: [0.1, 9]))
                 .shadow(color: .black.opacity(color == .white ? 0.35 : 0), radius: 3)
-                if let start = fitted.first?.first {
-                    Circle().stroke(color, lineWidth: 3).frame(width: 12, height: 12).position(start)
+                if let start {
+                    Circle().stroke(color, lineWidth: 3).frame(width: 12, height: 12).position(fit.point(start))
                 }
-                if let end = fitted.last?.last {
-                    Circle().fill(color).frame(width: 12, height: 12).position(end)
+                if let end {
+                    let p = fit.point(end)
+                    Circle().fill(color).frame(width: 12, height: 12).position(p)
                     if let label {
                         Text(label)
                             .font(.system(size: 13, weight: .semibold))
@@ -240,25 +265,36 @@ struct RouteOverlay: View {
                             .padding(.horizontal, 12).padding(.vertical, 6)
                             .background(.black.opacity(0.85), in: Capsule())
                             .overlay(Capsule().stroke(.white.opacity(0.9), lineWidth: 1))
-                            .position(x: min(max(end.x, 60), proxy.size.width - 60), y: end.y + 26)
+                            .position(x: min(max(p.x, 60), proxy.size.width - 60), y: p.y + 26)
                     }
                 }
             }
         }
     }
 
-    private func fit(in size: CGSize) -> [[CGPoint]] {
-        guard let origin = segments.first?.first?.coordinate else { return [] }
-        let projection = LocalProjection(origin: origin)
-        let projected = segments.map { $0.map { projection.project($0.coordinate) } }
-        let xs = projected.flatMap { $0.map(\.x) }, ys = projected.flatMap { $0.map(\.y) }
-        guard let minX = xs.min(), let maxX = xs.max(), let minY = ys.min(), let maxY = ys.max() else { return [] }
-        let span = max(maxX - minX, maxY - minY, 50)
-        let scale = Double(min(size.width, size.height)) / span
-        let midX = (minX + maxX) / 2, midY = (minY + maxY) / 2
-        return projected.map { segment in
-            segment.map { CGPoint(x: Double(size.width) / 2 + ($0.x - midX) * scale,
-                                  y: Double(size.height) / 2 - ($0.y - midY) * scale) }
+    /// Fits all points into the frame, preserving aspect ratio (north up).
+    private struct Fit {
+        let projection: LocalProjection?
+        let midX: Double, midY: Double, scale: Double, size: CGSize
+
+        init(lines: [[Coordinate]], size: CGSize) {
+            self.size = size
+            guard let origin = lines.first(where: { !$0.isEmpty })?.first else {
+                projection = nil; midX = 0; midY = 0; scale = 1; return
+            }
+            let projection = LocalProjection(origin: origin)
+            let points = lines.flatMap { $0 }.map(projection.project)
+            let xs = points.map(\.x), ys = points.map(\.y)
+            let minX = xs.min() ?? 0, maxX = xs.max() ?? 0, minY = ys.min() ?? 0, maxY = ys.max() ?? 0
+            self.projection = projection
+            midX = (minX + maxX) / 2; midY = (minY + maxY) / 2
+            scale = Double(min(size.width, size.height)) / max(maxX - minX, maxY - minY, 50)
+        }
+
+        func point(_ c: Coordinate) -> CGPoint {
+            guard let projection else { return .zero }
+            let p = projection.project(c)
+            return CGPoint(x: Double(size.width) / 2 + (p.x - midX) * scale, y: Double(size.height) / 2 - (p.y - midY) * scale)
         }
     }
 }
@@ -283,6 +319,7 @@ struct MemoryCardSheet: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     let session: WalkSession
+    var initialStyle: CardStyle = .photo
     @State private var style: CardStyle = .photo
     @State private var selected = 0
     @State private var pickerItem: PhotosPickerItem?
@@ -295,7 +332,8 @@ struct MemoryCardSheet: View {
         let photos = model.moments(for: session).compactMap { model.photo(for: $0) }
         let card = MemoryCardView(session: session, recap: recap, style: style, photos: photos,
                                   selected: min(selected, max(0, photos.count - 1)), sticker: sticker,
-                                  isSample: model.isDemo(session), placesFound: model.discovered(in: session).count)
+                                  isSample: model.isDemo(session), placesFound: model.discovered(in: session).count,
+                                  route: model.cardRoute(for: session))
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
@@ -323,6 +361,7 @@ struct MemoryCardSheet: View {
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { add($0, photosCount: photos.count) }.ignoresSafeArea()
         }
+        .onAppear { style = initialStyle }
         .onChange(of: pickerItem) { _, item in
             guard let item else { return }
             Task {

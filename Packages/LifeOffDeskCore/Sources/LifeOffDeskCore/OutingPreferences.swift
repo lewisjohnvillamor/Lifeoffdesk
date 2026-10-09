@@ -8,18 +8,47 @@ public struct OutingPreferences: Codable, Hashable, Sendable {
     public var moodTags: [MoodTag]
     /// Specific things asked for ("pizza", "ramen", "milk tea"); matched against names and OSM cuisine.
     public var keywords: [String]
+    /// "Somewhere new" / "something familiar"; ranking is computed from exploration history.
+    public var novelty: PreferenceProfile.Novelty
+    /// Functional requirements for the destination (hard filters, evidence-checked).
+    public var accessNeeds: [AccessNeed]
+    /// The request is about the path ("walang hagdan sa daan"), which the app cannot verify.
+    public var routeAccess: Bool
     public var travelMode: String
     public var needsClarification: Bool
 
     public init(durationMinutes: Int? = nil, budgetPHP: Int? = nil, categories: [PlaceCategory] = [],
-                moodTags: [MoodTag] = [], keywords: [String] = [], needsClarification: Bool = false) {
+                moodTags: [MoodTag] = [], keywords: [String] = [], novelty: PreferenceProfile.Novelty = .any,
+                accessNeeds: [AccessNeed] = [], routeAccess: Bool = false, needsClarification: Bool = false) {
         self.durationMinutes = durationMinutes
         self.budgetPHP = budgetPHP
         self.categories = categories
         self.moodTags = moodTags
         self.keywords = keywords
+        self.novelty = novelty
+        self.accessNeeds = accessNeeds
+        self.routeAccess = routeAccess
         travelMode = "walk"
         self.needsClarification = needsClarification
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case durationMinutes, budgetPHP, categories, moodTags, keywords, novelty, accessNeeds, routeAccess, travelMode, needsClarification
+    }
+
+    /// Older saved/evaluation JSON without the v5 fields decodes with neutral defaults.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        durationMinutes = try c.decodeIfPresent(Int.self, forKey: .durationMinutes)
+        budgetPHP = try c.decodeIfPresent(Int.self, forKey: .budgetPHP)
+        categories = try c.decodeIfPresent([PlaceCategory].self, forKey: .categories) ?? []
+        moodTags = try c.decodeIfPresent([MoodTag].self, forKey: .moodTags) ?? []
+        keywords = try c.decodeIfPresent([String].self, forKey: .keywords) ?? []
+        novelty = try c.decodeIfPresent(PreferenceProfile.Novelty.self, forKey: .novelty) ?? .any
+        accessNeeds = try c.decodeIfPresent([AccessNeed].self, forKey: .accessNeeds) ?? []
+        routeAccess = try c.decodeIfPresent(Bool.self, forKey: .routeAccess) ?? false
+        travelMode = try c.decodeIfPresent(String.self, forKey: .travelMode) ?? "walk"
+        needsClarification = try c.decodeIfPresent(Bool.self, forKey: .needsClarification) ?? false
     }
 
     public static let durationRange = 5...120
@@ -30,6 +59,7 @@ public struct OutingPreferences: Codable, Hashable, Sendable {
     /// True when nothing searchable was given (then ask instead of listing random places).
     public var isEmptyRequest: Bool {
         durationMinutes == nil && budgetPHP == nil && categories.isEmpty && moodTags.isEmpty && keywords.isEmpty
+            && novelty == .any && !routeAccess
     }
 }
 
@@ -58,7 +88,8 @@ public enum ClarificationReason: String, Hashable, Sendable {
 }
 
 public enum PreferenceValidator {
-    static let keys = ["durationMinutes", "budgetPHP", "categories", "moodTags", "keywords", "travelMode", "needsClarification"]
+    static let keys = ["durationMinutes", "budgetPHP", "categories", "moodTags", "keywords", "novelty", "accessNeeds",
+                       "routeAccess", "travelMode", "needsClarification"]
 
     /// Extracts the first balanced JSON object, ignoring any `<think>` block or surrounding prose.
     public static func extractJSONObject(from text: String) -> String? {
@@ -99,6 +130,21 @@ public enum PreferenceValidator {
         let categories: [PlaceCategory] = enumList(object["categories"], key: "categories", errors: &errors)
         let moods: [MoodTag] = enumList(object["moodTags"], key: "moodTags", errors: &errors)
         let keywords = keywordList(object["keywords"], errors: &errors)
+        var novelty = PreferenceProfile.Novelty.any
+        switch object["novelty"] {
+        case nil: break
+        case let .string(raw)?:
+            if let value = PreferenceProfile.Novelty(rawValue: raw) { novelty = value }
+            else { errors.append(.unknownEnumValue(key: "novelty", value: raw)) }
+        default: errors.append(.wrongType("novelty"))
+        }
+        let access: [AccessNeed] = enumList(object["accessNeeds"], key: "accessNeeds", errors: &errors)
+        var routeAccess = false
+        switch object["routeAccess"] {
+        case nil: break
+        case let .bool(flag)?: routeAccess = flag
+        default: errors.append(.wrongType("routeAccess"))
+        }
 
         switch object["travelMode"] {
         case nil: break
@@ -114,7 +160,8 @@ public enum PreferenceValidator {
         guard errors.isEmpty else { return .invalid(errors) }
 
         var prefs = OutingPreferences(durationMinutes: duration, budgetPHP: budget, categories: categories,
-                                      moodTags: moods, keywords: keywords, needsClarification: asked)
+                                      moodTags: moods, keywords: keywords, novelty: novelty, accessNeeds: access,
+                                      routeAccess: routeAccess, needsClarification: asked)
         if let budget, !OutingPreferences.budgetRange.contains(budget) {
             prefs.budgetPHP = nil
             return .needsClarification(prefs, .budgetOutOfRange)

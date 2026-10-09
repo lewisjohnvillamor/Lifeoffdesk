@@ -85,6 +85,21 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertEqual(reopened.loadFinishedWalks(), [recorder.session])
     }
 
+    func testDeleteOneAdventureKeepsTheOthers() throws {
+        let store = try LocalStore(directory: Fixture.tempDirectory())
+        var keep = WalkSession(startedAt: Fixture.time(0)); keep.state = .finished
+        var drop = WalkSession(startedAt: Fixture.time(100)); drop.state = .finished
+        try store.commitFinished(keep)
+        try store.commitFinished(drop)
+        try store.addMoment(WalkMemory(sessionID: drop.id, takenAt: Fixture.time(110), coordinate: nil), jpeg: Data("a".utf8))
+        let kept = WalkMemory(sessionID: keep.id, takenAt: Fixture.time(10), coordinate: nil)
+        try store.addMoment(kept, jpeg: Data("b".utf8))
+        try store.deleteFinished(drop.id)
+        XCTAssertEqual(store.loadFinishedWalks().map(\.id), [keep.id])
+        XCTAssertEqual(store.loadMoments(), [kept], "Only the deleted adventure's photos are removed")
+        XCTAssertEqual(store.momentPhoto(kept), Data("b".utf8))
+    }
+
     func testCorruptFileFallsBackToPreviousCopy() throws {
         let dir = Fixture.tempDirectory()
         let store = try LocalStore(directory: dir)

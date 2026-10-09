@@ -31,6 +31,11 @@ public struct WalkMemory: Codable, Hashable, Identifiable, Sendable {
 public struct TrailRun: Hashable, Sendable {
     public var points: [Coordinate]
     public var isNew: Bool
+
+    public init(points: [Coordinate], isNew: Bool) {
+        self.points = points
+        self.isNew = isNew
+    }
 }
 
 extension ExplorationGrid {

@@ -7,7 +7,8 @@ struct MapScreen: View {
     @State private var camera = MapCamera()
     @State private var geometry: MapGeometry?
     @State private var showPlanner = false
-    @State private var cardSession: WalkSession?
+    /// Simulator screenshot helper: the style travels with the item so the sheet never reads a stale value.
+    @State private var simCard: SimCard?
     @State private var showCamera = false
     @State private var followUser = true
     @State private var tilted = true
@@ -52,9 +53,24 @@ struct MapScreen: View {
             guard arguments.contains("--open-recap") || arguments.contains("--open-card") else { return }
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             guard model.demoMode, let walk = model.historyWalks.first else { return }
-            if arguments.contains("--open-card") { cardSession = walk } else { model.presentedRecap = walk }
+            // --seed-photo: adds the bundled test image (simulator build only) to this sample adventure,
+            // exercising photo saving, thumbnails, collage and the sticker cut-out.
+            if arguments.contains("--seed-photo"), let image = UIImage(named: "life-off-desk-cat-concept.png") {
+                model.addMoment(image, to: walk, at: walk.lastSample?.coordinate)
+                model.addMoment(image, to: walk, at: walk.segments.first?.first?.coordinate)
+            }
+            var style = CardStyle.photo
+            if let i = arguments.firstIndex(of: "--card-style"), i + 1 < arguments.count {
+                style = CardStyle(rawValue: arguments[i + 1]) ?? .photo
+            }
+            if arguments.contains("--open-card") { simCard = SimCard(session: walk, style: style) } else { model.presentedRecap = walk }
+            // --request-narration: exercises the recap narration path (Simulator has no model, so this
+            // shows the labelled computed fallback, never an AI result).
+            if arguments.contains("--request-narration") { model.requestNarration(for: walk) }
         }
-        .sheet(item: $cardSession) { session in MemoryCardSheet(session: session).environmentObject(model) }
+        .sheet(item: $simCard) { card in
+            MemoryCardSheet(session: card.session, initialStyle: card.style).environmentObject(model)
+        }
         #endif
         .onChange(of: model.demoMode) { _, on in
             if on { camera = MapCamera(center: .zero, pointsPerMeter: launchScale ?? 0.12) }
@@ -182,7 +198,7 @@ struct MapScreen: View {
             Image(systemName: "flag.fill").font(.caption).accessibilityHidden(true)
             Text(place.name).font(.footnote.weight(.semibold)).lineLimit(1)
             if let position = model.currentPosition {
-                Text("· \(Format.distance(Geo.distanceMeters(position, place.coordinate))) straight-line")
+                Text("· " + PlannerCopy.distanceText(model.destinationStreet, straightLine: Geo.distanceMeters(position, place.coordinate)))
                     .font(.footnote).foregroundStyle(Theme.secondaryInk)
             }
             if model.phase == .idle {
@@ -348,4 +364,10 @@ struct HoldToEndButton: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onEnd() }
     }
+}
+
+private struct SimCard: Identifiable {
+    let session: WalkSession
+    let style: CardStyle
+    var id: UUID { session.id }
 }

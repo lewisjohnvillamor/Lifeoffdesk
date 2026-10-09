@@ -16,6 +16,25 @@ final class AdventureTests: XCTestCase {
         XCTAssertTrue(Discovery.placesPassed(by: WalkSession(startedAt: Fixture.time(0)), in: Fixture.catalog([near])).isEmpty)
     }
 
+    func testFrontierTargetIsOnAStreetNotInsideABlock() {
+        let grid = ExplorationGrid(origin: Fixture.origin)
+        func line(_ points: [(Double, Double)]) -> [Coordinate] {
+            points.map { Fixture.projection.unproject(MeterPoint(x: $0.0, y: $0.1)) }
+        }
+        // Two streets forming an L to the north-east: their weighted centroid lies inside the block.
+        let a = line([(200, 200), (400, 200), (600, 200)])
+        let b = line([(200, 200), (200, 400), (200, 600)])
+        let ideas = AdventureSuggester.frontiers(from: Fixture.origin, roads: [a, b], explored: [], grid: grid,
+                                                 minimumMeters: 100, limit: 3)
+        XCTAssertFalse(ideas.isEmpty)
+        for idea in ideas {
+            let p = Fixture.projection.project(idea.target)
+            let onA = abs(p.y - 200) < 1 && p.x >= 199 && p.x <= 601
+            let onB = abs(p.x - 200) < 1 && p.y >= 199 && p.y <= 601
+            XCTAssertTrue(onA || onB, "target \(p) is off-street")
+        }
+    }
+
     func testFrontiersPointAtUnexploredStreetsOnly() {
         let grid = ExplorationGrid(origin: Fixture.origin)
         func line(_ points: [(Double, Double)]) -> [Coordinate] {

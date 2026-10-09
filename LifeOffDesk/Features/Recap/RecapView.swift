@@ -7,6 +7,7 @@ struct RecapView: View {
     @Environment(\.dismiss) private var dismiss
     let session: WalkSession
     @State private var showCard = false
+    @State private var confirmDelete = false
 
     var body: some View {
         let recap = model.recap(for: session)
@@ -22,7 +23,8 @@ struct RecapView: View {
                     Button { showCard = true } label: {
                         MemoryCardView(session: session, recap: recap,
                                        photos: model.moments(for: session).compactMap { model.photo(for: $0) },
-                                       isSample: model.isDemo(session), placesFound: model.discovered(in: session).count)
+                                       isSample: model.isDemo(session), placesFound: model.discovered(in: session).count,
+                                       route: model.cardRoute(for: session))
                             .scaleEffect(0.78)
                             .frame(width: MemoryCardView.size.width * 0.78, height: MemoryCardView.size.height * 0.78)
                             .shadow(color: .black.opacity(0.15), radius: 14, y: 8)
@@ -39,6 +41,7 @@ struct RecapView: View {
                         Text("You passed " + found.prefix(4).map(\.name).joined(separator: ", ") + (found.count > 4 ? " and more" : ""))
                             .font(.footnote).foregroundStyle(Theme.secondaryInk).multilineTextAlignment(.center)
                     }
+                    narration
                     Button { showCard = true } label: { Label("Make a card", systemImage: "camera") }
                         .buttonStyle(PrimaryButtonStyle())
                     if recap.wasRecovered {
@@ -55,7 +58,25 @@ struct RecapView: View {
             .background(Theme.canvas)
             .navigationTitle(session.startedAt.formatted(date: .abbreviated, time: .shortened))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                if !model.isDemo(session) {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }
+                            .foregroundStyle(Theme.danger)
+                            .accessibilityLabel("Delete adventure")
+                    }
+                }
+            }
+            .confirmationDialog("Delete this adventure?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("Delete adventure", role: .destructive) {
+                    model.deleteAdventure(session)
+                    dismiss()
+                }
+                Button("Keep it", role: .cancel) {}
+            } message: {
+                Text("Its trail, photos and the streets it uncovered will be removed from this iPhone. This can't be undone.")
+            }
             .sheet(isPresented: $showCard) { MemoryCardSheet(session: session).environmentObject(model) }
         }
     }
@@ -99,5 +120,43 @@ struct RoutePreview: View {
                 context.stroke(path, with: .color(Theme.primary), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
             }
         }
+    }
+}
+
+extension RecapView {
+    /// P0-13: the model only picks computed facts and a tone; numbers come from the recap.
+    @ViewBuilder private var narration: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            switch model.narrations[session.id] {
+            case nil:
+                if let cached = model.cachedNarration(for: session) {
+                    narrationText(cached, note: "AI-selected highlights · values computed from your trail")
+                } else {
+                    Button { model.requestNarration(for: session) } label: {
+                        Label("Taglish recap", systemImage: "sparkles")
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityHint("Uses the on-device model to pick highlights; numbers are computed")
+                }
+            case .working?:
+                HStack(spacing: 8) { ProgressView(); Text("Pumipili ng highlights…").font(.footnote) }
+            case let .ai(text)?:
+                narrationText(text, note: "AI-selected highlights · values computed from your trail")
+            case let .fallback(text, reason)?:
+                narrationText(text, note: "Computed summary (no AI result: \(reason))")
+                Button("Try again") { model.requestNarration(for: session) }.font(.footnote)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func narrationText(_ text: String, note: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(text).font(.body).foregroundStyle(Theme.ink)
+            Text(note).font(.caption).foregroundStyle(Theme.secondaryInk)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
