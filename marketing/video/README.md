@@ -35,3 +35,15 @@ Both run about 56 s.
 - **Footage:** "Woman finishes working on her computer" (Mixkit 42653, Mixkit Free License) and "People Walking Together" (Pexels 7971035, https://www.pexels.com/video/people-walking-together-7971035/, Pexels License: free commercial use, no attribution required).
 
 **Still missing:** real phone footage. The app screens are simulator captures of the demo world.
+
+## Second film: features (`FeaturesSquare`, 1080×1080, 43 s)
+
+This film walks through the help chat:
+- a Taglish engine-overheat question, with the matching card steps highlighted
+- an emergency (911, then Makati Rescue, then CPR)
+- "Ano ang number ng NLEX?"
+- the lost-and-route conversation
+
+It closes on the route, walk and recap screens.
+
+**Where the chat answers come from:** `src/chat-run.json` is the output of `tools/ChatRun.swift`. That script runs the app's own offline code (`SafetyPrompt.combine`, `relevantSteps`, `HotlineDirectory`, `HelpPlaces.locationDescription`, `PlaceNameSearch.find`) against the bundled data. It uses the keyword layer only (no model), and a fixed demo location in Makati, so the video labels it as such. To regenerate it, make a SwiftPM executable that depends on `Packages/LifeOffDeskCore` with this file as `main.swift`, then run it and save the output to `src/chat-run.json`.
