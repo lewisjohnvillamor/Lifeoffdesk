@@ -10,7 +10,9 @@ Run `python3 -m http.server 4173 --directory marketing/dist` from the repository
 
 Calm illustrated neighborhood, approved ivory/forest palette, native sans-serif type. Taste Skill dials: variance 6, motion 3, density 3. The existing brand guide's single light theme takes precedence over the skill's generic dark-mode default. The page includes a fictional walking demonstration, three scripted planner examples, product context, FAQ and truthful availability information. No waitlist backend, fake download link, analytics or location permission request.
 
-The demo supports start, pause, continue, replay and reset. Reduced motion switches to explicit step advances. It pauses on tab hiding or when scrolled out of view. Coordinates and illustration are synthetic; demo progress is not distance or GPS evidence. Planner examples do not run a model and are labeled accordingly. Accessibility/route and offline claims retain the app's current evidence limitations.
+The demo supports start, pause, continue, replay and reset. Reduced motion switches to explicit step advances. It pauses on tab hiding or when scrolled out of view. Coordinates and illustration are synthetic; demo progress is not distance or GPS evidence. Planner examples are lightweight website interactions, while the product gallery shows the corresponding current app experience. Accessibility/route and offline claims retain the app's current evidence limitations.
+
+The product gallery uses current UI captures from the repository's iPhone 12 Pro Max Simulator target: demo map, grounded planner results and Adventures. The captures visibly identify sample or simulator content where applicable. `app-icon.png` and `mascot-walking.png` are resized/copied from the canonical app asset catalog; do not regenerate them independently.
 
 ## Artwork
 

@@ -55,14 +55,40 @@ if ('IntersectionObserver' in window) new IntersectionObserver(entries=>{if(!ent
 paint();
 const examples = {
   park:['“May 30 minutes ako. Gusto ko ng quiet na park.”','30 minutes. A park. A quieter moment.','The app uses your preferences to search its local catalog. Quietness needs supporting information; it won’t simply guess.'],
-  coffee:['“Coffee break muna. May café ba nearby?”','A coffee stop, close to home.','The planned experience matches your café preference to catalog records and labels straight-line distance. Opening hours stay unverified unless supported.'],
-  new:['“Somewhere new naman, kahit malapit lang.”','A familiar area. A different corner.','Adaptive suggestions are planned to use your recorded exploration to find something new. A suggestion is not a verified walking route.']
+  coffee:['“Coffee break muna. May café ba nearby?”','A coffee stop, close to home.','Life Off Desk matches your café preference to nearby places and shows the distance clearly.'],
+  new:['“Somewhere new naman, kahit malapit lang.”','A familiar area. A different corner.','Life Off Desk uses your explored world to surface a nearby place or street you have not discovered yet.']
 };
+const promptText = document.querySelector('#sample-prompt-text');
+const promptAccessible = document.querySelector('#sample-prompt');
+const promptBox = document.querySelector('.chat-prompt');
+let typingRun = 0;
+function typePrompt(text) {
+  const run = ++typingRun;
+  promptAccessible.textContent = text;
+  promptBox.setAttribute('aria-label', `Example outing request: ${text}`);
+  if (reducedMotion.matches) { promptText.textContent = text; return; }
+  promptText.textContent = '';
+  let index = 0;
+  function typeNext() {
+    if (run !== typingRun) return;
+    promptText.textContent = text.slice(0, ++index);
+    if (index < text.length) window.setTimeout(typeNext, index < 2 ? 180 : 34);
+  }
+  typeNext();
+}
 document.querySelectorAll('[data-example]').forEach(button=>button.addEventListener('click',()=>{
   document.querySelectorAll('[data-example]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
   const [prompt,heading,reply]=examples[button.dataset.example];
-  document.querySelector('#sample-prompt').textContent=prompt;
+  typePrompt(prompt);
   document.querySelector('#sample-title').textContent=heading;
   document.querySelector('#sample-reply').textContent=reply;
 }));
+if ('IntersectionObserver' in window) {
+  const plannerObserver = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    typePrompt(examples.park[0]);
+    plannerObserver.disconnect();
+  }, { threshold: .45 });
+  plannerObserver.observe(document.querySelector('.conversation'));
+}
 document.querySelector('#year').textContent=new Date().getFullYear();
