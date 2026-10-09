@@ -5,23 +5,25 @@ import { fontFamily } from "./kit";
 import { ColdOpen } from "./scenes/ColdOpen";
 import { Intro } from "./scenes/Intro";
 import { Fog } from "./scenes/Fog";
-import { Coach } from "./scenes/Coach";
-import { Help } from "./scenes/Help";
 import { Local } from "./scenes/Local";
 import { Memories } from "./scenes/Memories";
 import { EndCard } from "./scenes/EndCard";
 import { Outside } from "./scenes/Outside";
+import { Emergency, Hotlines, Lost, Overheat } from "./features/FeatureVideo";
 
+// Under 60 s for X/LinkedIn: story, then the help chat running for real, then the close.
 export const SCENES = [
-  { name: "Cold open", durationInFrames: 300, component: ColdOpen },
-  { name: "Intro", durationInFrames: 170, component: Intro },
-  { name: "Fog", durationInFrames: 150, component: Fog },
-  { name: "Coach", durationInFrames: 190, component: Coach },
-  { name: "Help", durationInFrames: 220, component: Help },
-  { name: "Local", durationInFrames: 140, component: Local },
-  { name: "Memories", durationInFrames: 130, component: Memories },
-  { name: "Outside", durationInFrames: 230, component: Outside },
-  { name: "End card", durationInFrames: 150, component: EndCard },
+  { name: "Cold open", durationInFrames: 260, component: ColdOpen },
+  { name: "Intro", durationInFrames: 150, component: Intro },
+  { name: "Fog", durationInFrames: 120, component: Fog },
+  { name: "Chat: overheat", durationInFrames: 200, component: Overheat },
+  { name: "Chat: emergency", durationInFrames: 190, component: Emergency },
+  { name: "Chat: hotlines", durationInFrames: 110, component: Hotlines },
+  { name: "Chat: lost", durationInFrames: 210, component: Lost },
+  { name: "Local", durationInFrames: 120, component: Local },
+  { name: "Memories", durationInFrames: 90, component: Memories },
+  { name: "Outside", durationInFrames: 200, component: Outside },
+  { name: "End card", durationInFrames: 120, component: EndCard },
 ];
 export const TOTAL = SCENES.reduce((s, x) => s + x.durationInFrames, 0);
 

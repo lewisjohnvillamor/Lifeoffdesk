@@ -1,0 +1,161 @@
+[
+ {
+  "emergency": false,
+  "highlights": [
+   "Don't remove the radiator or coolant cap unless the engine is cold: pressurised hot water can scald.",
+   "When cold, check the coolant tank is between min and max; water only as an emergency top-up."
+  ],
+  "hotlines": [],
+  "q": "nag-overheat ang makina, pwede bang buhusan ng tubig?",
+  "source": "How to check your engine coolant - The AA",
+  "steps": [
+   "If the temperature gauge rises, turn the heater up full as a temporary fix.",
+   "A red temperature light means pull over somewhere safe.",
+   "Switch off and let the engine cool for at least 30 minutes, longer if it overheated.",
+   "Don't remove the radiator or coolant cap unless the engine is cold: pressurised hot water can scald.",
+   "When cold, check the coolant tank is between min and max; water only as an emergency top-up.",
+   "Have the car checked at a garage: coolant should not drop."
+  ],
+  "title": "Engine overheating",
+  "topic": "overheating"
+ },
+ {
+  "emergency": true,
+  "highlights": [],
+  "hotlines": [
+   {
+    "name": "Makati Rescue",
+    "numbers": [
+     "(02) 8895 8243",
+     "(02) 8899 8928",
+     "(02) 8870 1191"
+    ]
+   },
+   {
+    "name": "Philippine Red Cross",
+    "numbers": [
+     "143",
+     "(02) 8790 2300"
+    ]
+   },
+   {
+    "name": "MMDA Metrobase (Metro Manila roads)",
+    "numbers": [
+     "136"
+    ]
+   }
+  ],
+  "q": "may nahimatay, hindi humihinga si lola",
+  "source": "How to do CPR | St John Ambulance",
+  "steps": [
+   "Make sure it's safe; shake their shoulders and ask loudly \"are you OK?\"",
+   "No response: shout for help, tilt the head back, check normal breathing for up to 10 seconds.",
+   "Not breathing normally: have someone call 911 on speaker and find a defibrillator.",
+   "Heel of your hand mid-chest, other hand on top, arms straight, press down 5–6 cm.",
+   "Push 100–120 times a minute. Not trained? Keep giving continuous chest compressions.",
+   "Continue until help takes over, they breathe normally, or you are exhausted."
+  ],
+  "title": "CPR (adult, not breathing)",
+  "topic": "cpr"
+ },
+ {
+  "emergency": false,
+  "highlights": [],
+  "hotlines": [],
+  "q": "May metal sheet na nakasugat sa akin",
+  "source": "Cuts and grazes - NHS",
+  "steps": [
+   "Wash and dry your hands; wear disposable gloves if you have them.",
+   "Press on the wound with a bandage or clean folded cloth.",
+   "If something is stuck in it, leave it in and press firmly on either side.",
+   "Raise an injured arm above head level; for a leg, lie down and raise it above the heart.",
+   "If blood soaks through, add another pad on top and keep pressing.",
+   "Every 10 minutes check the bandage isn't too tight."
+  ],
+  "title": "Cuts and bleeding",
+  "topic": "bleeding"
+ },
+ {
+  "emergency": true,
+  "highlights": [],
+  "hotlines": [
+   {
+    "name": "Makati Rescue",
+    "numbers": [
+     "(02) 8895 8243",
+     "(02) 8899 8928",
+     "(02) 8870 1191"
+    ]
+   },
+   {
+    "name": "Philippine Red Cross",
+    "numbers": [
+     "143",
+     "(02) 8790 2300"
+    ]
+   },
+   {
+    "name": "MMDA Metrobase (Metro Manila roads)",
+    "numbers": [
+     "136"
+    ]
+   }
+  ],
+  "q": "stroke",
+  "source": "Symptoms of a stroke - NHS",
+  "steps": [
+   "Face: has one side of the face drooped? Ask them to smile.",
+   "Arms: can they lift both arms and keep them up? One may be weak or numb.",
+   "Speech: is their speech slurred or confused?",
+   "Time: call 911 straight away, even if the signs stop. Note the time they started.",
+   "Don't drive them to the hospital yourself if an ambulance can come; follow the call handler's instructions."
+  ],
+  "title": "Stroke: think FAST",
+  "topic": "stroke"
+ },
+ {
+  "asking": true,
+  "hotlines": [
+   {
+    "name": "NLEX, SCTEX, CAVITEX, CALAX (MPTC)",
+    "numbers": [
+     "1-35000"
+    ],
+    "source": "MPTC expressways advisory"
+   }
+  ],
+  "q": "Ano ang number ng NLEX?"
+ },
+ {
+  "asking": true,
+  "hotlines": [
+   {
+    "name": "PNP Highway Patrol Group",
+    "numbers": [
+     "0917 683 3333",
+     "(02) 723 0401"
+    ],
+    "source": "PNP Highway Patrol Group"
+   }
+  ],
+  "q": "number ng highway patrol"
+ },
+ {
+  "lost": "14.55680, 121.02360 (±8 m) · about 29 m from Common Man Coffee Roasters",
+  "places": [
+   {
+    "m": 399,
+    "name": "Greenbelt 4"
+   },
+   {
+    "m": 457,
+    "name": "Greenbelt 5"
+   },
+   {
+    "m": 461,
+    "name": "Yankee Candle At True Value Greenbelt"
+   }
+  ],
+  "search": "Greenbelt"
+ }
+]
