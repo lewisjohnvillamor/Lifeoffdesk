@@ -145,25 +145,39 @@ public enum CoachValidator {
     }
 }
 
-/// Deterministic Taglish coach lines; every value comes from `WorldFacts`.
+/// Deterministic Taglish coach lines; every value comes from `WorldFacts`. Kept to one short
+/// glanceable line (founder: the full sentences were too long for a map card): opener, one compact
+/// fact ("Pinakamalayo mo: 2.40 km → 600 m"), one question.
 public enum CoachRenderer {
     public static func render(_ choice: CoachChoice, facts: WorldFacts) -> String? {
-        let phrases = choice.factIDs.compactMap { phrase($0, facts: facts) }
-        guard !phrases.isEmpty, phrases.count == choice.factIDs.count,
+        guard let body = body(choice.factIDs, facts: facts),
               let target = facts.questLabels[choice.quest] else { return nil }
-        let body = phrases.count == 1 ? phrases[0] : "\(phrases[0]), at \(phrases[1])"
-        return "\(opener(facts.signal, choice.tone)) \(capitalized(body)). \(invite(choice.quest, target: target, tone: choice.tone))"
+        return "\(opener(facts.signal, choice.tone)) \(body). \(invite(choice.quest, target: target, tone: choice.tone))"
+    }
+
+    /// A before/now pair collapses into one arrow ("2.40 km → 600 m"); otherwise each fact is a short phrase.
+    static func body(_ ids: [WorldFacts.FactID], facts: WorldFacts) -> String? {
+        let pairs: [(now: WorldFacts.FactID, before: WorldFacts.FactID, label: String)] = [
+            (.reachNow, .reachBefore, "Pinakamalayo mo"), (.newStreetsNow, .newStreetsBefore, "Bagong kalye"),
+        ]
+        for pair in pairs where Set(ids) == [pair.now, pair.before] {
+            guard let now = facts.value(pair.now), let before = facts.value(pair.before) else { return nil }
+            return "\(pair.label): \(before) → \(now)"
+        }
+        let phrases = ids.compactMap { phrase($0, facts: facts) }
+        guard !phrases.isEmpty, phrases.count == ids.count else { return nil }
+        return phrases.joined(separator: ", ")
     }
 
     static func opener(_ signal: WorldFacts.Signal, _ tone: CoachChoice.Tone) -> String {
         switch (signal, tone) {
         case (.shrinking, .playful): return "Uy, lumiliit ang mundo mo!"
-        case (.shrinking, _): return "Napansin ko, mas maliit ang mundo mo lately."
+        case (.shrinking, _): return "Lumiliit ang mundo mo."
         case (.quiet, .playful): return "Miss ka na ng mga kalye!"
-        case (.quiet, _): return "Matagal-tagal ka nang hindi lumalabas."
+        case (.quiet, _): return "Tagal mo nang di lumalabas."
         case (.growing, _): return "Lumalawak ang mundo mo!"
-        case (.start, _): return "Simulan na natin ang mapa mo."
-        case (.steady, .proud): return "Tuloy-tuloy ka, nice!"
+        case (.start, _): return "Simulan na natin!"
+        case (.steady, .proud): return "Tuloy-tuloy, nice!"
         case (.steady, _): return "Kumusta ang mundo mo?"
         }
     }
@@ -171,26 +185,23 @@ public enum CoachRenderer {
     static func phrase(_ id: WorldFacts.FactID, facts: WorldFacts) -> String? {
         guard let value = facts.value(id) else { return nil }
         switch id {
-        case .daysSinceLast: return value == "0" ? "nag-adventure ka today" : value == "1" ? "1 araw mula sa huling adventure mo" : "\(value) araw mula sa huling adventure mo"
-        // "lang" (only) fits a shrinking world; for a steady or growing one it would read as a put-down.
-        case .reachNow: return "\(value)\(facts.signal == .shrinking ? " lang" : "") ang pinakamalayo mo nitong 2 linggo"
-        case .reachBefore: return "\(value) ang pinakamalayo mo noong nakaraang 2 linggo"
-        case .newStreetsNow: return "\(value) ng bagong kalye nitong 2 linggo"
-        case .newStreetsBefore: return "\(value) ng bagong kalye noong nakaraang 2 linggo"
-        case .adventuresNow: return value == "1" ? "1 adventure nitong 2 linggo" : "\(value) adventures nitong 2 linggo"
+        case .daysSinceLast: return value == "0" ? "Nag-adventure ka today" : value == "1" ? "Huling adventure: kahapon" : "Huling adventure: \(value) araw na"
+        case .reachNow: return "Pinakamalayo mo: \(value)"
+        case .reachBefore: return "Dati: \(value)"
+        case .newStreetsNow: return "\(value) bagong kalye"
+        case .newStreetsBefore: return "Dati: \(value) bagong kalye"
+        case .adventuresNow: return value == "1" ? "1 adventure" : "\(value) adventures"
         case .frontier, .newPlace: return nil
         }
     }
 
     static func invite(_ quest: WorldFacts.Quest, target: String, tone: CoachChoice.Tone) -> String {
-        let lead = tone == .playful ? "Game?" : "Tara?"
+        let lead = tone == .playful ? "Game" : "Tara"
         switch quest {
-        case .frontier: return "\(lead) May \(target)."
-        case .newPlace: return "\(lead) Hindi mo pa napupuntahan ang \(target)."
+        case .frontier: return "\(lead)? May \(target)."
+        case .newPlace: return "\(lead) sa \(target)?"
         }
     }
-
-    private static func capitalized(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
 
     /// Computed fallback (no AI): fixed fact order and the first quest. Labelled by the app.
     public static func computed(_ facts: WorldFacts) -> String? {

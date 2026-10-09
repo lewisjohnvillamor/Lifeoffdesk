@@ -311,7 +311,7 @@ struct MapScreen: View {
         var parts: [String] = []
         switch card.status {
         case .working: parts.append("On-device AI is thinking… · computed for now")
-        case .ai: parts.append("On-device AI picked this · numbers computed from your adventures")
+        case .ai: parts.append("On-device AI · numbers from your adventures")
         case let .computed(reason): parts.append("Computed suggestion" + (reason.isEmpty ? "" : " · \(reason)"))
         }
         if card.sample { parts.append("SAMPLE DATA") }
