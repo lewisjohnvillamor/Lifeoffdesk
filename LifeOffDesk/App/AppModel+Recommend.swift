@@ -8,6 +8,8 @@ struct RecommendationCard: Equatable {
     /// nil = the on-device model picked it; otherwise why the computed pick is shown.
     var computedReason: String?
     var alternatives: Int
+    /// Second-pass AI check of this pick ("AI check: swak sa hilig mo"); nil when it did not run.
+    var judge: JudgeVerdict?
 }
 
 enum RecommendationState: Equatable {
@@ -62,15 +64,38 @@ extension AppModel {
             }
             var card = RecommendationCard(candidate: fallback.0, text: fallback.1, computedReason: nil,
                                           alternatives: candidates.count)
+            let recent = history.recentCategories
             do {
-                let (outcome, _) = try await self.ai.run { await RecommendationPrompt.choose(candidates, engine: $0) }
-                switch outcome {
-                case let .valid(choice):
-                    let picked = candidates[choice.index]
-                    card = RecommendationCard(candidate: picked, text: RecommendationCopy.render(picked, reasons: choice.reasons),
-                                              computedReason: nil, alternatives: candidates.count)
-                case .invalid: card.computedReason = "AI reply was rejected"
-                case let .engineError(message): card.computedReason = message
+                // One AI session: pick, then a second pass double-checks the pick and may veto it,
+                // moving on to the next candidate. The judge never adds facts.
+                let result = try await self.ai.run { engine -> (Int, [PlaceRecommender.ReasonID], JudgeVerdict?, String?) in
+                    let (outcome, _) = await RecommendationPrompt.choose(candidates, engine: engine)
+                    guard case let .valid(choice) = outcome else {
+                        if case let .engineError(message) = outcome { return (0, [], nil, message) }
+                        return (0, [], nil, "AI reply was rejected")
+                    }
+                    let order = [choice.index] + candidates.indices.filter { $0 != choice.index }
+                    var firstVerdict: JudgeVerdict?
+                    for index in order {
+                        let (check, _) = await JudgePrompt.check(candidates[index], taste: taste, recent: recent, engine: engine)
+                        guard case let .valid(verdict) = check else { break }
+                        if firstVerdict == nil { firstVerdict = verdict }
+                        if verdict.verdict == .good {
+                            let reasons = index == choice.index ? choice.reasons
+                                : Array([PlaceRecommender.ReasonID.likesCuisine, .likesCategory, .nearby]
+                                    .filter { candidates[index].reasons[$0] != nil }.prefix(2))
+                            return (index, reasons, verdict, nil)
+                        }
+                    }
+                    // Every candidate judged weak (or the judge failed): show the pick with its verdict.
+                    return (choice.index, choice.reasons, firstVerdict, nil)
+                }
+                if let problem = result.3 {
+                    card.computedReason = problem
+                } else {
+                    let picked = candidates[result.0]
+                    card = RecommendationCard(candidate: picked, text: RecommendationCopy.render(picked, reasons: result.1),
+                                              computedReason: nil, alternatives: candidates.count, judge: result.2)
                 }
             } catch {
                 card.computedReason = "On-device AI unavailable"

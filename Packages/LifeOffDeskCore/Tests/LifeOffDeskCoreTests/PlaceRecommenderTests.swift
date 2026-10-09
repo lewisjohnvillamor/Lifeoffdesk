@@ -79,3 +79,26 @@ final class PlaceRecommenderTests: XCTestCase {
         XCTAssertNotNil(RecommendationCopy.computed(fresh))
     }
 }
+
+final class RecommendationJudgeTests: XCTestCase {
+    private func candidate() -> PlaceRecommender.Candidate {
+        let place = Fixture.place("cafe", .cafe, east: 400, north: 0)
+        return PlaceRecommender.Candidate(place: place, street: nil, straightLineMeters: 400, score: 1,
+                                          reasons: [.likesCategory: "3 sa 4", .nearby: "400 m", .neverBeen: "oo"])
+    }
+
+    func testVerdictAndReasonMustAgreeAndPromptCarriesComputedTaste() async {
+        let taste = PlaceRecommender.Taste(places: [Fixture.place("a", .cafe, east: 0, north: 0),
+                                                    Fixture.place("b", .cafe, east: 1, north: 0),
+                                                    Fixture.place("c", .park, east: 2, north: 0)])
+        let engine = ScriptedEngine(replies: [#"{"verdict":"good","reason":"tooFar"}"#,
+                                              #"{"verdict":"good","reason":"tasteMatch"}"#])
+        let (outcome, attempts) = await JudgePrompt.check(candidate(), taste: taste, recent: [.park], engine: engine)
+        guard case let .valid(verdict) = outcome else { return XCTFail("expected repaired verdict") }
+        XCTAssertEqual(attempts.count, 2, "good + tooFar contradicts itself and is repaired")
+        XCTAssertEqual(verdict, JudgeVerdict(verdict: .good, reason: .tasteMatch))
+        XCTAssertTrue(engine.counter.prompts[0].contains("Taste: cafe 2 of 3, park 1 of 3"))
+        XCTAssertTrue(engine.counter.prompts[0].contains("Recent suggestions: park"))
+        XCTAssertEqual(JudgePrompt.label(verdict), "AI check: swak sa hilig mo")
+    }
+}

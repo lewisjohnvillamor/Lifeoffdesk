@@ -86,6 +86,11 @@ struct WalksView: View {
                         Text(card.computedReason.map { "Computed pick · \($0)" }
                              ?? "On-device AI picked this from \(card.alternatives) nearby matches · facts computed")
                             .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                        if let judge = card.judge {
+                            Label(JudgePrompt.label(judge), systemImage: judge.verdict == .good ? "checkmark.seal.fill" : "exclamationmark.triangle")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(judge.verdict == .good ? Theme.primary : Theme.danger)
+                        }
                         Text("OpenStreetMap · hours & access unverified").font(.caption2).foregroundStyle(Theme.secondaryInk)
                     }
                 }
