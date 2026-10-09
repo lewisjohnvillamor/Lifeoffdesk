@@ -23,6 +23,11 @@ struct PlannerSheet: View {
                 VStack(alignment: .leading, spacing: 18) {
                     inputBar
                     if showQuickPicks {
+                        HStack(spacing: 10) {
+                            MascotView(pose: .thinking, size: 56)
+                            Text("Saan tayo? Sabihin mo lang, sa Taglish o English.")
+                                .font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                        }
                         quickPickRow
                         nextAdventures
                     }

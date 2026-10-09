@@ -12,6 +12,19 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    HStack(spacing: 14) {
+                        MascotView(pose: .welcome, size: 72)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Life Off Desk").font(.system(.title3, design: .rounded).weight(.bold))
+                            Text("There's more to life than your screen.").font(.footnote).foregroundStyle(Theme.secondaryInk)
+                            Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "–") · works offline")
+                                .font(.caption).foregroundStyle(Theme.secondaryInk)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    .accessibilityElement(children: .combine)
+                }
                 Section("Privacy") {
                     Text("No account. Walks, exploration and planner requests stay on this iPhone; inference runs on-device. iOS device backups may include app data.")
                         .font(.footnote).foregroundStyle(Theme.secondaryInk)

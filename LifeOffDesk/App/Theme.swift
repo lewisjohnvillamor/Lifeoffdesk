@@ -61,3 +61,45 @@ struct CardBackground: ViewModifier {
 extension View {
     func card() -> some View { modifier(CardBackground()) }
 }
+
+/// The canonical cat (assets/mascot/life-off-desk-cat-stickers-male.png, cut into 12 poses).
+/// Brand guide: a companion with sparse, small appearances — never a permanent large overlay.
+enum Mascot: String {
+    case welcome, walking, thinking, planning, discovering, fogPeek = "fog-peek", takingPhotos = "taking-photos"
+    case savingMemories = "saving-memories", cafeBreak = "cafe-break", resting, celebrating, encouragement
+
+    var imageName: String { "mascot-\(rawValue)" }
+}
+
+struct MascotView: View {
+    let pose: Mascot
+    var size: CGFloat = 96
+
+    var body: some View {
+        Image(pose.imageName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true) // decorative; nearby text carries the meaning
+    }
+}
+
+/// "Life Off Desk" wordmark with the tagline, for the intro and About.
+struct Wordmark: View {
+    var tagline = true
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text("Life Off Desk")
+                .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                .foregroundStyle(Theme.ink)
+            if tagline {
+                Text("There's more to life than your screen.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryInk)
+            }
+        }
+        .multilineTextAlignment(.center)
+        .accessibilityElement(children: .combine)
+    }
+}

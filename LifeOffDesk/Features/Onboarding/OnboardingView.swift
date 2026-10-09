@@ -12,12 +12,13 @@ struct OnboardingView: View {
         _page = State(initialValue: startPage)
     }
 
-    private let pages: [(title: String, subtitle: String)] = [
-        ("Every street you walk becomes your map.", "The map starts blank. Only where you actually walk is drawn."),
-        ("New streets count.", "Turn an unknown corner and your world grows."),
-        ("Ask for a nearby spot.", "Type in Taglish. The AI on your phone suggests real places, even offline."),
-        ("Stays on your phone.", "No account. Your walks and the AI never leave your iPhone."),
-        ("Share your adventure as a card.", "Your route, your photos and the places you found in one card."),
+    private let pages: [(title: String, subtitle: String, mascot: Mascot)] = [
+        ("There's more to life than your screen.",
+         "Every adventure, on foot or riding, draws your own map. It starts blank.", .welcome),
+        ("New streets count.", "Turn an unknown corner and your world grows out of the fog.", .fogPeek),
+        ("Ask in Taglish.", "The AI on your phone suggests real nearby places, even with no signal.", .thinking),
+        ("Stays on your phone.", "No account, no cloud. Your adventures, photos and the AI never leave your iPhone.", .encouragement),
+        ("Keep the memories.", "Share your route, your photos and the places you found as one card.", .takingPhotos),
     ]
 
     var body: some View {
@@ -27,14 +28,21 @@ struct OnboardingView: View {
                 ForEach(pages.indices, id: \.self) { index in
                     VStack(spacing: 0) {
                         Spacer()
-                        IntroIllustration(page: index, animate: !reduceMotion)
-                            .frame(height: 300)
-                            .id("\(index)-\(page == index)") // restart the drawing when a page appears
+                        if index == 0 {
+                            Wordmark(tagline: false).padding(.bottom, 8)
+                        }
+                        ZStack(alignment: .bottomTrailing) {
+                            IntroIllustration(page: index, animate: !reduceMotion)
+                                .frame(height: 250)
+                                .id("\(index)-\(page == index)") // restart the drawing when a page appears
+                            MascotView(pose: pages[index].mascot, size: 104)
+                                .offset(x: 8, y: 18)
+                        }
                         Text(pages[index].title)
                             .font(.title2.weight(.bold))
                             .foregroundStyle(PaperStyle.ink)
                             .multilineTextAlignment(.center)
-                            .padding(.top, 36)
+                            .padding(.top, 30)
                         Text(pages[index].subtitle)
                             .font(.body)
                             .foregroundStyle(Theme.secondaryInk)

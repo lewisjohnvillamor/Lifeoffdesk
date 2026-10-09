@@ -1,5 +1,9 @@
 # Life Off Desk — build status
 
+## Branding pass (2026-10-09)
+
+The app had no icon or asset catalog and the mascot appeared nowhere. Added `Assets.xcassets` with an app icon (crop of the canonical concept portrait), BrandCanvas/AccentColor, a branded launch screen, and the 12 canonical poses cut from the sticker sheet by their own transparency (verified visually: none clipped). Intro pages show a pose each, the wordmark and updated copy (adventures on foot or riding; offline Taglish AI; stays on your phone). Small mascot accents per the brand guide in recap, planner idle, empty states, Me, Settings About and the card badge. Verified only via CI Simulator screenshots; not yet seen on the phone home screen.
+
 ## City streaming (game-style chunks) and all of Metro Manila configured (2026-10-09, founder decision)
 
 **Streaming.** The app no longer decodes every city at launch. `RegionLibrary` keeps only the small manifests in memory, plus the always-on Metro Manila main-roads context and the primary city. `RegionChunks` (pure, tested) decides which cities should be in memory:

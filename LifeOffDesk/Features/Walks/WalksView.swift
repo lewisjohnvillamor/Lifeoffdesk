@@ -121,8 +121,11 @@ struct WalksView: View {
                 Text(message).font(.footnote).foregroundStyle(Theme.danger)
             case let .results(ids):
                 let walks = ids.compactMap { id in model.finishedWalks.first { $0.id == id } }
-                Text(walks.isEmpty ? "Walang tugma. Subukang alisin ang isang filter." : "\(walks.count) adventure\(walks.count == 1 ? "" : "s")")
-                    .font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryInk)
+                HStack(spacing: 8) {
+                    if walks.isEmpty { MascotView(pose: .discovering, size: 48) }
+                    Text(walks.isEmpty ? "Walang tugma. Subukang alisin ang isang filter." : "\(walks.count) adventure\(walks.count == 1 ? "" : "s")")
+                        .font(.footnote.weight(.semibold)).foregroundStyle(Theme.secondaryInk)
+                }
                 ForEach(walks) { walk in
                     Button { selected = walk } label: { row(walk) }.buttonStyle(.plain)
                 }
@@ -281,8 +284,11 @@ struct WalksView: View {
                 }
             }
             if model.historyWalks.isEmpty {
-                Text("Your adventures will appear here.").font(.subheadline).foregroundStyle(Theme.secondaryInk)
-                    .frame(maxWidth: .infinity).padding(.top, 24)
+                VStack(spacing: 8) {
+                    MascotView(pose: .walking, size: 96)
+                    Text("Your adventures will appear here.").font(.subheadline).foregroundStyle(Theme.secondaryInk)
+                }
+                .frame(maxWidth: .infinity).padding(.top, 24)
             }
             ForEach(groups.keys.sorted(by: >), id: \.self) { month in
                 let walks = (groups[month] ?? []).sorted { $0.startedAt > $1.startedAt }
