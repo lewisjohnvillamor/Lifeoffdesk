@@ -211,7 +211,8 @@ final class PlaceSearchTests: XCTestCase {
         }
         let merged = try XCTUnwrap(PlaceCatalog.merged(catalogs))
         XCTAssertEqual(Set(merged.places.map(\.id)).count, merged.places.count)
-        XCTAssertEqual(merged.places.count, catalogs.reduce(0) { $0 + $1.places.count })
+        // Neighbouring city boxes overlap; the merge keeps each OSM place once.
+        XCTAssertLessThanOrEqual(merged.places.count, catalogs.reduce(0) { $0 + $1.places.count })
     }
 
     func testSearchNearMuntinlupaReturnsMuntinlupaPlaces() throws {

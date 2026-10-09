@@ -1,5 +1,11 @@
 # Life Off Desk — build status
 
+## More cities: Parañaque, Pasay, Taguig configured (2026-10-09)
+
+For riding adventures (e.g. Sucat → Makati), the corridor cities are added as detailed regions in `config/regions.json`: **Parañaque, Pasay, Taguig**. Their bounding boxes are not hand-typed: `prepare_makati.py` resolves each from the OSM administrative boundary of that name (city level preferred) and records the relation in the config. `scripts/refresh_places.sh` downloads streets + every named place for new cities and refreshes places for existing ones. Until it runs (the OSM servers are blocked in this environment), the builder skips the new regions and the app behaves as before: recording works there against the Metro Manila main-roads pack.
+
+Expected cost per city: about 2–3 MB of bundled JSON. Phone memory grows because all detailed streets go into the matching and walking graphs; after adding cities, check memory/launch on the phone (Settings → AI diagnostics) before adding more. A whole-NCR rollout should load street graphs per nearby city rather than all at once (not built yet). Overlapping city boxes are fine: places merge by OSM ID.
+
 ## Adventures on foot or riding (2026-10-09, founder decision)
 
 Founder: adventures are not only walks; driving or riding can be the escape. The GPS filter used to reject anything faster than 4 m/s (~14 km/h), so a Sucat → Makati drive was dropped except for crawling traffic, which slipped through and was mislabelled as walking. Now:

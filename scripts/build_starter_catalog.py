@@ -158,7 +158,7 @@ def main():
     index = []
     for region in config['regions']:
         source_dir = args.input_root/region['localDir']
-        if not (source_dir/'manifest.json').exists():
+        if not region.get('bbox') or not (source_dir/'manifest.json').exists():
             print(f"{region['id']}: not prepared (run prepare_makati.py --region {region['id']}); skipped")
             continue
         build_region(region, source_dir, args.output/region['id'])

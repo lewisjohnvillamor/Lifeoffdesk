@@ -98,6 +98,8 @@ class RegionTests(unittest.TestCase):
         self.assertEqual(ids[0], 'makati-cbd-starter')
         self.assertIn('muntinlupa', ids)
         for region in config['regions']:
+            if not region.get('bbox'):
+                continue  # resolved from the OSM boundary at preparation time
             query = makati.query_for(region['bbox'], region.get('highways'), region.get('places', True))
             self.assertIn('way["highway"', query)
             self.assertEqual('leisure' in query, region.get('places', True))
@@ -133,6 +135,18 @@ class RegionTests(unittest.TestCase):
         self.assertEqual(c({'amenity':'cafe','name':'Starbucks'})[0], 'cafe')
         self.assertIsNone(c({'amenity':'parking','name':'Lot A'}), 'parking is not an outing')
         self.assertIsNone(c({'amenity':'pharmacy'}), 'unnamed non-sports places are skipped')
+
+    def test_bbox_comes_from_the_city_level_boundary(self):
+        raw = {'elements': [
+            {'type':'relation','id':2,'tags':{'name':'Pasay','admin_level':'10'},
+             'bounds':{'minlat':14.52,'minlon':121.0,'maxlat':14.53,'maxlon':121.01}},
+            {'type':'relation','id':1,'tags':{'name':'Pasay','admin_level':'6'},
+             'bounds':{'minlat':14.49,'minlon':120.97,'maxlat':14.56,'maxlon':121.03}}]}
+        bbox, source = makati.bbox_from_boundary(raw, 'Pasay')
+        self.assertEqual(bbox, {'south':14.49,'west':120.97,'north':14.56,'east':121.03})
+        self.assertTrue(source.endswith('/relation/1'))
+        with self.assertRaises(ValueError):
+            makati.bbox_from_boundary(raw, 'Atlantis')
 
 class DemoWalkTests(unittest.TestCase):
     def test_generator_is_deterministic_and_labelled(self):

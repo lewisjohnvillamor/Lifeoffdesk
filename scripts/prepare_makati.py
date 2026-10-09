@@ -94,6 +94,48 @@ def classify(tags):
         return 'other', amenity or leisure or tourism, name
     return None
 
+METRO_MANILA_SEARCH_BOX = '14.30,120.90,14.80,121.20'
+
+def boundary_query(name):
+    return f'''[out:json][timeout:60];
+relation["boundary"="administrative"]["name"="{name}"]({METRO_MANILA_SEARCH_BOX});
+out bb tags;'''
+
+def bbox_from_boundary(raw, name):
+    """Bounding box of the administrative boundary called `name` (city level preferred)."""
+    candidates = [e for e in raw.get('elements', []) if e.get('type') == 'relation' and e.get('bounds')
+                  and e.get('tags', {}).get('name') == name]
+    if not candidates:
+        raise ValueError(f'No OSM administrative boundary named {name!r} found')
+    level = lambda e: abs(int(e['tags'].get('admin_level', '99') or 99) - 6)
+    best = min(candidates, key=lambda e: (level(e), e['id']))
+    b = best['bounds']
+    return ({'south': b['minlat'], 'west': b['minlon'], 'north': b['maxlat'], 'east': b['maxlon']},
+            f"https://www.openstreetmap.org/relation/{best['id']}")
+
+def overpass(query, endpoint):
+    body = urllib.parse.urlencode({'data':query}).encode()
+    request = urllib.request.Request(endpoint, data=body,
+                headers={'User-Agent':'LifeOffDesk-hackathon-starter/1.0 (one-time preparation)',
+                         'Content-Type':'application/x-www-form-urlencoded'})
+    with urllib.request.urlopen(request, timeout=300) as response:
+        return json.load(response)
+
+def resolve_bbox(region, endpoint):
+    """Fill a missing bbox from the OSM boundary and record it in config/regions.json."""
+    if region.get('bbox'):
+        return region
+    bbox, source = bbox_from_boundary(overpass(boundary_query(region['boundaryName']), endpoint), region['boundaryName'])
+    config_path = ROOT/'config/regions.json'
+    config = json.loads(config_path.read_text())
+    for entry in config['regions']:
+        if entry['id'] == region['id']:
+            entry['bbox'] = bbox
+            entry['boundarySource'] = f'{source} (bounding box of the administrative boundary, includes water)'
+    config_path.write_text(json.dumps(config, indent=2, ensure_ascii=False) + '\n')
+    print(f"{region['id']}: bbox from {source}: {bbox}")
+    return {**region, 'bbox': bbox}
+
 def representative_point(element):
     """Node position, Overpass center, or bounds midpoint (`out geom` returns bounds, not center)."""
     if element['type'] == 'node' and 'lat' in element and 'lon' in element:
@@ -153,6 +195,10 @@ def main():
     parser.add_argument('--endpoint', default=ENDPOINT, help='Overpass endpoint (mirrors allowed)')
     args = parser.parse_args()
     region = load_region(args.region)
+    if not region.get('bbox'):
+        if args.input or args.dry_run:
+            raise ValueError(f"{region['id']} has no bbox yet; run once online to resolve it from OSM")
+        region = resolve_bbox(region, args.endpoint)
     args.output = args.output or ROOT/'local-data'/region['localDir']
     include_places = region.get('places', True)
     query = query_for(region['bbox'], False if args.places_only else region.get('highways'), include_places)
@@ -162,12 +208,7 @@ def main():
     if args.input:
         raw = json.loads(args.input.read_text())
     else:
-        body = urllib.parse.urlencode({'data':query}).encode()
-        request = urllib.request.Request(args.endpoint, data=body,
-                    headers={'User-Agent':'LifeOffDesk-hackathon-starter/1.0 (one-time preparation)',
-                             'Content-Type':'application/x-www-form-urlencoded'})
-        with urllib.request.urlopen(request, timeout=300) as response:
-            raw = json.load(response)
+        raw = overpass(query, args.endpoint)
     retrieved = datetime.now(timezone.utc).isoformat()
     if args.places_only:
         existing = json.loads((args.output/'roads.geojson').read_text())
