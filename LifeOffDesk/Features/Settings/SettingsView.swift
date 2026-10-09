@@ -104,6 +104,10 @@ struct AIDiagnosticsView: View {
                     .font(.footnote).foregroundStyle(Theme.secondaryInk)
                 Button(ai.state == .loading ? "Loading…" : "Load model now") { Task { await ai.preload() } }
                     .disabled(ai.state == .loading || ai.state == .ready || model.activeSession != nil)
+                if let problem = ai.lastProblem { row("Last problem", problem) }
+                if let interruption = ai.lastInterruption { row("Last interruption", interruption) }
+                ForEach(model.content?.issues ?? [], id: \.self) { row("Data issue", $0) }
+                row("Access facts loaded", "\(model.content?.evidence.count ?? 0)")
                 Button("Verify SHA-256") { Task { await ai.verifyModelHash() } }
                 if let hash = ai.hashResult { Text(hash).font(.footnote.monospaced()) }
             }

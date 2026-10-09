@@ -154,6 +154,9 @@ struct PlannerSheet: View {
         case let .modelUnavailable(message):
             note(message)
             manualFilters
+        case let .interrupted(message):
+            note(message)
+            Button("Subukan ulit") { send() }.font(.subheadline.weight(.semibold))
         case let .answered(response, usedAI):
             answer(response, usedAI: usedAI)
         }
@@ -195,6 +198,9 @@ struct PlannerSheet: View {
             }
         case .failed:
             note(PlannerCopy.modelFailure)
+            if let reason = model.lastTrace?.failureReason {
+                Text(reason).font(.caption).foregroundStyle(Theme.secondaryInk)
+            }
             manualFilters
         }
     }

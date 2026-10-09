@@ -1,4 +1,5 @@
 import CryptoKit
+import os
 import Foundation
 import LifeOffDeskCore
 import UIKit
@@ -11,6 +12,10 @@ final class AIService: ObservableObject {
     static let modelFileName = "Qwen3-1.7B-Q4_K_M.gguf"
     /// Founder-selected model, from config/materials-lock.json (group model-large).
     static let expectedSHA256 = "d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5"
+    /// Exact size from the materials lock: a cheap check on every load (the hash takes ~seconds).
+    static let expectedBytes: Int64 = 1_282_439_264
+    /// Weights + KV cache (2048 ctx) + compute buffers need headroom beyond the file size.
+    static let loadHeadroomBytes: UInt64 = 700 * 1024 * 1024
 
     enum State: Equatable {
         case notLoaded, loading, ready, missing, failed(String)
@@ -19,6 +24,10 @@ final class AIService: ObservableObject {
     @Published private(set) var state: State = .notLoaded
     @Published private(set) var loadInfo: LlamaLoadInfo?
     @Published private(set) var hashResult: String?
+    /// Why the last AI request did not produce a result, shown instead of failing silently.
+    @Published private(set) var lastProblem: String?
+    /// Set when running work was cancelled (walk start, low memory, erase); cleared on the next run.
+    @Published private(set) var lastInterruption: String?
     private var coordinator: InferenceCoordinator!
     private var memoryObserver: NSObjectProtocol?
 
@@ -30,6 +39,7 @@ final class AIService: ObservableObject {
             throw InferenceError.loadFailed("AI is unavailable in Simulator. Run on a physical iPhone to use on-device AI.")
             #else
             guard let url = await AIService.modelURL() else { throw ModelMissing() }
+            try AIService.preflight(url)
             return try await Task.detached(priority: .userInitiated) { try LlamaEngine.load(path: url.path) }.value
             #endif
         }, onEvent: { [weak self] event in
@@ -37,7 +47,7 @@ final class AIService: ObservableObject {
         })
         memoryObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.unload() }
+            MainActor.assumeIsolated { self?.unload(reason: "low memory warning") }
         }
     }
 
@@ -49,9 +59,27 @@ final class AIService: ObservableObject {
             #if !targetEnvironment(simulator)
             if let llama = engine as? LlamaEngine { loadInfo = llama.info }
             #endif
-        case let .failed(message): state = message == "model missing" ? .missing : .failed(message)
+        case let .failed(message):
+            state = message == "model missing" ? .missing : .failed(message)
+            lastProblem = message == "model missing" ? "Model file not found in the app or Documents." : message
         case .unloaded: state = .notLoaded
         }
+    }
+
+    /// Refuses a wrong/incomplete model file or a load likely to exceed this app's memory limit,
+    /// with a readable reason, instead of loading the wrong artifact or being killed by iOS.
+    nonisolated static func preflight(_ url: URL) throws {
+        let size = ((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber)?.int64Value ?? -1
+        guard size == expectedBytes else {
+            throw InferenceError.loadFailed("Model file is \(size) bytes, expected \(expectedBytes) (wrong or incomplete copy at \(url.lastPathComponent)). Remove it from Documents or rebuild.")
+        }
+        #if !targetEnvironment(simulator)
+        let available = os_proc_available_memory()
+        let needed = UInt64(expectedBytes) + loadHeadroomBytes
+        if available > 0 && UInt64(available) < needed {
+            throw InferenceError.loadFailed("Not enough free memory to load the model (\(available / 1_048_576) MB available, about \(needed / 1_048_576) MB needed). Close other apps and try again.")
+        }
+        #endif
     }
 
     /// Documents first, then the app bundle. Both must be the exact selected file.
@@ -65,7 +93,22 @@ final class AIService: ObservableObject {
     /// Runs one inference task after any earlier ones, loading the model if needed.
     /// Throws `InferenceError.stale` if the model was unloaded or data erased meanwhile.
     func run<T: Sendable>(_ work: @escaping @Sendable (any IntentEngine) async throws -> T) async throws -> T {
-        try await coordinator.perform(work)
+        lastInterruption = nil
+        do {
+            return try await coordinator.perform(work)
+        } catch InferenceError.stale {
+            throw InferenceError.stale
+        } catch InferenceError.cancelled {
+            throw InferenceError.cancelled
+        } catch {
+            lastProblem = "\(error)"
+            throw error
+        }
+    }
+
+    /// Readable reason for an interrupted request.
+    var interruptionMessage: String {
+        "Na-interrupt ang AI (\(lastInterruption ?? "na-unload ang model")). Subukan ulit."
     }
 
     /// Loads the model without generating (diagnostics: check file, memory and load time).
@@ -75,7 +118,8 @@ final class AIService: ObservableObject {
 
     /// Cancels pending AI work and releases the model once native work stops (walk start,
     /// memory warning, erase). Never blocks the caller.
-    func unload() {
+    func unload(reason: String = "na-unload ang model") {
+        lastInterruption = reason
         let coordinator = self.coordinator!
         Task { await coordinator.unload() }
         if state == .loading { state = .notLoaded }

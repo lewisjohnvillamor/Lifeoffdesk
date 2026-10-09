@@ -19,6 +19,8 @@ enum PlannerState: Equatable {
     case thinking
     case answered(PlannerResponse, usedAI: Bool)
     case modelUnavailable(String)
+    /// The request was cancelled by a walk start, low memory or erase; the typed text is kept.
+    case interrupted(String)
 }
 
 @MainActor
@@ -348,7 +350,7 @@ final class AppModel: ObservableObject {
     }
 
     private func beginSession() {
-        ai.unload() // keep the model out of memory while tracking
+        ai.unload(reason: "nagsimula ang adventure") // keep the model out of memory while tracking
         let new = WalkRecorder.start(at: Date(), destinationPlaceID: destination?.id, destinationName: destination?.name)
         recorder = new
         lastFix = nil
@@ -776,7 +778,8 @@ final class AppModel: ObservableObject {
                 self.lastTrace = trace
                 self.plannerState = .answered(response, usedAI: true)
             } catch InferenceError.stale, InferenceError.cancelled {
-                if !Task.isCancelled { self.plannerState = .idle }
+                // The user cancelled (keep idle) or something else stopped the model: say so.
+                if !Task.isCancelled { self.plannerState = .interrupted(self.ai.interruptionMessage) }
             } catch {
                 switch self.ai.state {
                 case .missing: self.plannerState = .modelUnavailable(PlannerCopy.modelMissing)
@@ -851,7 +854,7 @@ final class AppModel: ObservableObject {
     func erasePersonalData() {
         guard canErase, let store else { return }
         do {
-            ai.unload() // cancels in-flight AI so nothing regenerates from erased data
+            ai.unload(reason: "erase") // cancels in-flight AI so nothing regenerates from erased data
             try store.erasePersonalData()
             exploration = Exploration()
             finishedWalks = []

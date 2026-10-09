@@ -57,7 +57,7 @@ extension AppModel {
                 case let .engineError(message): self.historyState = .failed(message)
                 }
             } catch InferenceError.stale, InferenceError.cancelled {
-                if !Task.isCancelled { self.historyState = .idle }
+                if !Task.isCancelled { self.historyState = .failed(self.ai.interruptionMessage) }
             } catch {
                 self.historyState = .failed("On-device AI unavailable (\(error)). Calendar and list still work.")
             }
@@ -118,10 +118,15 @@ extension AppModel {
                 case .invalid: self.narrations[id] = .fallback(fallback, reason: "AI reply was rejected")
                 case let .engineError(message): self.narrations[id] = .fallback(fallback, reason: message)
                 }
-            } catch InferenceError.stale {
-                self.narrations[id] = nil
+            } catch InferenceError.stale, InferenceError.cancelled {
+                // Deleted/erased adventures disappear; otherwise show why there is no AI result.
+                if demo || self.finishedWalks.contains(where: { $0.id == id }) {
+                    self.narrations[id] = .fallback(fallback, reason: self.ai.interruptionMessage)
+                } else {
+                    self.narrations[id] = nil
+                }
             } catch {
-                self.narrations[id] = .fallback(fallback, reason: "On-device AI unavailable")
+                self.narrations[id] = .fallback(fallback, reason: "On-device AI unavailable: \(error)")
             }
         }
     }
