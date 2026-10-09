@@ -82,6 +82,8 @@ jobs:
           shoot 04-demo-flat --demo-map --flat --map-scale 0.2
           shoot 05-blank-closeup --map-scale 0.6
           shoot 06-planner-results --open-planner --planner-filter park
+          shoot 13-route-to-place --route-to osm:way:777918859
+          shoot 14-help-sheet --open-help
           shoot 07-recap-card --demo-map --open-recap
           shoot 08-memory-card --demo-map --open-card
           shoot 08b-card-photo --demo-map --open-card --seed-photo --card-style Photo

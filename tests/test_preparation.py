@@ -136,6 +136,19 @@ class RegionTests(unittest.TestCase):
         self.assertIsNone(c({'amenity':'parking','name':'Lot A'}), 'parking is not an outing')
         self.assertIsNone(c({'amenity':'pharmacy'}), 'unnamed non-sports places are skipped')
 
+    def test_help_places_are_kept_even_unnamed_or_restricted(self):
+        c = makati.classify
+        self.assertEqual(c({'amenity':'police'}), ('other', 'police', 'Police station'))
+        self.assertEqual(c({'amenity':'hospital','name':'Ospital ng Makati'}), ('other', 'hospital', 'Ospital ng Makati'))
+        self.assertEqual(c({'amenity':'fire_station'})[1], 'fire_station')
+        self.assertIn('nwr["amenity"~"^(fire_station|hospital|police)$"]',
+                      makati.query_for({'south':14.5,'west':121.0,'north':14.6,'east':121.1}), 'fetched even when unnamed')
+        station = {'id':'osm:node:1','name':'Police station','latitude':14.4,'longitude':121.0,'category':'other',
+                   'kind':'police','sourceTags':{'amenity':'police','access':'private'}}
+        private_cafe = {**station, 'id':'osm:node:2', 'kind':'cafe', 'sourceTags':{'access':'private'}}
+        self.assertEqual([p['id'] for p in catalog.select_places([station, private_cafe], (14.4, 121.0), None)],
+                         ['osm:node:1'])
+
     def test_bbox_comes_from_the_city_level_boundary(self):
         raw = {'elements': [
             {'type':'relation','id':2,'tags':{'name':'Pasay','admin_level':'10'},

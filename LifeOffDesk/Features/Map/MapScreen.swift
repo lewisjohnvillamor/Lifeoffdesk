@@ -10,6 +10,7 @@ struct MapScreen: View {
     /// Simulator screenshot helper: the style travels with the item so the sheet never reads a stale value.
     @State private var simCard: SimCard?
     @State private var showCamera = false
+    @State private var showHelp = false
     @State private var followUser = true
     @State private var tilted = true
     @State private var launchScale: CGFloat?
@@ -96,6 +97,7 @@ struct MapScreen: View {
             camera.center = geometry.point(position)
         }
         .sheet(isPresented: $showPlanner) { PlannerSheet().environmentObject(model) }
+        .sheet(isPresented: $showHelp) { HelpSheet().environmentObject(model) }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { model.captureMoment($0) }.ignoresSafeArea()
         }
@@ -131,6 +133,10 @@ struct MapScreen: View {
         }
         if arguments.contains("--flat") { tilted = false }
         if arguments.contains("--start-walk") { model.startWalking() } // simulator GPS route is supplied by simctl
+        if arguments.contains("--open-help") { showHelp = true }
+        // Draws the street route to a bundled place (simulated GPS position from simctl).
+        if let i = arguments.firstIndex(of: "--route-to"), i + 1 < arguments.count,
+           let place = model.content?.catalog.place(id: arguments[i + 1]) { model.choose(place) }
         if arguments.contains("--open-planner") {
             showPlanner = true
             if let i = arguments.firstIndex(of: "--planner-filter"), i + 1 < arguments.count,
@@ -304,6 +310,10 @@ struct MapScreen: View {
         VStack(spacing: 14) {
             if model.phase == .walking || model.phase == .acquiringFix || model.phase == .paused {
                 labeledIcon("camera", "Spot", label: "Take a photo") { showCamera = true }
+            }
+            labeledIcon("shield.lefthalf.filled", "Help",
+                        label: "Get help: emergency call, your location and the nearest police, hospitals and fire stations") {
+                showHelp = true
             }
             labeledIcon("scope", "Locate", label: "Center on my location") {
                 followUser = true

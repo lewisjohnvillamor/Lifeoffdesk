@@ -1,5 +1,16 @@
 # Life Off Desk — build status
 
+## Get help: 911, your location, nearest police / hospitals / fire stations (2026-10-09, founder request)
+
+- Map → **Help** (shield) opens a safety sheet, fully offline:
+  - **Call 911** (Philippine national emergency hotline; a call needs cell signal, not mobile data).
+  - **Your location** as coordinates ± GPS accuracy plus the nearest named place within 200 m, with Copy and "Text it" (SMS works without data).
+  - The nearest 3 **police stations, hospitals and fire stations** within 10 km, ranked by distance along mapped streets (straight-line when the street graph cannot reach one, labelled). **Route** sets it as the destination and draws the suggested street route.
+- Deterministic (`HelpPlaces` in the core), no AI. Honest copy: OSM records are unreviewed; a station may have moved or closed; call first in an emergency. Empty state says when none are mapped in the loaded data.
+- Data: `prepare_makati.py` now also fetches `amenity=police|hospital|fire_station` **even when unnamed** (labelled "Police station" etc.), and `build_starter_catalog.py` keeps them even if OSM tags them non-public. Taglish search words: pulis, presinto, bumbero (ospital already existed).
+- **Needs a data refresh on the Mac**: the bundled packs were built before this, so they contain no police/hospital/fire records yet. Run `scripts/refresh_places.sh` then `python3 scripts/build_starter_catalog.py` (the network here blocks Overpass). Until then the sheet shows "none mapped" for every group, but 911 and the location card already work.
+- Tested here: 3 core tests (grouping, street ranking with the bridge detour, 10 km cut-off, straight-line fallback labelled, location wording, Taglish words) and 1 Python test (unnamed/private help places kept, query includes them). CI screenshots `13-route-to-place` and `14-help-sheet` added. **Not yet seen on the phone.**
+
 ## Suggested street route to the destination (2026-10-09, founder report)
 
 - Founder report: choosing a place showed "2.14 km by streets" but no path. The shortest-path search already ran; it now keeps predecessors and returns the path (`WalkingGraph.route`), the same search and the same metres as the distance.
