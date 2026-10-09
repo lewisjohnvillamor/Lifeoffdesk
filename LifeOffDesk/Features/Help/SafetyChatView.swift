@@ -169,7 +169,7 @@ struct SafetyChatView: View {
                     }
                     if !card.callNow.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Call 911 if:").font(.footnote.bold()).foregroundStyle(Theme.danger)
+                            Text(card.topic.isVehicle ? "Safety warnings:" : "Call 911 if:").font(.footnote.bold()).foregroundStyle(Theme.danger)
                             ForEach(card.callNow, id: \.self) { Text("• " + $0).font(.footnote).foregroundStyle(Theme.ink) }
                         }
                     }

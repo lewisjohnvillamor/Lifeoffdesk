@@ -7,6 +7,9 @@ public enum SafetyTopic: String, Codable, CaseIterable, Sendable {
     case bleeding, burn, sprain, heat, fainting, choking, cpr, allergy, animalBite, dehydration, sting,
          snakeBite, wildPlants, flood, lightning, unsafe, lost, phoneBattery, noGPS,
          breakdown, flatTire, overheating, carBattery, wontStart, warningLights
+
+    /// Vehicle cards list safety warnings, not "call 911 if" signs.
+    public var isVehicle: Bool { [.breakdown, .flatTire, .overheating, .carBattery, .wontStart, .warningLights].contains(self) }
 }
 
 public struct SafetyCard: Codable, Hashable, Sendable, Identifiable {
