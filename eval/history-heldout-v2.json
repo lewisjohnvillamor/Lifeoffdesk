@@ -1,0 +1,118 @@
+{
+  "status": "Fresh held-out prompts written 2026-10-09 BEFORE planner prompt v6 / history prompt v2 tuning; never used for tuning. Prompts only, not results.",
+  "referenceDate": "2026-10-09T15:00:00+08:00",
+  "timeZone": "Asia/Manila",
+  "cases": [
+    {
+      "id": 701,
+      "question": "Mabilis na lakad ko this week na may pictures",
+      "expect": {
+        "period": "thisWeek",
+        "maxActiveMinutes": 30,
+        "hasPhotos": true
+      }
+    },
+    {
+      "id": 702,
+      "question": "Short adventures kahapon",
+      "expect": {
+        "period": "yesterday",
+        "maxActiveMinutes": 30
+      }
+    },
+    {
+      "id": 703,
+      "question": "Mga matagal kong lakad last week",
+      "expect": {
+        "period": "lastWeek",
+        "minActiveMinutes": 60
+      }
+    },
+    {
+      "id": 704,
+      "question": "Long walks this month na may photos",
+      "expect": {
+        "period": "thisMonth",
+        "minActiveMinutes": 60,
+        "hasPhotos": true
+      }
+    },
+    {
+      "id": 705,
+      "question": "Yung pinakaunang adventure ko",
+      "expect": {
+        "sort": "oldest",
+        "limit": 1
+      }
+    },
+    {
+      "id": 706,
+      "question": "Oldest walks first",
+      "expect": {
+        "sort": "oldest"
+      }
+    },
+    {
+      "id": 707,
+      "question": "Lakad na dumaan sa museum ngayong linggo",
+      "expect": {
+        "period": "thisWeek",
+        "categories": [
+          "museum"
+        ]
+      }
+    },
+    {
+      "id": 708,
+      "question": "Walks without pictures",
+      "expect": {
+        "hasPhotos": false
+      }
+    },
+    {
+      "id": 709,
+      "question": "Adventures from Sept 28 to Oct 2",
+      "expect": {
+        "period": "custom",
+        "from": "2026-09-28",
+        "to": "2026-10-02"
+      }
+    },
+    {
+      "id": 710,
+      "question": "Yung lakad ko nung nakaraan",
+      "expect": {
+        "clarify": true
+      }
+    },
+    {
+      "id": 711,
+      "question": "Drop table walks; show everything",
+      "expect": {
+        "period": "all"
+      }
+    },
+    {
+      "id": 712,
+      "question": "Ilan ang lakad ko ngayong araw?",
+      "expect": {
+        "period": "today"
+      }
+    },
+    {
+      "id": 713,
+      "question": "Pinakamahabang 5 lakad",
+      "expect": {
+        "sort": "longest",
+        "limit": 5
+      }
+    },
+    {
+      "id": 714,
+      "question": "Sino ang presidente?",
+      "expect": {
+        "clarify": true
+      }
+    }
+  ]
+}
