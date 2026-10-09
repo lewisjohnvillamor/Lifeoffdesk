@@ -1,0 +1,14 @@
+Life Off Desk
+Copyright 2026 Lewis John Villamor
+
+Licensed under the Apache License, Version 2.0 (see LICENSE), except where noted
+below and in THIRD-PARTY-NOTICES.md:
+
+- Map and place data under LifeOffDesk/Resources/StarterData/ derived from
+  OpenStreetMap: © OpenStreetMap contributors, Open Database License (ODbL).
+- Help cards and hotlines are paraphrased or copied from the public sources each
+  entry links; those sources keep their own terms. Provided as-is, not medical advice.
+- The cat mascot artwork, app icon and the "Life Off Desk" name and branding are
+  not licensed under Apache-2.0; all rights reserved.
+- Third-party software, models and media (llama.cpp, Qwen3, Mixkit, Pexels, Inter
+  and others) are used under their own licenses; see THIRD-PARTY-NOTICES.md.

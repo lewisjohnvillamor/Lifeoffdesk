@@ -203,3 +203,12 @@ Tap the red **SOS** button on the right of the map to open **Get help**.
 Reports: [Airplane Mode](eval/results/taglish-heldout-iphone12promax-airplane-2026-10-10.json), [earlier run](eval/results/taglish-heldout-iphone12promax-2026-10-10.json). The Linux CPU development-machine score for this set is 46/60 intent and is not a phone result. Map-frame pacing was not measured. See [build status](docs/BUILD-STATUS.md).
 
 Map data © OpenStreetMap contributors (ODbL). Help cards link their public sources; hotlines list their sources and check dates. They are offline copies, so re-check before relying on them, and call **911** in an emergency.
+
+## License
+
+Code is licensed under the **[Apache License 2.0](LICENSE)**. Copyright 2026 Lewis John Villamor. These parts are excepted (see [NOTICE](NOTICE)):
+- **Map and place data** derived from OpenStreetMap stays under the **ODbL** (© OpenStreetMap contributors).
+- **Help cards and hotlines** keep the terms of the sources each entry links.
+- **The cat mascot, app icon and "Life Off Desk" branding** are all rights reserved.
+- **Third-party software, models and media** are used under their own licenses: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
