@@ -1,5 +1,14 @@
 # Life Off Desk — build status
 
+## Demo map lag fix, play button, follow during replay (2026-10-09, founder report)
+
+- **Lag on the demo world:** the revealed "island" was built from a 14-sided torn-paper disc every ~8 m of walked line. With 84 sample walks (217 km) that was ~400k vertices, clipped and shadowed several times per frame, so it lagged while panning and replaying. Now each walk is a Douglas–Peucker-simplified line stroked once with round caps and joins (cached per walk as before): a few thousand elements. The edge is smooth now (no torn jitter). City-pack chunking was not the cause; demo mode keeps the two cities its sample walks touch loaded on purpose, so totals are right.
+- **Play button:** demo mode uses the same big walk button as "Start exploring" ("Play a sample adventure" / "Next sample adventure") instead of a small replay/retry arrow.
+- **Follow the pointer:** each replayed walk (including every walk in "Watch your world grow") recentres and follows the moving position; dragging the map still stops following.
+- Coach copy: "lang" (only) is used for reach only when the world is shrinking.
+- Founder request: the red "Sample adventures · not real GPS" banners on Map, Adventures and Me are removed as redundant. The demo stays labelled by the map header "Demo world" (with the back-to-my-map ×), the Me-tab demo card, the SAMPLE stamp on sample captures, "SAMPLE DATA" on the coach and memory cards, and the recap label.
+- Compile-checked in CI; **smoothness not yet confirmed on the phone**.
+
 ## Voice requests in the planner (2026-10-09, founder request)
 
 - A mic button in the planner input: tap, speak (Taglish), and see the words appear; tap again or pause to send. The transcript goes through the same on-device planner AI and deterministic search.
