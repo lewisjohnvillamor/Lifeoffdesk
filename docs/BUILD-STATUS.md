@@ -1,5 +1,18 @@
 # Life Off Desk — build status
 
+## Founder phone check and silent-failure audit (2026-10-09)
+
+**Founder-reported, iPhone 12 Pro Max:** after building `main` at `7317b4d`, the founder reported that all six phone checks "are working": 1.7B load and responses, fully offline use of planner/history search/Taglish recap/preferences, an outdoor walk (GPS trail, street matching, new streets, km by streets), camera/library/share/sticker, VoiceOver/large text/reduced motion, and the device edge cases (erase during AI, walk start during load, relaunch). This is recorded as the founder's report. No load time, latency (p50/p95), memory or thermal numbers, model hash readout or diagnostics JSON were provided to this repository yet, and no latency budget has been agreed, so performance acceptance stays open until those numbers are recorded (Settings → AI diagnostics → Copy JSON report).
+
+**Silent-failure audit of the AI path** (model file → coordinator → task → UI), fixed in this round:
+- Interrupted requests (walk start, low-memory warning, erase) used to reset the planner/history to idle silently. Now they show "Na-interrupt ang AI (reason). Subukan ulit." with retry; recap narration shows the computed fallback with the interruption reason.
+- A same-named model file in Documents was used without checking it. Now every load checks the exact locked byte size (1,282,439,264) and refuses a wrong/incomplete copy with a message. The full SHA-256 stays on demand.
+- Loading with too little free memory could get the app killed by iOS. A preflight now checks `os_proc_available_memory()` against file size + 700 MB headroom (a provisional figure) and explains instead of loading.
+- Planner "model failed" now shows the reason (engine error, or the validator errors after the repair attempt).
+- An unreadable `place-facts.json` already failed closed but was indistinguishable from "no facts". Now it is listed in diagnostics with the number of loaded access facts, plus the last AI problem and last interruption.
+
+Remaining by design: the model can still be steered by hostile text into stricter filters (visible, removable chips; hard filters stay deterministic); a held-out miss returns a wrong-but-valid filter that the user sees as chips, not a hidden error.
+
 ## Local AI expansion implemented — P0-12–16 code complete, phone acceptance pending (2026-10-09)
 
 Merged `main` (`f24a819`, the 1.7B/accessibility specification) into the working branch and implemented it. **Nothing below has run on the iPhone 12 Pro Max**; every phone gate in [LOCAL-AI-MVP.md](LOCAL-AI-MVP.md#acceptance-and-evaluation) remains open.

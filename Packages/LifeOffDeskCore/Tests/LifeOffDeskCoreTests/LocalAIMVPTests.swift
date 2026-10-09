@@ -270,3 +270,18 @@ final class AdaptiveSuggestionTests: XCTestCase {
         XCTAssertEqual(results.first?.place.id, "new")
     }
 }
+
+/// Failures must carry a readable reason to the UI, never a silent blank.
+final class FailureReasonTests: XCTestCase {
+    func testEngineErrorAndRejectedRepliesHaveReasons() async {
+        let catalog = Fixture.catalog([Fixture.place("p", .park, east: 0, north: 0)])
+        let (failed, trace) = await Planner(engine: ScriptedEngine(replies: [])).plan("park", catalog: catalog,
+                                                                                   origin: .currentLocation(Fixture.origin))
+        XCTAssertEqual(failed, .failed)
+        XCTAssertTrue(trace.failureReason?.hasPrefix("Engine:") == true)
+        let (rejected, trace2) = await Planner(engine: ScriptedEngine(replies: ["nope", "still nope"])).plan(
+            "park", catalog: catalog, origin: .currentLocation(Fixture.origin))
+        XCTAssertEqual(rejected, .failed)
+        XCTAssertTrue(trace2.failureReason?.contains("rejected") == true, trace2.failureReason ?? "nil")
+    }
+}

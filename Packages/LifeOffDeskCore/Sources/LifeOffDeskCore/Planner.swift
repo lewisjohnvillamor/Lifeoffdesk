@@ -24,6 +24,13 @@ public struct PlannerTrace: Hashable, Sendable {
     public var engineError: String?
     /// Fields filled from saved preferences (shown to the user; the request always wins).
     public var appliedSaved: [String] = []
+
+    /// Why no usable answer came back, for the UI (nil when the model produced one).
+    public var failureReason: String? {
+        if let engineError { return "Engine: \(engineError)" }
+        guard let last = attempts.last, case let .invalid(errors) = last.outcome else { return nil }
+        return "The model's reply was rejected \(attempts.count == 2 ? "twice" : "") (\(errors.map { "\($0)" }.joined(separator: ", ")))."
+    }
 }
 
 /// Runs: model intent extraction → validation (one bounded repair) → deterministic search.

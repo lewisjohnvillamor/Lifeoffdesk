@@ -15,6 +15,8 @@ struct StarterContent {
     let packs: [RegionPack]
     /// Union of every region's places; search filters by distance from the user.
     let catalog: PlaceCatalog
+    /// Optional files that exist but could not be read (shown in diagnostics, never ignored silently).
+    var issues: [String] = []
 
     /// Every bundled access fact (empty until reviewed facts are added).
     var evidence: [EvidenceFactV1] { packs.flatMap { $0.evidence?.facts ?? [] } }
@@ -73,19 +75,25 @@ struct StarterContent {
         }
         let index = try decoder.decode(RegionIndex.self, from: Data(contentsOf: url("regions", in: "StarterData")))
         var packs: [RegionPack] = []
+        var issues: [String] = []
         for entry in index.regions {
             let directory = "StarterData/\(entry.id)"
             let region = try decoder.decode(RegionManifest.self, from: Data(contentsOf: url("region", in: directory)))
             let roads = try decoder.decode(RoadContext.self, from: Data(contentsOf: url("roads", in: directory)))
             let catalog = region.hasFullDetail
                 ? try PlaceCatalog.decode(Data(contentsOf: url("places", in: directory))) : nil
-            let evidence = bundle.url(forResource: "place-facts", withExtension: "json", subdirectory: directory)
-                .flatMap { try? EvidenceSidecar.decode(Data(contentsOf: $0)) }
+            var evidence: EvidenceSidecar?
+            if let url = bundle.url(forResource: "place-facts", withExtension: "json", subdirectory: directory) {
+                do { evidence = try EvidenceSidecar.decode(Data(contentsOf: url)) } catch {
+                    // Fails closed (no evidence = hard access requirements match nothing) but visibly.
+                    issues.append("\(entry.id)/place-facts.json unreadable: \(error)")
+                }
+            }
             packs.append(RegionPack(region: region, roads: roads, catalog: catalog, evidence: evidence))
         }
         guard !packs.isEmpty, let catalog = PlaceCatalog.merged(packs.compactMap(\.catalog)) else {
             throw LoadError.noCatalog
         }
-        return StarterContent(packs: packs, catalog: catalog)
+        return StarterContent(packs: packs, catalog: catalog, issues: issues)
     }
 }
