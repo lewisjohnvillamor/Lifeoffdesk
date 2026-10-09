@@ -1,5 +1,19 @@
 # Life Off Desk — build status
 
+## Tappable photo pins, pin clustering, scale notes (2026-10-09, founder request)
+
+- **Tap a photo pin** on the map (or a photo in Me → Spots): a sheet shows the photo, date and time, and "Open this adventure" (its recap). Sample captures say they are illustrations.
+- **Clustering:** pins closer than ~40 pt on screen merge into one pin with a count bubble, recomputed as you zoom (grid-based, linear in the number of pins). Tapping a cluster zooms in 2.5× around it until the photos separate.
+- **Scale toward a year of daily adventures (365):**
+  - The island is one cached stroked outline per walk.
+  - The Adventures list is lazy, and pins are clustered.
+  - The blurred island shadow is skipped when zoomed far out (ppm < 0.05).
+- **Not addressed yet:**
+  - Every finished walk is a JSON file loaded at launch, with about 1 GPS fix per second (`distanceFilter = none`). 365 thirty-minute walks would be roughly 650k fixes, tens of MB to decode at launch.
+  - Stats recompute over all walks in the background after each change.
+  - Fixes would be thinning stored fixes (e.g. a 5 m spacing on save), a per-month cache of totals, and loading old walks lazily. These touch GPS and persistence (P0-tested areas), so they need their own tests.
+- Compile-checked in CI; **not yet tried on the phone** (tap targets on the tilted map especially).
+
 ## Adventures: faster loading and "Para sa'yo" recommendations (2026-10-09, founder request)
 
 - **Faster Adventures tab:** the page is now a LazyVStack, so adventure rows are built only as they scroll into view; before, all 84 sample rows were built up front. Route thumbnails draw at most 60 points per segment instead of every GPS fix.

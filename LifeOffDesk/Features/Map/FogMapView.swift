@@ -119,8 +119,10 @@ struct FogMapView: View {
     let exploration: Exploration
     /// Current walk (or replay): new ground dotted, revisited ground solid.
     let trailRuns: [TrailRun]
-    /// Captured moments with a location, drawn as photo pins.
-    var pins: [(coordinate: Coordinate, image: UIImage?)] = []
+    /// Captured moments with a location, drawn as photo pins (nearby ones grouped into clusters).
+    var pins: [MapPin] = []
+    /// Tapping a single photo pin; tapping a cluster zooms in instead.
+    var onPinTap: (UUID) -> Void = { _ in }
     let position: Coordinate?
     let destination: Place?
     /// Suggested path along mapped streets to the destination (not navigation).
@@ -132,6 +134,7 @@ struct FogMapView: View {
     @State private var zoomStart: CGFloat?
     @State private var islands = IslandCache()
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @State private var canvasSize: CGSize = .zero
 
     var body: some View {
         Canvas { context, size in
@@ -187,9 +190,13 @@ struct FogMapView: View {
 
             if !island.isEmpty {
                 // 4. Raised paper: soft shadow, visible thickness, then the white sheet.
-                context.drawLayer { shadow in
-                    shadow.addFilter(.shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: lift + 4))
-                    shadow.fill(screenIsland.offsetBy(dx: 0, dy: lift), with: .color(PaperStyle.edge))
+                // The blurred shadow is the costliest layer; zoomed far out (a year of adventures on
+                // screen) it is invisible anyway, so it is skipped there.
+                if ppm >= 0.05 {
+                    context.drawLayer { shadow in
+                        shadow.addFilter(.shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: lift + 4))
+                        shadow.fill(screenIsland.offsetBy(dx: 0, dy: lift), with: .color(PaperStyle.edge))
+                    }
                 }
                 context.fill(screenIsland.offsetBy(dx: 0, dy: lift), with: .color(PaperStyle.edge))
                 context.fill(screenIsland, with: .color(PaperStyle.island))
@@ -240,9 +247,9 @@ struct FogMapView: View {
                 }
             }
 
-            // Photo pins for captured moments.
-            for pin in pins {
-                let p = geometry.point(pin.coordinate).applying(transform)
+            // Photo pins for captured moments; pins closer than a thumb's width share one pin with a count.
+            for cluster in PinClusters.make(pins, project: { geometry.point($0).applying(transform) }) {
+                let p = cluster.point
                 let frame = CGRect(x: p.x - 19, y: p.y - 46, width: 38, height: 38)
                 var stem = Path()
                 stem.move(to: CGPoint(x: p.x - 6, y: p.y - 10)); stem.addLine(to: CGPoint(x: p.x, y: p.y))
@@ -253,13 +260,22 @@ struct FogMapView: View {
                     pinLayer.addFilter(.shadow(color: .black.opacity(0.25), radius: 4, y: 2))
                     pinLayer.fill(badge, with: .color(.white))
                 }
-                if let image = pin.image {
+                if let image = cluster.image {
                     context.drawLayer { photoLayer in
                         photoLayer.clip(to: Path(roundedRect: frame, cornerRadius: 9))
                         photoLayer.draw(Image(uiImage: image), in: frame)
                     }
                 } else {
                     context.fill(Path(roundedRect: frame, cornerRadius: 9), with: .color(Theme.revealedGround))
+                }
+                if cluster.ids.count > 1 {
+                    let count = context.resolve(Text("\(cluster.ids.count)").font(.caption2.bold()).foregroundColor(.white))
+                    let size = count.measure(in: CGSize(width: 60, height: 20))
+                    let w = max(20, size.width + 10)
+                    let bubble = CGRect(x: frame.maxX - w / 2 - 2, y: frame.minY - 12, width: w, height: 20)
+                    context.fill(Path(roundedRect: bubble, cornerRadius: 10), with: .color(Theme.primary))
+                    context.stroke(Path(roundedRect: bubble, cornerRadius: 10), with: .color(.white), lineWidth: 1.5)
+                    context.draw(count, at: CGPoint(x: bubble.midX, y: bubble.midY), anchor: .center)
                 }
             }
 
@@ -292,12 +308,42 @@ struct FogMapView: View {
                 context.stroke(dot, with: .color(Theme.surface), lineWidth: 3)
             }
         }
+        .background(GeometryReader { proxy in
+            Color.clear
+                .onAppear { canvasSize = proxy.size }
+                .onChange(of: proxy.size) { _, size in canvasSize = size }
+        })
+        // Attached before the tilt so the tap location is in the canvas's own coordinates.
+        .simultaneousGesture(SpatialTapGesture().onEnded { value in handleTap(at: value.location) })
         // Gentle 3D tilt like a sheet of paper on a desk; the canvas is oversized so corners stay covered.
         .scaleEffect(tilted ? 1.45 : 1)
         .rotation3DEffect(.degrees(tilted ? 32 : 0), axis: (x: 1, y: 0, z: 0), anchor: .center, perspective: 0.55)
         .gesture(dragGesture.simultaneously(with: zoomGesture))
         .accessibilityElement()
         .accessibilityLabel(accessibilitySummary)
+    }
+
+    /// Single pin: open it. Cluster: zoom in around it until the photos separate.
+    private func handleTap(at location: CGPoint) {
+        guard canvasSize != .zero, !pins.isEmpty else { return }
+        let transform = camera.transform(in: canvasSize)
+        let clusters = PinClusters.make(pins, project: { geometry.point($0).applying(transform) })
+        // The pin image sits above its anchor point.
+        guard let hit = clusters.min(by: { distance($0, location) < distance($1, location) }),
+              distance(hit, location) < 34 else { return }
+        if hit.ids.count == 1 {
+            onPinTap(hit.ids[0])
+        } else {
+            let world = hit.point.applying(transform.inverted())
+            withAnimation(.easeInOut(duration: 0.35)) {
+                camera.center = world
+                camera.pointsPerMeter = min(MapCamera.maxScale, camera.pointsPerMeter * 2.5)
+            }
+        }
+    }
+
+    private func distance(_ cluster: PinClusters.Cluster, _ location: CGPoint) -> CGFloat {
+        hypot(cluster.point.x - location.x, cluster.point.y - 28 - location.y)
     }
 
     private func grid(in rect: CGRect) -> Path {
@@ -340,5 +386,49 @@ struct FogMapView: View {
         if let destination { parts.append("Destination marker: \(destination.name).") }
         if route != nil { parts.append("A suggested route along mapped streets is drawn to it.") }
         return parts.joined(separator: " ")
+    }
+}
+
+/// A photo pin on the map.
+struct MapPin: Identifiable {
+    let id: UUID
+    let coordinate: Coordinate
+    let image: UIImage?
+}
+
+/// Groups pins that would overlap on screen (greedy, in screen space, so it re-clusters as you zoom).
+/// Keeps a year of daily photos readable: far out they merge into a few counted pins.
+enum PinClusters {
+    struct Cluster {
+        var point: CGPoint
+        var ids: [UUID]
+        var image: UIImage?
+    }
+
+    static let radius: CGFloat = 40
+
+    static func make(_ pins: [MapPin], project: (Coordinate) -> CGPoint) -> [Cluster] {
+        var clusters: [Cluster] = []
+        var cells: [Int64: [Int]] = [:]
+        func key(_ x: Int, _ y: Int) -> Int64 { Int64(x) << 32 | Int64(UInt32(bitPattern: Int32(truncatingIfNeeded: y))) }
+        for pin in pins {
+            let p = project(pin.coordinate)
+            let cx = Int((p.x / radius).rounded(.down)), cy = Int((p.y / radius).rounded(.down))
+            var joined = false
+            search: for dx in -1...1 {
+                for dy in -1...1 {
+                    for index in cells[key(cx + dx, cy + dy)] ?? [] where hypot(clusters[index].point.x - p.x, clusters[index].point.y - p.y) < radius {
+                        clusters[index].ids.append(pin.id)
+                        joined = true
+                        break search
+                    }
+                }
+            }
+            if !joined {
+                cells[key(cx, cy), default: []].append(clusters.count)
+                clusters.append(Cluster(point: p, ids: [pin.id], image: pin.image))
+            }
+        }
+        return clusters
     }
 }

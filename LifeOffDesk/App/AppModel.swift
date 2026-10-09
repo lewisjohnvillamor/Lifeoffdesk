@@ -706,6 +706,8 @@ final class AppModel: ObservableObject {
         (isDemo(session) ? sampleMoments : moments).filter { $0.sessionID == session.id }.sorted { $0.takenAt < $1.takenAt }
     }
 
+    func isDemoMoment(_ memory: WalkMemory) -> Bool { sampleMomentPhotos[memory.id] != nil }
+
     func photo(for memory: WalkMemory) -> UIImage? {
         if let sample = sampleMomentPhotos[memory.id] { return sample }
         return store?.momentPhoto(memory).flatMap(UIImage.init(data:))
