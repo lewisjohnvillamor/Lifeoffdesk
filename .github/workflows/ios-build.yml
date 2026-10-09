@@ -58,13 +58,21 @@ jobs:
           APP=$(find build/sim/Build/Products -name "LifeOffDesk.app" -maxdepth 3 | head -1)
           xcrun simctl install "$UDID" "$APP"
           mkdir -p screenshots
+          EXTRA=""
           shoot() {
             name=$1; shift
             xcrun simctl terminate "$UDID" com.lifeoffdesk.simulator 2>/dev/null || true
-            xcrun simctl launch "$UDID" com.lifeoffdesk.simulator "$@"
+            xcrun simctl launch "$UDID" com.lifeoffdesk.simulator "$@" $EXTRA
             sleep 8
             xcrun simctl io "$UDID" screenshot "screenshots/$name.png"
           }
+          EXTRA="--show-intro"
+          shoot 00-intro-1 --intro-page 0
+          shoot 00-intro-2 --intro-page 1
+          shoot 00-intro-3 --intro-page 2
+          shoot 00-intro-4 --intro-page 3
+          shoot 00-intro-5 --intro-page 4
+          EXTRA="--skip-intro"
           shoot 01-blank
           shoot 02-demo-tilted --demo-map
           shoot 03-demo-closeup --demo-map --map-scale 0.6

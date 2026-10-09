@@ -29,7 +29,7 @@ The first four colors reflect the approved direction. Border/danger are proposed
 - Spacing tokens: 4, 8, 12, 16, 24, 32 points. Use a 16-point content inset as a starting value.
 - Rounded cards/buttons: 18–24 points. Minimum interactive target: 44 × 44 points.
 - Respect safe areas, keyboard, classic iPhone 12 notch and home indicator. The reference board is visual guidance rather than exact pixel coordinates.
-- Keep bottom controls reachable. Avoid decorative onboarding before the map. Use sheets for planner/results; use a recap view after Finish.
+- Keep bottom controls reachable. Founder decision 2026-10-09: a five-page intro (dotted routes drawing themselves, one bold line, one quiet line) shows once on first launch, is skippable on every page and can be reopened from Settings. It never gates the map behind an account, permission or download. Use sheets for planner/results; use a recap view after Finish.
 - Respect Reduce Motion and VoiceOver; accessible labels describe the action and state. Provide text equivalents for meaningful map status.
 - Start with one polished light theme; postpone a complete dark theme. Use SF Symbols for interface actions and keep icon sizing consistent.
 

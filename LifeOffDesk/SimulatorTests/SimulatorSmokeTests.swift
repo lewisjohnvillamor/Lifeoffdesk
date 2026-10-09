@@ -3,6 +3,7 @@ import XCTest
 final class SimulatorSmokeTests: XCTestCase {
     func testDemoPreviewReplayAndExit() {
         let app = XCUIApplication()
+        app.launchArguments = ["--skip-intro"]
         app.launch()
         XCTAssertTrue(app.buttons["Preview demo map"].waitForExistence(timeout: 15))
         app.buttons["Preview demo map"].tap()
@@ -20,6 +21,7 @@ final class SimulatorSmokeTests: XCTestCase {
 
     func testPlannerFailurePreservesInputAndWalkingEntry() {
         let app = XCUIApplication()
+        app.launchArguments = ["--skip-intro"]
         app.launch()
         XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.staticTexts["Simulator · no AI · simulated GPS"].exists)
@@ -39,11 +41,26 @@ final class SimulatorSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 10))
     }
 
+    func testIntroShowsOnceAndCanBeSkipped() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--show-intro"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Every street you walk becomes your map."].waitForExistence(timeout: 10))
+        app.buttons["Skip"].tap()
+        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 5))
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        XCTAssertTrue(app.buttons["Start walking"].waitForExistence(timeout: 10), "Intro is shown only once")
+    }
+
     func testSimulatorLaunchPerformance() {
         let options = XCTMeasureOptions()
         options.iterationCount = 3
         measure(metrics: [XCTApplicationLaunchMetric()], options: options) {
-            XCUIApplication().launch()
+            let app = XCUIApplication()
+            app.launchArguments = ["--skip-intro"]
+            app.launch()
         }
     }
 }
