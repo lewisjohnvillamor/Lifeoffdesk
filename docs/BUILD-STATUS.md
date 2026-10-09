@@ -1,5 +1,13 @@
 # Life Off Desk — build status
 
+## Voice requests in the planner (2026-10-09, founder request)
+
+- A mic button in the planner input: tap, speak (Taglish), and see the words appear; tap again or pause to send. The transcript goes through the same on-device planner AI and deterministic search.
+- Apple Speech `SFSpeechRecognizer` with `requiresOnDeviceRecognition = true`. Audio never leaves the phone, so it works in Airplane Mode. It picks the first installed on-device recognizer from fil-PH, en-PH, en-US and shows which language it used. Taglish words and local place names are passed as `contextualStrings` hints.
+- If no on-device recognizer exists, or permission is denied, the planner says so and you type instead. It never falls back to Apple's servers.
+- New Info.plist strings: microphone and speech recognition. Regenerate the project (`scripts/setup_ios.sh` or `xcodegen`) so they are included, or the app crashes when the mic is tapped.
+- Compile-checked in CI only. **Not yet tried on the phone**: which locales are on-device on the iPhone 12 Pro Max, and how well Taglish is transcribed, are unknown until tested.
+
 ## Founder round: faster planner, choice buttons, icons, Me-tab demo world (2026-10-09)
 
 - **Planner speed (founder: ~10 s per request on the phone).** Three changes:
