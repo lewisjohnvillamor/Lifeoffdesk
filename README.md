@@ -1,6 +1,8 @@
 # Life Off Desk
 
-An offline-first iPhone exploration app: ask in Taglish for a nearby outing, pick a real local place, and reveal your personal map through actual walking.
+An offline iPhone exploration app: ask in Taglish for a nearby outing, pick a real local place, and reveal your personal map through actual walking. Built for the AppBuildersPH Hackathon 2026 (Local AI): an on-device LLM (Qwen3-1.7B via llama.cpp) runs the Taglish planner, adventure-history search and grounded recaps with no network at runtime.
+
+**Submission answers (what runs locally, what needs internet, disclosures, why local AI, demo plan): [docs/SUBMISSION.md](docs/SUBMISSION.md).**
 
 **First city: Makati. First test phone: iPhone 12 Pro Max. Develop on an Apple silicon Mac with Xcode.** Both genuine phone-local AI suggestions and GPS fog reveal are required. No account or cloud inference is part of the intended MVP.
 
@@ -14,7 +16,7 @@ scripts/setup_ios.sh        # verifies downloads, unpacks llama.xcframework, gen
 open LifeOffDesk/LifeOffDesk.xcodeproj
 ```
 
-Set your signing team, pick the iPhone (simulator builds are not supported by the pinned runtime) and Run.
+Set your signing team, pick the iPhone and Run. `setup_ios.sh` downloads about 1.34 GB (model + runtime, checksum-verified). The pinned runtime has no Simulator slice; `LifeOffDesk/project-simulator.yml` builds a Simulator version that shows every screen but reports AI as unavailable.
 
 Read [Mac setup](docs/MAC-SETUP.md) for prerequisites, download scope, source-data review and device steps. Downloads are separate from Git and checksum-verified. The Makati data script prepares unreviewed source records; it does not establish venues are currently open or accessible.
 
@@ -42,6 +44,6 @@ AGENTS.md and skills/ contain portable implementation guidance. The TXT brief an
 
 ## Current status
 
-The app source, tested core logic, on-device inference adapter and Makati starter data are in place. **The app has not yet been compiled in Xcode, installed on the iPhone, run offline on the phone or tested outdoors.** The inference adapter has been run against the real model on a Linux CPU as a development diagnostic only. See [build status](docs/BUILD-STATUS.md) for exactly what was tested.
+App, core library (114 tests), 1.7B on-device inference, street matching and the local-AI features (history search, grounded recap, preferences, adaptive suggestions, accessibility evidence) are implemented and merged. CI builds the unsigned iPhone app and the Simulator app on every push. The founder reported the iPhone 12 Pro Max checks working (offline AI, outdoor walk, camera/sticker, accessibility, edge cases). Phone latency/memory numbers are not yet recorded; model accuracy figures in the build status are development-machine runs, labelled as such. See [build status](docs/BUILD-STATUS.md).
 
-The first build is a small Makati subset; broader Luzon maps, road routing, social features and photo cutouts follow after the required loops pass.
+Deferred by design: full Luzon map packs, turn-by-turn routing, accounts, live hazard information, reviewed accessibility facts (the evidence files ship empty, so access requests honestly return no verified places).
