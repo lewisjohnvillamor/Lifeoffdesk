@@ -11,7 +11,7 @@ struct MeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if model.demoMode {
-                        Label("Sample walks · not real GPS", systemImage: "sparkles")
+                        Label("Sample adventures · not real GPS", systemImage: "sparkles")
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
                     }
                     totals

@@ -15,7 +15,7 @@ final class SimulatorSmokeTests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
         app.buttons["Replay a sample walk"].tap()
-        XCTAssertTrue(app.staticTexts["Sample walks · not real GPS"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Sample adventures · not real GPS"].waitForExistence(timeout: 5))
         app.buttons["Back to my map"].tap()
         XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 5))
 
