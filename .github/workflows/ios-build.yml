@@ -43,6 +43,8 @@ jobs:
   simulator-screenshots:
     if: github.event_name == 'workflow_dispatch'
     runs-on: macos-15
+    permissions:
+      contents: write
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -98,6 +100,15 @@ jobs:
           shoot 08c-card-collage --demo-map --open-card --seed-photo --card-style Collage
           shoot 08d-card-sticker --demo-map --open-card --seed-photo --card-style Sticker
           shoot 07b-recap-narration --demo-map --open-recap --request-narration
+          # Marketing captures: demo world (labelled "Demo world"), no simulator banner, no AI-less coach card.
+          shoot m1-demo-tilted --demo-map --marketing --map-scale 0.16
+          shoot m2-demo-closeup --demo-map --marketing --map-scale 0.45
+          shoot m3-demo-flat --demo-map --marketing --flat --map-scale 0.1
+          shoot m4-me-demo --demo-map --marketing --tab me
+          shoot m5-adventures-demo --demo-map --marketing --tab walks
+          shoot m6-route --marketing --route-to osm:way:777918859
+          shoot m7-card-sticker --demo-map --marketing --open-card --seed-photo --card-style Sticker
+          shoot m8-recap --demo-map --marketing --open-recap
           shoot 10-walks-tab --demo-map --tab walks
           shoot 12-preferences --tab me --open-settings
           shoot 11-me-tab --demo-map --tab me
@@ -118,3 +129,17 @@ jobs:
         with:
           name: simulator-screenshots
           path: screenshots/*.png
+      # Manual runs also publish the PNGs to the ci-screenshots branch so they can be fetched with git.
+      - name: Publish screenshots branch
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/shots" && cp screenshots/*.png "$RUNNER_TEMP/shots/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan ci-screenshots
+          git rm -rfq --cached .
+          git clean -fdxq
+          cp "$RUNNER_TEMP/shots/"*.png .
+          git add -- *.png
+          git commit -qm "Simulator screenshots from ${GITHUB_SHA}"
+          git push -f origin ci-screenshots
