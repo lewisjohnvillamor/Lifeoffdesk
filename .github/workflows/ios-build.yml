@@ -1,0 +1,32 @@
+# Compile check only: builds the app for a generic iOS device without signing and runs the core
+# tests on macOS. It does not install on a phone or prove on-device inference.
+name: iOS build check
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain versions
+        run: xcodebuild -version && swift --version
+      - name: Core tests
+        run: swift test --package-path Packages/LifeOffDeskCore
+      - name: Python preparation tests
+        run: python3 -m unittest discover -s tests
+      - name: Download pinned runtime and model (checksum-verified)
+        run: python3 scripts/download_materials.py
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Unpack runtime and generate project
+        run: scripts/setup_ios.sh
+      - name: Build for generic iOS device (unsigned)
+        run: |
+          xcodebuild -project LifeOffDesk/LifeOffDesk.xcodeproj -scheme LifeOffDesk \
+            -destination 'generic/platform=iOS' -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build | tail -200
+          exit ${PIPESTATUS[0]}

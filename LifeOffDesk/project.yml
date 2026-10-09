@@ -1,0 +1,58 @@
+# XcodeGen spec. On the Mac: `brew install xcodegen`, run scripts/setup_ios.sh, then open LifeOffDesk.xcodeproj.
+name: LifeOffDesk
+options:
+  bundleIdPrefix: com.lifeoffdesk
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  LifeOffDeskCore:
+    path: ../Packages/LifeOffDeskCore
+targets:
+  LifeOffDesk:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Features
+      - path: Services
+      - path: Resources/StarterData
+        type: folder
+        buildPhase: resources
+      - path: ../eval/taglish-cases.json
+        buildPhase: resources
+      # Pinned model, provisioned by scripts/download_materials.py (not in Git).
+      # Alternatively copy it into the app's Documents folder with Finder file sharing.
+      - path: ../downloads/model/Qwen3-0.6B-Q4_0.gguf
+        buildPhase: resources
+        optional: true
+    dependencies:
+      - package: LifeOffDeskCore
+      # llama.cpp b11429 release xcframework, unpacked by scripts/setup_ios.sh (not in Git).
+      - framework: ../vendor/llama.xcframework
+        embed: true
+        codeSign: true
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Life Off Desk
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSLocationWhenInUseUsageDescription: >-
+          Life Off Desk uses your location only during a walk you start, to reveal the path you
+          actually walked. It stays on this iPhone.
+        UIBackgroundModes: [location]
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lifeoffdesk.app
+        # Set your Apple Developer team in Xcode (Signing & Capabilities) or here.
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        # The pinned llama.xcframework ships ios-arm64 and macOS slices only (no simulator).
+        SUPPORTED_PLATFORMS: iphoneos

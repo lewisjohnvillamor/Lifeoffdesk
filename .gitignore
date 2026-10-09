@@ -16,3 +16,9 @@ __pycache__/
 *.py[cod]
 # Personal photos, tracks and private evidence
 private/
+# SwiftPM build output
+.build/
+.swiftpm/
+Tools/**/.build/
+LifeOffDesk/LifeOffDesk.xcodeproj/
+LifeOffDesk/Info.plist
