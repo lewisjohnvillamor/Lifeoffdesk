@@ -29,8 +29,6 @@ SHOTS = {
              'iOS Simulator · sample adventure'),
     'help': ('m9-help-chat-emergency.png', 'Help, even offline', 'Ask in Taglish. The AI finds the right first-aid card; 911 comes first.',
              'iOS Simulator · keyword routing (no AI in Simulator) · cards from NHS, St John Ambulance, WHO, The AA'),
-    'help-tire': ('m10-help-chat-tire.png', 'Stuck on the road?', 'Flat tire, overheating, dead battery: sourced steps, offline.',
-                  'iOS Simulator · keyword routing (no AI in Simulator) · card from The AA'),
     'coach': ('iphone-coach.png', 'An AI that notices', 'On-device AI nudges you when your world gets smaller.',
               'Real iPhone 12 Pro Max capture · Demo world · on-device AI'),
 }
