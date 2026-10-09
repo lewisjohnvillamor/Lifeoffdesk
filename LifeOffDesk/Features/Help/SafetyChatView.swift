@@ -16,11 +16,13 @@ final class SafetyChat: ObservableObject {
             case location(String)
             /// Offline map places matching a name, each with a Route button.
             case places([Place], query: String)
+            /// Bundled hotlines (official sources), each number tap-to-call.
+            case hotlines([Hotline], title: String)
             /// `seen`: what Apple's on-device image recognition named in the photo, if any.
             /// `suggestions`: offered when no card matched, instead of a dead end.
             case answer(SafetyCard?, emergency: Bool, routedByAI: Bool, seen: [String], photoUnclear: Bool = false,
                         continued: Bool = false, suggestions: [SafetyCard] = [], highlights: [String] = [],
-                        alternatives: [SafetyCard] = [])
+                        alternatives: [SafetyCard] = [], hotlines: [Hotline] = [])
         }
         let id = UUID()
         let kind: Kind
@@ -34,6 +36,7 @@ final class SafetyChat: ObservableObject {
     private var awaitingDestination = false
     let guide: SafetyGuide?
     let loadProblem: String?
+    let hotlines: HotlineDirectory?
 
     init() {
         // Routing terms (Taglish/Tagalog/English); without them the model alone routes.
@@ -41,6 +44,8 @@ final class SafetyChat: ObservableObject {
            let url = Bundle.main.url(forResource: "safety-lexicon", withExtension: "json", subdirectory: "StarterData") {
             SafetyKeywords.lexicon = try? SafetyLexicon.decode(Data(contentsOf: url))
         }
+        hotlines = Bundle.main.url(forResource: "hotlines", withExtension: "json", subdirectory: "StarterData")
+            .flatMap { try? HotlineDirectory.decode(Data(contentsOf: $0)) }
         if let url = Bundle.main.url(forResource: "safety-guide", withExtension: "json", subdirectory: "StarterData") {
             do {
                 guide = try SafetyGuide.decode(Data(contentsOf: url)); loadProblem = nil
@@ -65,6 +70,17 @@ final class SafetyChat: ObservableObject {
             }
         }
         awaitingDestination = false
+        // "Ano ang number ng highway patrol / NLEX / Makati rescue?": a lookup in the bundled
+        // directory, never the model. Emergencies still go through the card path (911 first).
+        if photo == nil, let directory = hotlines, directory.isAsking(text), !SafetyKeywords.emergency(in: text),
+           SafetyKeywords.topic(in: text) == nil {
+            let found = directory.answer(for: text, regionID: model.regionIDHere)
+            messages.append(Message(kind: .hotlines(found, title: directory.named(in: text).isEmpty
+                ? "Emergency hotlines (offline copy)" : "Hotlines na nahanap")))
+            showNearestHelp(for: text, model: model)
+            lastQuestion = nil
+            return
+        }
         let ai = model.ai
         thinking = true
         let followUp = SafetyPrompt.followUp(text, previous: lastQuestion)
@@ -88,10 +104,12 @@ final class SafetyChat: ObservableObject {
             // A wrong route (model mistake or a steering message) is one tap from the right card.
             let alternatives = SafetyPrompt.alternatives(model: routed, question: routedText, shown: card?.topic)
                 .compactMap { guide?.card($0) }
+            // Emergencies: your city's rescue line and other national lines after the 911 button.
+            let localLines = final.emergency ? (hotlines?.forEmergency(regionID: model.regionIDHere) ?? []) : []
             messages.append(Message(kind: .answer(card, emergency: final.emergency, routedByAI: routed != nil, seen: labels,
                                                   photoUnclear: photo != nil && labels.isEmpty, continued: followUp != nil,
                                                   suggestions: suggestions, highlights: highlights,
-                                                  alternatives: alternatives)))
+                                                  alternatives: alternatives, hotlines: localLines)))
             if !text.isEmpty { lastQuestion = routedText }
             if card?.topic == .lost { startLostFlow(model: model) }
             thinking = false
@@ -102,6 +120,22 @@ final class SafetyChat: ObservableObject {
         messages.append(Message(kind: .answer(guide?.card(topic), emergency: false, routedByAI: false, seen: [])))
         lastQuestion = nil
         if topic == .lost { startLostFlow(model: model) } else { awaitingDestination = false }
+    }
+
+    /// "Nearest police / hospital / fire station": the closest ones in the loaded offline map.
+    private func showNearestHelp(for text: String, model: AppModel) {
+        let words = SafetyLexicon.normalize(text)
+        let wanted: [HelpKind] = [
+            (HelpKind.police, ["pulis", "police", "presinto", "istasyon ng pulis", "highway patrol", "hpg"]),
+            (.hospital, ["ospital", "hospital", "clinic", "klinika", "ambulansya", "ambulance"]),
+            (.fireStation, ["bumbero", "fire", "sunog"]),
+        ].filter { $0.1.contains { SafetyLexicon.matches(SafetyLexicon.normalize($0), in: words) } }.map(\.0)
+        guard !wanted.isEmpty else { return }
+        Task {
+            let snapshot = await model.nearbyHelp()
+            let places = wanted.flatMap { (snapshot.places[$0] ?? []).prefix(2).map(\.place) }
+            if !places.isEmpty { messages.append(Message(kind: .places(places, query: text))) }
+        }
     }
 
     /// Lost: say where the user is (offline GPS + nearest named place), then ask where to go.
@@ -202,6 +236,32 @@ struct SafetyChatView: View {
         }
     }
 
+    /// Tap-to-call rows; every number shows its source so it can be checked.
+    @ViewBuilder private func hotlineRows(_ lines: [Hotline]) -> some View {
+        ForEach(lines) { line in
+            VStack(alignment: .leading, spacing: 4) {
+                Text(line.name).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                HStack(spacing: 8) {
+                    ForEach(line.numbers, id: \.self) { number in
+                        if let url = URL(string: "tel:\(Hotline.dialable(number))") {
+                            Link(destination: url) {
+                                Label(number, systemImage: "phone.fill").font(.footnote.bold())
+                                    .padding(.horizontal, 10).frame(minHeight: Theme.minTarget)
+                                    .background(Theme.revealedGround, in: Capsule()).foregroundStyle(Theme.primary)
+                            }
+                            .accessibilityLabel("Call \(line.name), \(number)")
+                        }
+                    }
+                }
+                if let url = URL(string: line.sourceURL) {
+                    Link("Source: \(line.sourceName) · checked \(line.retrieved)", destination: url)
+                        .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                }
+            }
+        }
+        Text("Offline copy; numbers can change. 911 works nationwide.").font(.caption2).foregroundStyle(Theme.secondaryInk)
+    }
+
     @ViewBuilder private func bubble(_ message: SafetyChat.Message) -> some View {
         switch message.kind {
         case let .question(q, photo):
@@ -258,7 +318,14 @@ struct SafetyChatView: View {
             }
             .padding(14).frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
-        case let .answer(card, emergency, routedByAI, seen, photoUnclear, continued, suggestions, highlights, alternatives):
+        case let .hotlines(lines, title):
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title).font(.footnote.bold()).foregroundStyle(Theme.ink)
+                hotlineRows(lines)
+            }
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+        case let .answer(card, emergency, routedByAI, seen, photoUnclear, continued, suggestions, highlights, alternatives, hotlines):
             VStack(alignment: .leading, spacing: 10) {
                 if continued {
                     Label("Tuloy sa huling tanong mo", systemImage: "arrow.turn.down.right")
@@ -280,6 +347,10 @@ struct SafetyChatView: View {
                             .font(.subheadline.bold()).foregroundStyle(.white)
                             .frame(maxWidth: .infinity, minHeight: 48)
                             .background(Theme.danger, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    if !hotlines.isEmpty {
+                        Text("Iba pang matatawagan:").font(.footnote.bold()).foregroundStyle(Theme.ink)
+                        hotlineRows(hotlines)
                     }
                 }
                 if let card {
