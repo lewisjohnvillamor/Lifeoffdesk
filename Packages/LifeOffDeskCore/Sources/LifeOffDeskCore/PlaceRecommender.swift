@@ -75,7 +75,8 @@ public enum PlaceRecommender {
 
     /// The same place is not suggested again for two weeks (dismissed ones never again).
     public static let repeatCooldown: TimeInterval = 14 * 86_400
-    public static let maxMeters = 2500.0
+    /// Founder decision: adventures can be by car too, so recommend up to 10 km away.
+    public static let maxMeters = 10_000.0
 
     /// Ranked candidates: in a category you like (or any, with no history), not passed before,
     /// not saved, not dismissed, not shown in the last two weeks, with a penalty for repeating
@@ -100,7 +101,7 @@ public enum PlaceRecommender {
             }
             let share = taste.total > 0 ? Double(liked) / Double(taste.total) : 0.3
             let repeats = Double(recent.filter { $0 == place.category }.count)
-            let score = share * 3 + (reasons[.likesCuisine] != nil ? 0.8 : 0) - meters / 1500 - repeats * 0.9
+            let score = share * 3 + (reasons[.likesCuisine] != nil ? 0.8 : 0) - meters / 5000 - repeats * 0.9
             pool.append(Candidate(place: place, street: nil, straightLineMeters: meters, score: score, reasons: reasons))
         }
         // Street distances for the best few, then re-rank on them.
@@ -109,7 +110,7 @@ public enum PlaceRecommender {
             let streets = graph.distances(from: origin, to: top.map(\.place.coordinate), maxMeters: maxMeters * 2)
             for i in top.indices {
                 top[i].street = streets[i]
-                top[i].score -= (top[i].meters - top[i].straightLineMeters) / 1500
+                top[i].score -= (top[i].meters - top[i].straightLineMeters) / 5000
             }
         }
         top = Array(top.sorted { ($0.score, $1.id) > ($1.score, $0.id) }.prefix(limit))
@@ -231,8 +232,8 @@ public struct JudgeVerdict: Hashable, Sendable {
 }
 
 public enum RecommendationCheck {
-    /// Over this many metres (street distance when known) the walk is "too far".
-    public static let maxComfortMeters = 1500.0
+    /// Over this many metres (street distance when known) the trip is "too far" (founder decision: 10 km).
+    public static let maxComfortMeters = 10_000.0
 
     public static func verdict(_ candidate: PlaceRecommender.Candidate, taste: PlaceRecommender.Taste,
                                recent: [PlaceCategory]) -> JudgeVerdict {
@@ -255,7 +256,7 @@ public enum RecommendationCheck {
         case .cuisineMatch: return "Checked: swak sa paborito mong pagkain/inumin"
         case .closeEnough: return "Checked: malapit lang, sulit lakarin"
         case .offTaste: return "Heads-up: medyo malayo sa hilig mo"
-        case .tooFar: return "Heads-up: medyo malayo ang lakad"
+        case .tooFar: return "Heads-up: lampas 10 km ang layo"
         case .sameAsRecent: return "Heads-up: kapareho ng mga huling suggestion"
         }
     }

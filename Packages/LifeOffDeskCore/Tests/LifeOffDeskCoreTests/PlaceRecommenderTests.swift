@@ -21,7 +21,7 @@ final class PlaceRecommenderTests: XCTestCase {
     private var catalog: PlaceCatalog {
         Fixture.catalog([place("newCafe", .cafe, east: 400, cuisine: "coffee"), place("newPark", .park, east: 300),
                          place("museum", .museum, east: 100), place("c1", .cafe, east: 5000, cuisine: "coffee"),
-                         place("farCafe", .cafe, east: 9000)])
+                         place("farCafe", .cafe, east: 12000)])
     }
 
     func testRecommendsUnvisitedPlacesMatchingTasteWithComputedReasons() {
@@ -90,7 +90,7 @@ final class RecommendationCheckTests: XCTestCase {
     func testRulesFlagFarRepeatedAndOffTastePicksInstantly() {
         let taste = PlaceRecommender.Taste(places: [Fixture.place("a", .cafe, east: 0, north: 0)])
         let liked: [PlaceRecommender.ReasonID: String] = [.likesCategory: "1 sa 1"]
-        XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 2000, reasons: liked), taste: taste, recent: []).reason, .tooFar)
+        XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 10_500, reasons: liked), taste: taste, recent: []).reason, .tooFar)
         XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 400, reasons: liked), taste: taste, recent: [.cafe, .cafe]).reason, .sameAsRecent)
         XCTAssertEqual(RecommendationCheck.verdict(candidate(meters: 400, .park, reasons: [:]), taste: taste, recent: []).reason, .offTaste)
         let good = RecommendationCheck.verdict(candidate(meters: 400, reasons: liked.merging([.likesCuisine: "coffee"]) { a, _ in a }),
