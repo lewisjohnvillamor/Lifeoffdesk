@@ -61,7 +61,7 @@ Reducing the model, context, or prompt further should follow a repeatable device
 
 The selected `Qwen3-1.7B-Q4_K_M.gguf` file is **1,282,439,264 bytes** (about 1,223 MiB). The app’s preflight asks for the model size plus **700 MiB** of available-memory headroom, about **1.88 GiB total**. This is a conservative admission gate; it is not a measured peak resident-memory figure.
 
-Likely failure symptoms are model load rejection, long cold-start latency, memory-pressure unload, thermal slowdown, or cancellation lag. The exact iPhone 12 Pro Max breakpoint is still unknown because cold-load time, peak memory, p50/p95 generation latency, tokens per second, temperature, and energy have not been formally captured on that phone.
+Likely failure symptoms are model load rejection, long cold-start latency, memory-pressure unload, thermal slowdown, or cancellation lag. The airplane-mode phone run now measures load, latency, throughput, footprint, and thermal state. It does not establish the exact breakpoint or battery cost: the phone was charging, and the sustained 60-request sequence reached a critical thermal state.
 
 Containment already exists: inference is optional, serialized, cancelable, retried after a failed load, and removed from memory during the walk. Manual and computed paths preserve the main product.
 
@@ -117,13 +117,14 @@ Benchmark labels matter because a Mac CPU result does not prove iPhone performan
 | History query | **14/14 schema-valid; 10/14 pass; ~18–21 s/request** | Development-machine CPU evaluation |
 | Recap narration | **12/12 valid fact-ID selections** | Validity check, not prose preference scoring |
 | Safety keyword suites | Current repository suites pass all included cases | Finite, already-seen test sets; not population-level accuracy |
-| Planner phone latency | Founder observed roughly **10 s** | Anecdotal observation; no instrumentation or distribution |
+| Planner phone held-out run | **60/60 schema-valid; 47/60 intent pass** | iPhone 12 Pro Max, Airplane Mode, 60 sequential cases |
+| Phone performance | **1.59 s load; 7.38 s median; 8.84 s p95; 7.42 tokens/s; 532 MiB peak footprint** | Instrumented app report; generation latency distribution over 60 cases |
+| Phone thermal/battery | Thermal samples progressed from **serious to critical**; battery remained **65% charging** | Sustained stress-style sequence; charging prevents an energy-consumption claim |
 
-The acceptance benchmark still needed on the iPhone 12 Pro Max should record:
+The phone report now establishes offline inference performance for the planner. Remaining acceptance runs should record:
 
-- cold and warm model load;
-- per-task p50/p95 latency and tokens per second;
-- peak resident memory, memory warnings, thermal state, and battery impact;
+- unplugged battery impact and normal-use thermal recovery between a small number of requests;
+- cold/warm results for history, recap, adaptive suggestions, and cancellation;
 - cancellation time and behavior during app backgrounding;
 - offline results after a clean launch;
 - GPS filtering, background tracking, street snapping, and recovery outdoors;
@@ -134,7 +135,7 @@ Store benchmark inputs, commit/device/runtime identifiers, and raw results toget
 
 ## Priority architecture work
 
-1. **Instrument and run the physical-phone acceptance matrix.** This resolves the largest unknowns before tuning or adding more geography.
+1. **Complete the physical-phone acceptance matrix.** Planner inference is measured; outdoor GPS, unplugged energy, cancellation, other AI tasks, and map frame pacing remain open.
 2. **Add a walk summary/index and bounded track thinning.** This prevents predictable history growth from turning into a migration emergency.
 3. **Add user-controlled export/restore.** Local `.bak` recovery cannot protect against loss, replacement, or uninstall.
 4. **Measure region and graph budgets.** Cap resident packs/nodes with evidence from the target phone and cache graph artifacts where it proves valuable.

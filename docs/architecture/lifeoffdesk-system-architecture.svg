@@ -91,13 +91,13 @@
   <text x="125" y="1351" class="boxh danger">Highest scale cost · history + geometry</text>
   <text x="125" y="1387" class="small">One JSON file per walk, ~1 fix/sec, aggregate recomputation.</text><text x="125" y="1413" class="small">Observed prior lag: 84 demo walks / ~400k map vertices.</text><text x="125" y="1439" class="small">Mitigated with simplification/caching; phone smoothness is open.</text>
   <rect class="risk" x="830" y="1140" width="710" height="325"/>
-  <text x="865" y="1183" class="boxh amber">Measured on development CPU</text>
-  <text x="865" y="1223" class="body">Planner v5: 60/60 schema-valid · 46/60 intent pass</text><text x="865" y="1253" class="body">Adaptive: 14/14 valid · 10/14 intent · ~25 s/request</text><text x="865" y="1283" class="body">History: 14/14 valid · 10/14 pass · ~18–21 s/request</text><text x="865" y="1313" class="body">Recap: 12/12 valid fact-ID selections</text>
+  <text x="865" y="1183" class="boxh amber">iPhone 12 Pro Max · Airplane Mode</text>
+  <text x="865" y="1223" class="body">Planner: 60/60 schema-valid · 47/60 intent pass</text><text x="865" y="1253" class="body">Load 1.59 s · median 7.38 s · p95 8.84 s</text><text x="865" y="1283" class="body">7.42 tokens/s · peak footprint 532 MiB</text><text x="865" y="1313" class="body">Network path remained offline</text>
   <line x1="865" y1="1340" x2="1505" y2="1340" stroke="#E7C88E"/>
-  <text x="865" y="1375" class="small">Core tests today: 158 passed in 22.006 s.</text><text x="865" y="1404" class="small">Founder phone observation: ~10 s planner response (anecdotal).</text><text x="865" y="1433" class="small amber">These results are not formal iPhone performance benchmarks.</text>
+  <text x="865" y="1375" class="small">Sustained run: thermal serious → critical.</text><text x="865" y="1404" class="small">Battery stayed at 65% while charging.</text><text x="865" y="1433" class="small amber">Good offline proof; battery cost and normal-use heat remain open.</text>
   <rect class="soft" x="1580" y="1140" width="730" height="325"/>
-  <text x="1615" y="1183" class="boxh">Required acceptance run · iPhone 12 Pro Max</text>
-  <text x="1615" y="1223" class="body">Cold model load · p50/p95 task latency · tokens/sec</text><text x="1615" y="1253" class="body">peak memory · thermal state · battery · cancellation</text><text x="1615" y="1283" class="body">offline mode · background GPS · route/fog frame pacing</text>
+  <text x="1615" y="1183" class="boxh">Remaining acceptance evidence</text>
+  <text x="1615" y="1223" class="body">Unplugged battery cost · normal-use thermal recovery</text><text x="1615" y="1253" class="body">cancellation · background GPS · outdoor street snapping</text><text x="1615" y="1283" class="body">large-history launch · route/fog frame pacing</text>
   <line x1="1615" y1="1315" x2="2275" y2="1315" stroke="#C8D4C9"/>
   <text x="1615" y="1351" class="boxh">Next architecture controls</text>
   <text x="1615" y="1386" class="small">1. Signposts + reproducible device benchmark harness</text><text x="1615" y="1412" class="small">2. Walk summaries/index + save-time track thinning</text><text x="1615" y="1438" class="small">3. User export/backup + reviewed place/route evidence</text>
