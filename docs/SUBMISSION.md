@@ -69,7 +69,7 @@ Fields marked **FOUNDER** must be filled by the team; nothing here is invented o
     - OpenStreetMap via Overpass API mirrors (ODbL; attribution shown in the app)
     - Hugging Face and GitHub for pinned downloads
     - GitHub Actions for CI
-    - Mixkit for the launch film's music and stock clips (Mixkit Free License)
+    - Mixkit and Pexels for the launch film's music and stock clips (Mixkit Free License, Pexels License)
 - **Existing code and assets:**
   - **No app code predates the hackathon.** The first commit is 2026-10-09 15:14 +08:00.
   - **Prepared beforehand in ChatGPT conversations:** the product brief and build reference, the brand guide, a static UI board (`design/`) and the cat mascot art (`assets/mascot/`). These were AI-generated from the founder's direction.
@@ -77,7 +77,7 @@ Fields marked **FOUNDER** must be filled by the team; nothing here is invented o
     - OSM data (ODbL)
     - help-card content paraphrased from NHS, St John Ambulance, WHO, the AA, GOV.UK and other linked public sources (each card links its source)
     - hotline numbers from official LGU, agency and operator pages; SLEX/Skyway/STAR/TPLEX come from one news report and are labelled as such
-    - launch-film music "Just Keep Walking" by Michael Ramir C. and two stock clips (Mixkit Free License)
+    - launch-film music "Just Keep Walking" by Michael Ramir C. and two stock clips (Mixkit Free License; Pexels License)
     - llama.cpp and Qwen, used unmodified
 - **AI development tools:**
   - **ChatGPT / Codex:** planning, briefs and mascot images before the build.
