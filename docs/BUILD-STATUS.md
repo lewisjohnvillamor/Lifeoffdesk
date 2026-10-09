@@ -128,6 +128,14 @@ The UI smoke test confirms walking entry remains available, not a completed walk
 - Tests cover GPS drift snapping to the walked street, crossing a street without painting its length, cutting through a block (unmatched, not painted), once-only counting across adventures, reveal following centrelines, and frontiers skipping walked streets. Tolerances are provisional; check outdoors (wide avenues, parallel streets, underpasses).
 - CI walking screenshot now uses a simulated route along real Makati street geometry (not hand-typed points).
 
+## Delete, memory card route and street distances (2026-10-09)
+
+- **Delete one adventure**: Recap → trash button → confirmation ("Delete this adventure?" / Delete adventure / Keep it). Removes the walk file and its backup, that adventure's photos and index entries, its exploration and recomputes stats. Sample (demo) adventures cannot be deleted. Core test `testDeleteOneAdventureKeepsTheOthers`. Not yet tried on the phone.
+- **Memory card route** now draws the adventure's matched street pieces (plus off-street stretches), fitted to the card, instead of raw GPS points. CI screenshot 08b shows clean street lines. The earlier noisy card came from a synthetic sample walk drawn raw.
+- **Photos**: simulator-only `--seed-photo` adds the bundled mascot test image (sim build only, not personal evidence) twice to a sample adventure; CI screenshot 08b shows both saved thumbnails and the selected photo on the card. Camera capture, library import and share sheet still need the phone.
+- **Collage / sticker**: the first CI attempt did not switch styles (stale sheet state in the screenshot helper, fixed); collage and Vision sticker cut-out remain unverified until the next CI screenshots, and sticker lifting must be checked on the phone (Vision availability differs in the Simulator).
+- **Street distances**: planner results, next-adventure ideas and the destination pill now use the shortest path over the bundled OSM streets (`WalkingGraph`: motorways excluded; private/no-access ways cost double and are flagged "may private road sa daan"), shown as "3.49 km lakad · ~47 min" (4.5 km/h). Off-street or disconnected points fall back to labelled straight-line. Time limits use street distance. This is a distance estimate, not navigation; OSM may miss gates, footbridges or closures. Founder example (Fordham Tower at East Bay → Hillsborough Aqua Park): straight-line ≈ 1.57 km; a development-only Python check on the same bundled data gave ≈ 3.0–3.5 km along streets depending on private-road handling, versus Google's 4.1 km walking route (different endpoints: our park marker is the area midpoint). Swift tests use synthetic layouts only.
+
 ## Gate table
 
 | Gate | Status | Evidence |

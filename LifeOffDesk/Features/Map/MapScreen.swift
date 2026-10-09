@@ -7,8 +7,8 @@ struct MapScreen: View {
     @State private var camera = MapCamera()
     @State private var geometry: MapGeometry?
     @State private var showPlanner = false
-    @State private var cardSession: WalkSession?
-    @State private var cardStyle: CardStyle = .photo
+    /// Simulator screenshot helper: the style travels with the item so the sheet never reads a stale value.
+    @State private var simCard: SimCard?
     @State private var showCamera = false
     @State private var followUser = true
     @State private var tilted = true
@@ -59,13 +59,14 @@ struct MapScreen: View {
                 model.addMoment(image, to: walk, at: walk.lastSample?.coordinate)
                 model.addMoment(image, to: walk, at: walk.segments.first?.first?.coordinate)
             }
+            var style = CardStyle.photo
             if let i = arguments.firstIndex(of: "--card-style"), i + 1 < arguments.count {
-                cardStyle = CardStyle(rawValue: arguments[i + 1]) ?? .photo
+                style = CardStyle(rawValue: arguments[i + 1]) ?? .photo
             }
-            if arguments.contains("--open-card") { cardSession = walk } else { model.presentedRecap = walk }
+            if arguments.contains("--open-card") { simCard = SimCard(session: walk, style: style) } else { model.presentedRecap = walk }
         }
-        .sheet(item: $cardSession) { session in
-            MemoryCardSheet(session: session, initialStyle: cardStyle).environmentObject(model)
+        .sheet(item: $simCard) { card in
+            MemoryCardSheet(session: card.session, initialStyle: card.style).environmentObject(model)
         }
         #endif
         .onChange(of: model.demoMode) { _, on in
@@ -360,4 +361,10 @@ struct HoldToEndButton: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onEnd() }
     }
+}
+
+private struct SimCard: Identifiable {
+    let session: WalkSession
+    let style: CardStyle
+    var id: UUID { session.id }
 }
