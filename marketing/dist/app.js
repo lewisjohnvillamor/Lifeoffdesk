@@ -91,4 +91,81 @@ if ('IntersectionObserver' in window) {
   }, { threshold: .45 });
   plannerObserver.observe(document.querySelector('.conversation'));
 }
+const prototypeScreens = {
+  map: {
+    src: 'assets/mockup-map.jpg',
+    alt: 'Life Off Desk shown inside an iPhone, with explored streets and discoveries on the map.',
+    kicker: 'EXPLORE',
+    title: 'Watch your world grow.',
+    description: 'Every street you explore turns from fog into a map that feels like yours.'
+  },
+  route: {
+    src: 'assets/mockup-route.jpg',
+    alt: 'Life Off Desk shown inside an iPhone, with a suggested route following mapped streets.',
+    kicker: 'GO SOMEWHERE',
+    title: 'Find a different corner.',
+    description: 'Choose a nearby place and see a suggested path along streets already in the map.'
+  },
+  coach: {
+    src: 'assets/mockup-coach.jpg',
+    alt: 'Life Off Desk shown on an iPhone with a Taglish on-device AI suggestion above the map.',
+    kicker: 'LOCAL AI',
+    title: 'A nudge that stays on your phone.',
+    description: 'Ask naturally in English or Taglish and get ideas grounded in your explored world.'
+  },
+  recap: {
+    src: 'assets/mockup-recap.jpg',
+    alt: 'Life Off Desk shown inside an iPhone with a completed adventure recap and mascot card.',
+    kicker: 'REMEMBER',
+    title: 'Keep the little adventure.',
+    description: 'New streets, places and time come together in a memory you can return to.'
+  },
+  help: {
+    src: 'assets/mockup-help.jpg',
+    alt: 'Life Off Desk shown inside an iPhone with the offline help assistant and sourced first-aid steps.',
+    kicker: 'GET HELP',
+    title: 'Useful guidance, even offline.',
+    description: 'Ask in Taglish for sourced first-aid or road-trouble guidance when you need it.'
+  }
+};
+const prototypeImage = document.querySelector('#prototype-image');
+const prototypeButtons = [...document.querySelectorAll('[data-prototype]')];
+const prototypeKicker = document.querySelector('#prototype-kicker');
+const prototypeTitle = document.querySelector('#prototype-title');
+const prototypeDescription = document.querySelector('#prototype-description');
+Object.values(prototypeScreens).forEach(screen => { const preload = new Image(); preload.src = screen.src; });
+prototypeButtons.forEach(button => { button.tabIndex = button.getAttribute('aria-selected') === 'true' ? 0 : -1; });
+let prototypeChange = 0;
+function selectPrototype(button) {
+  const screen = prototypeScreens[button.dataset.prototype];
+  if (!screen) return;
+  const change = ++prototypeChange;
+  prototypeButtons.forEach(item => {
+    const selected = item === button;
+    item.setAttribute('aria-selected', String(selected));
+    item.tabIndex = selected ? 0 : -1;
+  });
+  prototypeImage.classList.add('is-changing');
+  const update = () => {
+    if (change !== prototypeChange) return;
+    prototypeImage.src = screen.src;
+    prototypeImage.alt = screen.alt;
+    prototypeKicker.textContent = screen.kicker;
+    prototypeTitle.textContent = screen.title;
+    prototypeDescription.textContent = screen.description;
+    requestAnimationFrame(() => prototypeImage.classList.remove('is-changing'));
+  };
+  reducedMotion.matches ? update() : window.setTimeout(update, 120);
+}
+prototypeButtons.forEach((button, index) => {
+  button.addEventListener('click', () => selectPrototype(button));
+  button.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const next = prototypeButtons[(index + direction + prototypeButtons.length) % prototypeButtons.length];
+    next.focus();
+    selectPrototype(next);
+  });
+});
 document.querySelector('#year').textContent=new Date().getFullYear();
