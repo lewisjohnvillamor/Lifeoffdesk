@@ -11,7 +11,7 @@ import { Memories } from "./scenes/Memories";
 import { EndCard } from "./scenes/EndCard";
 
 export const SCENES = [
-  { name: "Cold open", durationInFrames: 270, component: ColdOpen },
+  { name: "Cold open", durationInFrames: 300, component: ColdOpen },
   { name: "Intro", durationInFrames: 170, component: Intro },
   { name: "Fog", durationInFrames: 150, component: Fog },
   { name: "Coach", durationInFrames: 190, component: Coach },

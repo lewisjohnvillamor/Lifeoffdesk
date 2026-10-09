@@ -1,5 +1,11 @@
 import React from "react";
-import { Easing, Img, continueRender, delayRender, interpolate, staticFile, useCurrentFrame } from "remotion";
+import { Easing, Img, continueRender, delayRender, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+
+/** Square (1080×1080, for X and LinkedIn feeds) vs landscape (1920×1080). */
+export const useSquare = () => {
+  const { width, height } = useVideoConfig();
+  return width === height;
+};
 
 // Inter (SIL OFL, from @fontsource/inter) bundled locally so rendering needs no network.
 const fontHandle = delayRender("Loading Inter");
@@ -38,12 +44,12 @@ export const usePop = (at: number) => {
   return interpolate(f, [at, at + 14], [0, 1], { ...clamp, easing: Easing.spring({ damping: 14, stiffness: 180 }) });
 };
 
-export const Bubble: React.FC<{ at: number; out?: boolean; children: React.ReactNode; size?: number; maxWidth?: number; tint?: string }> = ({
-  at, out, children, size = 40, maxWidth = 760, tint,
+export const Bubble: React.FC<{ at: number; out?: boolean; children: React.ReactNode; size?: number; maxWidth?: number; tint?: string; sub?: string }> = ({
+  at, out, children, size = 40, maxWidth = 760, tint, sub,
 }) => {
   const p = usePop(at);
   return (
-    <div style={{ display: "flex", justifyContent: out ? "flex-end" : "flex-start", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: out ? "flex-end" : "flex-start", width: "100%", gap: size * 0.18 }}>
       <div
         style={{
           opacity: Math.min(1, p * 1.4),
@@ -62,6 +68,11 @@ export const Bubble: React.FC<{ at: number; out?: boolean; children: React.React
       >
         {children}
       </div>
+      {sub ? (
+        <div style={{ opacity: Math.min(1, p * 1.2) * 0.9, fontSize: size * 0.62, color: C.secondary, fontStyle: "italic", maxWidth, padding: `0 ${size * 0.4}px` }}>
+          {sub}
+        </div>
+      ) : null}
     </div>
   );
 };
