@@ -1,6 +1,6 @@
 # Mac download and build setup
 
-Develop on the confirmed Apple silicon Mac with Xcode. Target the actual iPhone 12 Pro Max. This repo currently contains the specification, references, assets and preparation scripts; it does not yet contain an implemented Xcode app.
+Develop on the confirmed Apple silicon Mac with Xcode. Target the actual iPhone 12 Pro Max. The repo contains the app source (`LifeOffDesk/`), an XcodeGen spec and the core Swift package. The Xcode project file is generated, not committed.
 
 ## 1. Clone and check tools
 
@@ -45,7 +45,21 @@ The proposed starter bounding box is in config/starter-region.json. This makes o
 
 Review 15–30 relevant source places before copying a curated catalog into app resources. Source records are not independent proof of current access, prices, quietness or hours. Review restricted/private paths. Road geometry is visual context, not a routing graph. Keep OpenStreetMap attribution/license notices. If the endpoint is unavailable, export the printed query through an available Overpass instance and run `python3 scripts/prepare_makati.py --input /path/to/export.json`.
 
-## 4. Start the implementation agent
+## 4. Build and install
+
+```bash
+brew install xcodegen
+scripts/setup_ios.sh
+open LifeOffDesk/LifeOffDesk.xcodeproj
+```
+
+In Xcode set Signing & Capabilities → Team and a unique bundle identifier, select the connected iPhone and Run. The pinned xcframework has no simulator slice. The model is bundled into the app; to keep builds smaller you can remove it from the target and copy `Qwen3-0.6B-Q4_0.gguf` into the app's Documents folder via Finder (the app checks Documents first).
+
+`scripts/prepare_makati.py` is only needed to refresh starter data; then run `python3 scripts/build_starter_catalog.py`.
+
+Then on the phone: Settings (gear) → On-device AI diagnostics → Verify SHA-256 and Run all cases with airplane mode on.
+
+## 5. Implementation agent notes
 
 Read AGENTS.md and docs/IMPLEMENTATION-PLAN.md. Ask your agent to read these portable skill files directly:
 
@@ -59,6 +73,6 @@ Create/open the Xcode iOS app after inspecting the repo. Set signing, connect th
 
 The next gate is real phone inference of the prompts in eval/taglish-cases.json, with airplane mode on, Wi-Fi off and Mac disconnected. Then complete actual GPS/fog, durable recap and grounded planner results. Record measured results in docs/BUILD-STATUS.md.
 
-## 5. Submission
+## 6. Submission
 
 Confirm exact cutoff and track rules from the kickoff briefing; see docs/HACKATHON.md. Prepare an actual demo video and disclose libraries, AI tools and earlier planning/reference assets. No submission or message to the organizer has been made by this task.

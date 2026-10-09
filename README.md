@@ -9,9 +9,12 @@ An offline-first iPhone exploration app: ask in Taglish for a nearby outing, pic
 ```bash
 git clone https://github.com/lewisjohnvillamor/Lifeoffdesk.git
 cd Lifeoffdesk
-python3 scripts/download_materials.py
-python3 scripts/prepare_makati.py
+brew install xcodegen
+scripts/setup_ios.sh        # verifies downloads, unpacks llama.xcframework, generates the Xcode project
+open LifeOffDesk/LifeOffDesk.xcodeproj
 ```
+
+Set your signing team, pick the iPhone (simulator builds are not supported by the pinned runtime) and Run.
 
 Read [Mac setup](docs/MAC-SETUP.md) for prerequisites, download scope, source-data review and device steps. Downloads are separate from Git and checksum-verified. The Makati data script prepares unreviewed source records; it does not establish venues are currently open or accessible.
 
@@ -30,8 +33,15 @@ Read [Mac setup](docs/MAC-SETUP.md) for prerequisites, download scope, source-da
 
 AGENTS.md and skills/ contain portable implementation guidance. The TXT brief and reference guide support later ingestion. Approved cat artwork is under assets/mascot/; the latest static interface board is under design/. The sticker sheet is still unsplit. The included Figma update script is unapplied.
 
+## Repository layout
+
+- `LifeOffDesk/` — SwiftUI iPhone app and `project.yml` (XcodeGen)
+- `Packages/LifeOffDeskCore/` — platform-independent logic with tests (`swift test --package-path Packages/LifeOffDeskCore`)
+- `Tools/PlannerEval/` — runs the app's planner against the pinned model on a dev machine (`scripts/run_planner_eval.sh`)
+- `scripts/` — downloads, Makati OSM preparation, starter catalog build, iOS setup
+
 ## Current status
 
-Planning, branding, assets and download/data-preparation scripts are present. **The native app, real-phone AI benchmark and outdoor GPS tests have not been implemented or verified.** Taglish evaluation prompts are supplied; they are not performance results. Large models/runtime downloads, private photos and personal tracks are ignored by Git.
+The app source, tested core logic, on-device inference adapter and Makati starter data are in place. **The app has not yet been compiled in Xcode, installed on the iPhone, run offline on the phone or tested outdoors.** The inference adapter has been run against the real model on a Linux CPU as a development diagnostic only. See [build status](docs/BUILD-STATUS.md) for exactly what was tested.
 
 The first build is a small Makati subset; broader Luzon maps, road routing, social features and photo cutouts follow after the required loops pass.
