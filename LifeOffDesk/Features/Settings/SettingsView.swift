@@ -43,7 +43,7 @@ struct SettingsView: View {
                         dismiss()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { hasSeenIntro = false }
                     }
-                    Toggle("Demo map (sample walks)", isOn: Binding(get: { model.demoMode },
+                    Toggle("Demo map (sample adventures)", isOn: Binding(get: { model.demoMode },
                                                                     set: { model.setDemoMode($0) }))
                         .disabled(model.activeSession != nil)
                     Text("Shows bundled synthetic walks generated along real Makati and Muntinlupa streets so people can see a well-explored map. Clearly labelled, never saved to your walks. Turn off for your real map.")

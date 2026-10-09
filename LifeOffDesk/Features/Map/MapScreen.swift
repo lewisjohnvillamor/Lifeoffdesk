@@ -260,7 +260,7 @@ struct MapScreen: View {
     @ViewBuilder private var centerControls: some View {
         switch model.phase {
         case .idle where model.demoMode:
-            labeledIcon(model.replay == nil ? "play.fill" : "arrow.clockwise", "Replay", label: "Replay a sample walk",
+            labeledIcon(model.replay == nil ? "play.fill" : "arrow.clockwise", "Replay", label: "Replay a sample adventure",
                         primary: true, size: 72) { model.startReplay() }
         case .idle, .requestingPermission:
             labeledIcon("figure.walk", "Start exploring", label: "Start exploring", primary: true, size: 76) { model.startWalking() }

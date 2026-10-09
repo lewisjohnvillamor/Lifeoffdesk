@@ -9,12 +9,12 @@ final class SimulatorSmokeTests: XCTestCase {
         app.buttons["Layers"].tap()
         XCTAssertTrue(app.buttons["Preview demo map"].waitForExistence(timeout: 5))
         app.buttons["Preview demo map"].tap()
-        XCTAssertTrue(app.buttons["Replay a sample walk"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Replay a sample adventure"].waitForExistence(timeout: 10))
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Synthetic demo map with fog"
         screenshot.lifetime = .keepAlways
         add(screenshot)
-        app.buttons["Replay a sample walk"].tap()
+        app.buttons["Replay a sample adventure"].tap()
         XCTAssertTrue(app.staticTexts["Sample adventures · not real GPS"].waitForExistence(timeout: 5))
         app.buttons["Back to my map"].tap()
         XCTAssertTrue(app.buttons["Start exploring"].waitForExistence(timeout: 5))
