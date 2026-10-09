@@ -10,10 +10,16 @@ final class SafetyChat: ObservableObject {
     struct Message: Identifiable, Equatable {
         enum Kind: Equatable {
             case question(String, photo: UIImage?)
+            /// Plain assistant line (e.g. "Saan mo gustong pumunta?").
+            case say(String)
+            /// Where you are now, to read out or text.
+            case location(String)
+            /// Offline map places matching a name, each with a Route button.
+            case places([Place], query: String)
             /// `seen`: what Apple's on-device image recognition named in the photo, if any.
             /// `suggestions`: offered when no card matched, instead of a dead end.
             case answer(SafetyCard?, emergency: Bool, routedByAI: Bool, seen: [String], photoUnclear: Bool = false,
-                        continued: Bool = false, suggestions: [SafetyCard] = [])
+                        continued: Bool = false, suggestions: [SafetyCard] = [], highlights: [String] = [])
         }
         let id = UUID()
         let kind: Kind
@@ -23,6 +29,8 @@ final class SafetyChat: ObservableObject {
     @Published var thinking = false
     /// Last question asked, so a short follow-up ("paano na?") continues it.
     private var lastQuestion: String?
+    /// After the "lost" card the next message is treated as where the user wants to go.
+    private var awaitingDestination = false
     let guide: SafetyGuide?
     let loadProblem: String?
 
@@ -43,10 +51,20 @@ final class SafetyChat: ObservableObject {
         }
     }
 
-    func ask(_ question: String, photo: UIImage? = nil, ai: AIService) {
+    func ask(_ question: String, photo: UIImage? = nil, model: AppModel) {
         let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || photo != nil, !thinking else { return }
         messages.append(Message(kind: .question(text.isEmpty ? "(photo)" : text, photo: photo)))
+        // Lost flow: "Starbucks" / "may nakita akong Starbucks" searches the offline map.
+        if awaitingDestination, photo == nil, !SafetyKeywords.emergency(in: text) {
+            let topic = SafetyKeywords.topic(in: text)
+            if topic == nil || topic == .lost {
+                searchDestination(text, model: model)
+                return
+            }
+        }
+        awaitingDestination = false
+        let ai = model.ai
         thinking = true
         let followUp = SafetyPrompt.followUp(text, previous: lastQuestion)
         let routedText = followUp ?? text
@@ -64,17 +82,47 @@ final class SafetyChat: ObservableObject {
             let final = SafetyPrompt.combine(model: routed, question: routedText, photoLabels: labels)
             let card = final.topic.flatMap { guide?.card($0) }
             let suggestions = card == nil ? SafetyKeywords.suggestions(for: routedText).compactMap { guide?.card($0) } : []
+            // Point at the card steps that answer the question ("buhusan ng tubig?" -> the water steps).
+            let highlights = card.flatMap { c in SafetyKeywords.lexicon?.relevantSteps(in: c, for: text) } ?? []
             messages.append(Message(kind: .answer(card, emergency: final.emergency, routedByAI: routed != nil, seen: labels,
                                                   photoUnclear: photo != nil && labels.isEmpty, continued: followUp != nil,
-                                                  suggestions: suggestions)))
+                                                  suggestions: suggestions, highlights: highlights)))
             if !text.isEmpty { lastQuestion = routedText }
+            if card?.topic == .lost { startLostFlow(model: model) }
             thinking = false
         }
     }
 
-    func show(_ topic: SafetyTopic) {
+    func show(_ topic: SafetyTopic, model: AppModel) {
         messages.append(Message(kind: .answer(guide?.card(topic), emergency: false, routedByAI: false, seen: [])))
         lastQuestion = nil
+        if topic == .lost { startLostFlow(model: model) } else { awaitingDestination = false }
+    }
+
+    /// Lost: say where the user is (offline GPS + nearest named place), then ask where to go.
+    private func startLostFlow(model: AppModel) {
+        model.refreshIdleLocation()
+        if let position = model.currentPosition, let catalog = model.content?.catalog {
+            messages.append(Message(kind: .location(HelpPlaces.locationDescription(
+                position, accuracyMeters: model.lastFix?.horizontalAccuracy, catalog: catalog))))
+        } else {
+            messages.append(Message(kind: .say("Wala pang GPS fix. Pumunta sa bukas na lugar, malayo sa matataas na gusali, at subukan ulit.")))
+        }
+        messages.append(Message(kind: .say("Saan mo gustong pumunta? I-type ang lugar o landmark na nakikita mo (hal. Starbucks, Greenbelt, MRT).")))
+        awaitingDestination = true
+    }
+
+    private func searchDestination(_ text: String, model: AppModel) {
+        guard let catalog = model.content?.catalog else {
+            messages.append(Message(kind: .say("Hindi pa naka-load ang offline map. Subukan ulit maya-maya.")))
+            return
+        }
+        let found = PlaceNameSearch.find(text, in: catalog, from: model.currentPosition)
+        if found.isEmpty {
+            messages.append(Message(kind: .say("Wala akong nakitang ganyang lugar sa offline map na naka-load ngayon. Subukan ang ibang pangalan o landmark.")))
+        } else {
+            messages.append(Message(kind: .places(found, query: text)))
+        }
     }
 }
 
@@ -82,6 +130,8 @@ struct SafetyChatView: View {
     @EnvironmentObject private var model: AppModel
     /// Screenshot helper (simulator only): questions asked on appear.
     var initialQuestion: String?
+    /// Closes the whole help sheet after "Route" so the map shows the route.
+    var onRoute: () -> Void = {}
     @StateObject private var chat = SafetyChat()
     @StateObject private var speech = SpeechInput()
     @State private var text = ""
@@ -123,7 +173,7 @@ struct SafetyChatView: View {
         .task {
             guard let initialQuestion, chat.messages.isEmpty else { return }
             try? await Task.sleep(nanoseconds: 600_000_000)
-            chat.ask(initialQuestion, ai: model.ai)
+            chat.ask(initialQuestion, model: model)
         }
     }
 
@@ -137,7 +187,7 @@ struct SafetyChatView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(quickTopics.indices, id: \.self) { index in
-                        Button(quickTopics[index].0) { chat.show(quickTopics[index].1) }
+                        Button(quickTopics[index].0) { chat.show(quickTopics[index].1, model: model) }
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.ink)
                             .padding(.horizontal, 12).frame(minHeight: 36)
                             .background(Theme.surface, in: Capsule()).overlay(Capsule().stroke(Theme.border))
@@ -160,7 +210,50 @@ struct SafetyChatView: View {
                         .padding(12).background(Theme.primary, in: RoundedRectangle(cornerRadius: 16))
                 }
             }
-        case let .answer(card, emergency, routedByAI, seen, photoUnclear, continued, suggestions):
+        case let .say(line):
+            Text(line).font(.subheadline).foregroundStyle(Theme.ink)
+                .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+        case let .location(line):
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Nasaan ka ngayon (offline GPS)", systemImage: "location.fill").font(.footnote.bold()).foregroundStyle(Theme.ink)
+                Text(line).font(.subheadline.monospacedDigit()).foregroundStyle(Theme.ink).textSelection(.enabled)
+                HStack(spacing: 10) {
+                    Button("Copy") { UIPasteboard.general.string = line }.buttonStyle(.bordered)
+                    ShareLink("Text it", item: "My location: \(line)").buttonStyle(.bordered)
+                }
+            }
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+        case let .places(places, _):
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Nakita sa offline map:").font(.footnote.bold()).foregroundStyle(Theme.ink)
+                ForEach(places) { place in
+                    HStack(spacing: 10) {
+                        Image(systemName: PlaceIcon.symbol(place)).foregroundStyle(Theme.canvas)
+                            .frame(width: 32, height: 32).background(PlaceIcon.tint(place), in: Circle())
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(place.name).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                            if let here = model.currentPosition {
+                                Text("\(Format.distance(Geo.distanceMeters(here, place.coordinate))) straight-line")
+                                    .font(.caption).foregroundStyle(Theme.secondaryInk)
+                            }
+                        }
+                        Spacer()
+                        Button("Route") {
+                            model.choose(place)
+                            onRoute()
+                        }
+                        .buttonStyle(.borderedProminent).tint(Theme.primary)
+                        .accessibilityLabel("Show route to \(place.name)")
+                    }
+                }
+                Text("OpenStreetMap · route follows mapped streets").font(.caption2).foregroundStyle(Theme.secondaryInk)
+            }
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+        case let .answer(card, emergency, routedByAI, seen, photoUnclear, continued, suggestions, highlights):
             VStack(alignment: .leading, spacing: 10) {
                 if continued {
                     Label("Tuloy sa huling tanong mo", systemImage: "arrow.turn.down.right")
@@ -185,6 +278,17 @@ struct SafetyChatView: View {
                     }
                 }
                 if let card {
+                    if !highlights.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label("Sagot sa tanong mo (mula sa card):", systemImage: "text.quote")
+                                .font(.footnote.bold()).foregroundStyle(Theme.primary)
+                            ForEach(highlights, id: \.self) { Text("“\($0)”").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink) }
+                            Text("Walang iba pang sinasabi ang source tungkol dito. Kung hindi sigurado, maghintay at humingi ng tulong.")
+                                .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                        }
+                        .padding(10)
+                        .background(Theme.revealedGround, in: RoundedRectangle(cornerRadius: 12))
+                    }
                     Text(card.title).font(.headline).foregroundStyle(Theme.ink)
                     ForEach(Array(card.steps.enumerated()), id: \.offset) { index, step in
                         HStack(alignment: .top, spacing: 8) {
@@ -207,7 +311,7 @@ struct SafetyChatView: View {
                     if !suggestions.isEmpty {
                         Text("Baka ito ang hinahanap mo:").font(.footnote.bold()).foregroundStyle(Theme.ink)
                         ForEach(suggestions) { suggestion in
-                            Button { chat.show(suggestion.topic) } label: {
+                            Button { chat.show(suggestion.topic, model: model) } label: {
                                 Label(suggestion.title, systemImage: "arrow.right.circle")
                                     .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.primary)
                                     .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
@@ -287,7 +391,7 @@ struct SafetyChatView: View {
     }
 
     private func send() {
-        chat.ask(text, photo: photo, ai: model.ai)
+        chat.ask(text, photo: photo, model: model)
         text = ""
         photo = nil
     }

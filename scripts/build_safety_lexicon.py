@@ -124,6 +124,23 @@ BODY = {"allergy": ["labi", "lips", "mukha", "face", "dila", "tongue", "lalamuna
                    "foot", "feet", "leg", "legs", "knee", "ankle", "arm", "hand", "wrist", "finger", "toe", "shoulder",
                    "bone"]}
 
+# Tagalog/Taglish words -> English words used in the (English) cards, so a question can be matched
+# to the card step that answers it ("buhusan ng tubig" -> steps mentioning water).
+GLOSSARY = {
+    "tubig": ["water"], "buhusan": ["water", "pour"], "buhos": ["water", "pour"], "binuhusan": ["water"], "basain": ["water"],
+    "yelo": ["ice"], "malamig": ["cold", "cool"], "lamig": ["cold", "cool"], "mainit": ["hot", "heat"], "init": ["hot", "heat"],
+    "takip": ["cap"], "radiator": ["radiator", "coolant"], "makina": ["engine"], "kotse": ["car"], "sasakyan": ["car", "vehicle"],
+    "gulong": ["tire", "wheel"], "turnilyo": ["nuts"], "tuerka": ["nuts"], "susi": ["key"], "ilaw": ["light"], "langis": ["oil"],
+    "preno": ["brake"], "dugo": ["blood", "bleeding"], "sugat": ["wound", "cut"], "bendahe": ["bandage"], "tela": ["cloth"],
+    "gamot": ["medicine", "antiseptic"], "sabon": ["soap"], "hugasan": ["wash"], "hugas": ["wash"], "takpan": ["cover"],
+    "itaas": ["raise", "elevate"], "ipahinga": ["rest"], "pahinga": ["rest"], "inumin": ["drink", "fluids"], "uminom": ["drink"],
+    "lilim": ["shade", "cool"], "kumot": ["sheet"], "ospital": ["hospital"], "doktor": ["doctor"], "tawag": ["call"],
+    "kainin": ["eat", "eaten"], "kinain": ["eaten"], "suka": ["vomit"], "isuka": ["vomit"], "sisilong": ["indoors", "building"],
+    "silong": ["indoors", "building"], "puno": ["tree", "trees"], "lusong": ["walk", "floodwater"], "baha": ["flood", "floodwater"],
+    "sigarilyo": ["smoking"], "usok": ["smoke", "steam"], "jack": ["jack"], "reserba": ["spare"], "battery": ["battery"],
+    "baterya": ["battery"], "kable": ["leads"], "pulso": ["pulse"], "dibdib": ["chest"], "hininga": ["breathing"],
+}
+
 # Shown as buttons when nothing matched; first matching group wins.
 SUGGESTIONS = [
     {"when": ["kotse", "car", "sasakyan", "motor", "makina", "engine", "drive", "driving", "jeep", "tricycle"],
@@ -136,7 +153,7 @@ SUGGESTIONS = [
 out = {"schemaVersion": 1,
        "note": "Routing terms for the offline help assistant. Matching: whole words, '*' = word prefix, phrases in order, "
                "longer matches score more, body parts score half. Edit scripts/build_safety_lexicon.py.",
-       "emergency": EMERGENCY, "topics": TOPICS, "body": BODY, "suggestions": SUGGESTIONS,
+       "emergency": EMERGENCY, "topics": TOPICS, "body": BODY, "suggestions": SUGGESTIONS, "glossary": GLOSSARY,
        "order": list(TOPICS.keys())}
 (ROOT/"LifeOffDesk/Resources/StarterData/safety-lexicon.json").write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n")
 print(sum(len(v) for v in TOPICS.values()), "topic terms,", len(EMERGENCY), "emergency phrases")

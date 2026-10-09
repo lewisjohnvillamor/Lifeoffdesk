@@ -45,6 +45,19 @@ final class SafetyGuideTests: XCTestCase {
         print("SAFETY-ROUTING v2 keywords-only: topic \(hits)/\(cases.count), missed emergencies \(missed.count) \(missed), false alarms \(alarms)")
     }
 
+    func testQuestionIsAnsweredFromTheCardsOwnSteps() throws {
+        let url = Fixture.repoRoot.appendingPathComponent("LifeOffDesk/Resources/StarterData/safety-guide.json")
+        let guide = try SafetyGuide.decode(Data(contentsOf: url))
+        let lexicon = try XCTUnwrap(SafetyKeywords.lexicon)
+        let question = "nag overheat ang makina, pwede ko bang buhusan ng tubig?"
+        XCTAssertEqual(SafetyKeywords.topic(in: question), .overheating)
+        let steps = lexicon.relevantSteps(in: try XCTUnwrap(guide.card(.overheating)), for: question)
+        XCTAssertFalse(steps.isEmpty)
+        XCTAssertTrue(steps.allSatisfy { $0.lowercased().contains("water") }, "\(steps)")
+        XCTAssertTrue(lexicon.relevantSteps(in: try XCTUnwrap(guide.card(.flatTire)), for: "saan ilalagay ang jack?")
+            .first?.contains("Jack") ?? false)
+    }
+
     func testWholeWordMatchingAvoidsSubstringTraps() {
         XCTAssertNil(SafetyKeywords.topic(in: "paano po kayo"), "paano is not paa")
         XCTAssertNil(SafetyKeywords.topic(in: "I'm tired after the walk"), "tired is not tire")

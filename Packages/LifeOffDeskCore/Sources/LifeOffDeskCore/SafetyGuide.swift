@@ -51,11 +51,13 @@ public struct SafetyLexicon: Sendable {
         var body: [String: [String]]
         var suggestions: [Suggestion]
         var order: [String]
+        var glossary: [String: [String]]?
     }
 
     let emergency: [[String]]
     let topics: [(SafetyTopic, [Term])]
     let suggestionGroups: [(when: [[String]], topics: [SafetyTopic])]
+    let glossary: [String: [String]]
 
     public static func decode(_ data: Data) throws -> SafetyLexicon {
         let raw = try JSONDecoder().decode(Raw.self, from: data)
@@ -66,7 +68,8 @@ public struct SafetyLexicon: Sendable {
             return (topic, terms.filter { !$0.tokens.isEmpty })
         }
         return SafetyLexicon(emergency: raw.emergency.map(normalize).filter { !$0.isEmpty }, topics: topics,
-                             suggestionGroups: raw.suggestions.map { ($0.when.map(normalize), $0.topics) })
+                             suggestionGroups: raw.suggestions.map { ($0.when.map(normalize), $0.topics) },
+                             glossary: raw.glossary ?? [:])
     }
 
     /// Tagalog particles that float between words ("hindi na humihinga", "dumudugo pa po") and never
@@ -118,6 +121,27 @@ public struct SafetyLexicon: Sendable {
         if !best.specific && emergency(in: text) { return nil }
         return best.topic
     }
+
+    /// Card steps that answer the question best (word overlap, with Tagalog words mapped to the
+    /// English card wording). Extractive only: it points at sourced text, it never writes any.
+    public func relevantSteps(in card: SafetyCard, for question: String, limit: Int = 2) -> [String] {
+        var words = Set(Self.normalize(question).filter { !Self.stopwords.contains($0) })
+        for word in words { glossary[word]?.forEach { words.insert($0) } }
+        guard !words.isEmpty else { return [] }
+        let lines = card.steps + card.callNow
+        let scored = lines.map { line -> (String, Int) in
+            let tokens = Set(Self.normalize(line))
+            return (line, words.reduce(0) { $0 + (tokens.contains($1) || tokens.contains($1 + "s") ? 1 : 0) })
+        }
+        let best = scored.filter { $0.1 > 0 }.sorted { $0.1 > $1.1 }
+        return Array(best.prefix(limit).map(\.0))
+    }
+
+    /// Words too common to tell steps apart.
+    static let stopwords: Set<String> = ["ako", "ko", "ang", "ng", "sa", "ba", "pwede", "puwede", "dapat", "paano", "ano",
+                                         "the", "a", "an", "i", "my", "is", "it", "on", "to", "of", "and", "or", "should",
+                                         "can", "do", "what", "how", "mo", "niya", "siya", "kami", "tayo", "ito", "yan",
+                                         "may", "mga", "at", "kung", "engine", "car", "makina", "kotse", "sasakyan"]
 
     public func suggestions(for text: String) -> [SafetyTopic] {
         let words = Self.normalize(text)

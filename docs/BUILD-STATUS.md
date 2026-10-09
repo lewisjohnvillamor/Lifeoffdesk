@@ -6,6 +6,7 @@
   - Six car cards: breakdown safety (GOV.UK), flat tire, overheating, jump start, won't start, warning lights (The AA). They are adapted to 911 and right-hand traffic: UK motorway specifics are dropped.
   - Attach a photo: Apple Vision's on-device classifier names the objects (e.g. tire, wheel), which become context for the router. It never diagnoses damage or edibility.
   - 25 cards total; 146 Swift tests pass.
+- **Answers the actual question and handles 'lost' as a conversation:** the matching card steps are highlighted (Tagalog→English glossary; extractive quotes only). Lost shows your offline location, asks where to go, searches the offline map by name and offers Route. 2 new tests; 152 Swift tests pass.
 - **Lexicon rebuild (founder: "don't just capture my examples"):**
   - About 510 routing terms plus 92 emergency phrases per category, in Tagalog, Taglish and English (`scripts/build_safety_lexicon.py` → `StarterData/safety-lexicon.json`).
   - Whole-word and phrase matching that ignores Tagalog particles, with scoring and a body-part fallback.

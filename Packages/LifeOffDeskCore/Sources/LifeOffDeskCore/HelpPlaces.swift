@@ -75,3 +75,25 @@ public enum HelpPlaces {
         return text
     }
 }
+
+/// "Saan mo gustong pumunta?" in the help chat: finds catalogue places by name words, nearest
+/// first. Deterministic; only bundled OpenStreetMap places, never invented ones.
+public enum PlaceNameSearch {
+    static let ignore: Set<String> = ["gusto", "gustong", "pumunta", "punta", "papunta", "pupunta", "nakita", "akong", "ako",
+                                      "may", "malapit", "saan", "sa", "ang", "ng", "ko", "mo", "yung", "the", "to", "go",
+                                      "want", "i", "near", "see", "a", "an", "at", "is", "there", "nearest", "pinakamalapit",
+                                      "uwi", "uuwi", "dito", "doon", "nandito", "kami", "tayo", "nasa", "in", "kong", "kang", "natin", "namin", "please", "po"]
+
+    public static func find(_ query: String, in catalog: PlaceCatalog, from origin: Coordinate?, limit: Int = 3) -> [Place] {
+        let words = SafetyLexicon.normalize(query).filter { $0.count >= 3 && !ignore.contains($0) }
+        guard !words.isEmpty else { return [] }
+        let scored = catalog.places.compactMap { place -> (Place, Int, Double)? in
+            let name = Set(SafetyLexicon.normalize(place.name))
+            let hits = words.filter { word in name.contains { $0.hasPrefix(word) } }.count
+            guard hits > 0 else { return nil }
+            return (place, hits, origin.map { Geo.distanceMeters($0, place.coordinate) } ?? 0)
+        }
+        let best = scored.map(\.1).max() ?? 0
+        return scored.filter { $0.1 == best }.sorted { ($0.2, $0.0.id) < ($1.2, $1.0.id) }.prefix(limit).map(\.0)
+    }
+}

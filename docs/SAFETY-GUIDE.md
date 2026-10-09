@@ -45,6 +45,15 @@ The cards **unsafe**, **lost** and **noGPS** describe only what the app can do: 
   - Both sets have now been seen. A third set written by someone else (ideally native speakers from different regions) is the honest next measurement.
 - **Not measured:** the combined model + keyword routing on the phone. Run the sets from a Mac with the model to check.
 
+## Answering the actual question, and the lost conversation
+- **Answering the question:** after a card is chosen, the card lines that best match the question are shown on top under "Sagot sa tanong mo (mula sa card)".
+  - Matching is by word overlap, with a Tagalog→English glossary (tubig→water, buhusan→pour/water, takip→cap, gulong→tire…).
+  - Example: "nag-overheat ang makina, pwede ko bang buhusan ng tubig?" highlights the card's two water lines: don't open the cap while hot (scalding), and water only as an emergency top-up when cold.
+  - The highlight is extractive: it quotes the sourced card, and says when the source says nothing more.
+- **Lost:** after the lost card the chat shows where you are (offline GPS plus the nearest named place, with Copy and Text) and asks "Saan mo gustong pumunta?".
+  - The next message (e.g. "Starbucks", or "may nakita akong Starbucks") searches catalogue place names, nearest first, using `PlaceNameSearch`.
+  - Each result has a Route button that closes Help and draws the street route on the map.
+
 ## Photos
 - In the chat you can attach a photo. Apple's on-device image classifier (Vision, offline) names the objects in it, e.g. "tire, wheel, car".
 - Those names are passed to the router as context ("Photo shows: …"), and the chat shows what was seen.
