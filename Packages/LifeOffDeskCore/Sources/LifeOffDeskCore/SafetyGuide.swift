@@ -229,6 +229,18 @@ public enum SafetyPrompt {
         return SafetyAnswer(topic: topic, emergency: emergency)
     }
 
+    /// Other cards to offer under an answer, so a wrong route (a model mistake, or a message written
+    /// to steer it) costs one tap: the model's pick when the keywords disagreed, or, when only the
+    /// model routed, related cards. At most two, never the shown card.
+    public static func alternatives(model: SafetyAnswer?, question: String, shown: SafetyTopic?) -> [SafetyTopic] {
+        var out: [SafetyTopic] = []
+        let keyword = SafetyKeywords.topic(in: question)
+        if let keyword, let ai = model?.topic, ai != keyword { out.append(ai) }
+        if keyword == nil, shown != nil { out += SafetyKeywords.suggestions(for: question) }
+        var seen = Set<SafetyTopic>()
+        return out.filter { $0 != shown && seen.insert($0).inserted }.prefix(2).map { $0 }
+    }
+
     /// A short follow-up ("numbing", "paano?") continues the previous question when it matches nothing alone.
     public static func followUp(_ question: String, previous: String?) -> String? {
         guard let previous, question.split(separator: " ").count <= 4,

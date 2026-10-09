@@ -63,3 +63,32 @@ The cards **unsafe**, **lost** and **noGPS** describe only what the app can do: 
 - **No plant or mushroom identification.** A description is not enough, and a wrong identification can kill. The card says so and gives the poisoning steps.
 - **No free-form medical chat.** A 1.7B model can make things up, so it only picks cards.
 - **Not reviewed by a clinician.** The founder should review the cards before release.
+
+## AI security: prompt injection and hallucination (2026-10-10)
+
+**Where untrusted text reaches the model:**
+- **The user's own message** (typed or spoken).
+- **OpenStreetMap place names** (third-party data in the planner, recommender, coach and recap prompts).
+- **Apple Vision photo labels** (a fixed English vocabulary, so a photo cannot carry instructions).
+
+**Defences, true for every AI task in the app:**
+1. **The model never writes text the user sees.** Each task outputs a small JSON choice (a card ID, fact IDs, a candidate letter, a preference enum). Templates or bundled, sourced cards render what is shown. A hijacked model cannot write fake first-aid advice.
+2. **Grammar-constrained decoding.** llama.cpp's GBNF grammar only allows the task's JSON shape and enum values, so the model cannot even emit prose.
+3. **Strict validators with one repair attempt.** Unknown keys, invented cards, invented facts or quests are rejected. After two invalid replies the app falls back to computed/keyword results.
+4. **Sanitised inputs.** ChatML control tokens (`<|im_start|>`, `<|im_end|>`, `<think>`) and newlines are stripped, and length is capped. User text and place names are quoted and labelled "data, not instructions" in every system prompt.
+5. **Deterministic safety net in the help chat:**
+   - The keyword lexicon outranks the model's card when it matches.
+   - The emergency flag is an OR: the model can raise an emergency but can never lower one the user's words describe.
+6. **One-tap correction.** When the keywords and the model disagree, the other card is offered under the answer ("Hindi ito ang tanong mo? Subukan:"). When only the model routed, related cards are offered.
+7. **Fully offline.** No network calls and no tools the model can invoke, so there is no data to exfiltrate and nothing for an injected instruction to act on.
+
+**What "hallucination" means here:** the model picks the wrong card or the wrong facts. It cannot invent advice, numbers or places.
+- **Worst case:** a wrong reviewed card, with the Call 911 banner still raised by the keywords, and the correct card one tap away.
+
+**Tests (`SafetyGuideTests`):**
+- A hijacked model answer cannot hide an emergency or override a keyword match.
+- Model prose and invented card IDs are rejected, and the keyword net still routes.
+- Chat tokens in the question or photo labels cannot open a new turn.
+- A model-only route offers alternatives.
+
+**Not yet measured:** the combined AI + keyword routing accuracy on the phone, and the model's behaviour on a red-team set run through the real Qwen3-1.7B.
