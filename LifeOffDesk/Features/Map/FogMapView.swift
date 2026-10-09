@@ -11,7 +11,8 @@ final class MapGeometry {
     let coverage: Path
 
     init(content: StarterContent) {
-        projection = LocalProjection(origin: content.region.center)
+        let projection = LocalProjection(origin: content.region.center)
+        self.projection = projection
         var major = Path(), minor = Path(), foot = Path(), restricted = Path()
         for road in content.roads.roads {
             let points = road.coordinates.map { projection.project($0) }
