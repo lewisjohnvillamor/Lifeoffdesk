@@ -11,7 +11,7 @@ struct RoadTile {
 }
 
 /// Pre-projected starter geometry in local metres (y north). Built once.
-final class MapGeometry {
+final class MapGeometry: @unchecked Sendable { // immutable after init
     static let tileSize: CGFloat = 1000
 
     let projection: LocalProjection

@@ -25,8 +25,17 @@ enum PlannerState: Equatable {
 
 @MainActor
 final class AppModel: ObservableObject {
-    // Bundled starter area
-    let content: StarterContent?
+    // Bundled regions, streamed in and out like game chunks (see RegionChunks)
+    let regions: RegionLibrary?
+    @Published private(set) var content: StarterContent?
+    /// Bumped whenever the set of loaded cities changes (map geometry and graphs rebuild).
+    @Published private(set) var contentVersion = 0
+    @Published private(set) var loadingRegions: Set<String> = []
+    private var regionUsedAt: [String: Date] = [:]
+    private var mapViewport: BoundingBox?
+    private var viewportTask: Task<Void, Never>?
+    private var chunkCheckPosition: Coordinate?
+    private var networkGeneration = 0
     let contentError: String?
     let grid: ExplorationGrid
 
@@ -39,7 +48,17 @@ final class AppModel: ObservableObject {
     // Walking
     @Published private(set) var recorder: WalkRecorder?
     @Published private(set) var phase: WalkPhase = .idle
-    @Published private(set) var lastFix: TrackSample? { didSet { refreshDestinationStreet() } }
+    @Published private(set) var lastFix: TrackSample? {
+        didSet {
+            refreshDestinationStreet()
+            // Moving (walking or riding) streams the next city in before you reach it.
+            if let fix = lastFix?.coordinate,
+               chunkCheckPosition.map({ Geo.distanceMeters($0, fix) > 300 }) ?? true {
+                chunkCheckPosition = fix
+                updateChunks()
+            }
+        }
+    }
     @Published private(set) var lastFixReceivedAt: Date?
     @Published private(set) var lastRejection: RejectionReason?
     @Published var permissionDenied = false
@@ -48,7 +67,7 @@ final class AppModel: ObservableObject {
     @Published var presentedRecap: WalkSession?
 
     // Planner
-    @Published var destination: Place? { didSet { refreshDestinationStreet() } }
+    @Published var destination: Place? { didSet { refreshDestinationStreet(); updateChunks() } }
     @Published var plannerText = ""
     @Published var plannerState: PlannerState = .idle
     @Published private(set) var lastTrace: PlannerTrace?
@@ -84,11 +103,21 @@ final class AppModel: ObservableObject {
 
     init() {
         do {
-            let loaded = try StarterContent.loadFromBundle()
-            content = loaded
+            // Launch reads only manifests, the always-on main-road context and the primary city;
+            // every other city streams in when the map, GPS, planner or history needs it.
+            let library = try RegionLibrary.open()
+            var packs: [RegionPack] = [], issues: [String] = []
+            for id in library.contextIDs + [library.primary.id] where !packs.contains(where: { $0.region.id == id }) {
+                let loaded = try library.loadPack(id)
+                packs.append(loaded.pack)
+                issues += loaded.issues
+            }
+            regions = library
+            content = StarterContent(library: library, packs: packs, issues: issues)
             contentError = nil
-            grid = ExplorationGrid(origin: loaded.region.center)
+            grid = ExplorationGrid(origin: library.primary.center)
         } catch {
+            regions = nil
             content = nil
             contentError = "\(error)"
             grid = ExplorationGrid(origin: Coordinate(latitude: 14.5566, longitude: 121.0244))
@@ -116,6 +145,71 @@ final class AppModel: ObservableObject {
         refreshStats()
         buildStreetNetwork()
         refreshIdleLocation()
+        updateChunks()
+    }
+
+    // MARK: Region streaming (game-style chunks)
+
+    /// Called by the map when the visible area changes; debounced so scrolling stays smooth.
+    func mapViewportChanged(_ box: BoundingBox) {
+        mapViewport = box
+        viewportTask?.cancel()
+        viewportTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.ensureChunks()
+        }
+    }
+
+    func updateChunks() {
+        Task { [weak self] in await self?.ensureChunks() }
+    }
+
+    /// Loads the cities near the map view, GPS, destination, planner origin (`extra` + `reach`)
+    /// and every city a shown adventure passed through; frees idle far-away cities.
+    func ensureChunks(around extra: [Coordinate] = [], reach: Double? = nil) async {
+        guard let library = regions, let current = content else { return }
+        let detailed = library.detailed.map { (id: $0.id, bounds: $0.bounds) }
+        var points = extra
+        if let position = currentPosition { points.append(position) }
+        if let destination { points.append(destination.coordinate) }
+        if let last = recorder?.session.lastSample { points.append(last.coordinate) }
+        let walks = historyWalks + (recorder.map { [$0.session] } ?? [])
+        let demand = RegionChunks.Demand(viewport: mapViewport, points: points,
+                                         reachMeters: max(reach ?? 0, 2500),
+                                         pinned: RegionChunks.touched(by: walks, regions: detailed))
+        let desired = Set(RegionChunks.desired(detailed, demand: demand)).union([library.primary.id])
+        let now = Date()
+        for id in desired { regionUsedAt[id] = now }
+        let detailedIDs = Set(detailed.map { $0.id })
+        let loadedDetailed = current.loadedIDs.intersection(detailedIDs)
+        let missing = desired.subtracting(current.loadedIDs).subtracting(loadingRegions)
+        let evict = RegionChunks.evictions(loaded: regionUsedAt.filter { loadedDetailed.contains($0.key) },
+                                           desired: desired).subtracting([library.primary.id])
+        guard !missing.isEmpty || !evict.isEmpty else { return }
+        loadingRegions.formUnion(missing)
+        let results = await Task.detached(priority: .userInitiated) { () -> [(pack: RegionPack?, issues: [String])] in
+            missing.sorted().map { id in
+                do {
+                    let loaded = try library.loadPack(id)
+                    return (loaded.pack, loaded.issues)
+                } catch {
+                    return (nil, ["\(id) could not be loaded: \(error)"])
+                }
+            }
+        }.value
+        loadingRegions.subtract(missing)
+        guard let latest = content else { return }
+        var packs = latest.packs.filter { !evict.contains($0.region.id) }
+        var issues = latest.issues
+        for result in results {
+            issues += result.issues
+            if let pack = result.pack, !packs.contains(where: { $0.region.id == pack.region.id }) { packs.append(pack) }
+        }
+        for id in evict { regionUsedAt[id] = nil }
+        content = StarterContent(library: library, packs: packs, issues: issues)
+        contentVersion += 1
+        buildStreetNetwork()
     }
 
     // MARK: Loading and recovery
@@ -185,23 +279,31 @@ final class AppModel: ObservableObject {
     @Published private(set) var streetReveal: Exploration?
     private var liveCache: (key: String, reveal: [ExploredPath], runs: [TrailRun])?
 
+    /// Rebuilds street matching and walking distances for the loaded cities. A newer build
+    /// always wins over a slower older one.
     private func buildStreetNetwork() {
         guard let content else { return }
+        networkGeneration += 1
+        let generation = networkGeneration
         Task { [weak self] in
-            // Walking graph over every bundled road (context trunk roads included), for distances.
+            // Walking graph over every loaded road (context trunk roads included), for distances.
             let graph = await Task.detached(priority: .utility) {
                 WalkingGraph(roads: content.packs.flatMap(\.roads.roads))
             }.value
-            self?.walkingGraph = graph
-            self?.refreshDestinationStreet()
-            self?.refreshAdventureIdeas()
+            guard let self, self.networkGeneration == generation else { return }
+            self.walkingGraph = graph
+            self.destinationStreetKey = nil
+            self.refreshDestinationStreet()
+            self.refreshAdventureIdeas()
         }
         Task { [weak self] in
             let network = await Task.detached(priority: .utility) {
                 StreetNetwork(roads: content.matchingRoads, origin: content.region.center)
             }.value
-            self?.streetNetwork = network
-            self?.refreshStats()
+            guard let self, self.networkGeneration == generation else { return }
+            self.streetNetwork = network
+            self.liveCache = nil
+            self.refreshStats()
         }
     }
 
@@ -646,6 +748,7 @@ final class AppModel: ObservableObject {
             stopReplay()
             demoMode = false
             refreshStats()
+            updateChunks()
             return
         }
         guard recorder == nil else { return }
@@ -667,6 +770,7 @@ final class AppModel: ObservableObject {
         demoProblem = nil
         demoMode = true
         refreshStats()
+        updateChunks()
     }
 
     /// Animates one sample walk revealing the fog (~20 s), cycling through the sample walks.
@@ -767,7 +871,9 @@ final class AppModel: ObservableObject {
             }
             guard let origin = self.distanceOrigin else { return }
             self.plannerState = self.ai.state == .ready ? .thinking : .loadingModel
-            let catalog = content.catalog, graph = self.walkingGraph
+            // Stream in every city the search radius reaches before searching.
+            await self.ensureChunks(around: [origin.coordinate], reach: options.radiusMeters)
+            let catalog = self.content?.catalog ?? content.catalog, graph = self.walkingGraph
             let context = self.searchContext, saved = self.preferenceProfile
             do {
                 let (response, trace) = try await self.ai.run { engine in
@@ -798,7 +904,16 @@ final class AppModel: ObservableObject {
 
     /// Manual fallback. Keeps the app usable without AI but is labelled as such and is not Local AI evidence.
     func manualSearch(category: PlaceCategory) {
-        guard let content, let origin = distanceOrigin else { return }
+        guard let origin = distanceOrigin else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            await self.ensureChunks(around: [origin.coordinate], reach: self.searchRadiusMeters)
+            self.runManualSearch(category: category, origin: origin)
+        }
+    }
+
+    private func runManualSearch(category: PlaceCategory, origin: DistanceOrigin) {
+        guard let content else { return }
         let response = Planner.respond(OutingPreferences(categories: [category],
                                                          accessNeeds: preferenceProfile?.accessNeeds ?? []),
                                        catalog: content.catalog,
