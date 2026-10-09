@@ -1,0 +1,89 @@
+LIFE OFF DESK: BUILD REFERENCE GUIDE
+Version: 1.1 | Updated: 2026-10-09 | Build on Mac; test on iPhone 12 Pro Max.
+
+READ FIRST
+This package is a product/design handoff, not a working Xcode project.
+The updated ICP/MVP text defines behavior. The latest UI image illustrates the look.
+The existing Figma still shows the older flow. Its map-first update was blocked and not applied.
+The prepared Figma script has only passed a syntax check and should not be treated as a tested migration.
+
+SCREEN 01: OPEN
+Open directly to a predominantly blank warm-ivory map canvas.
+Header: Your world. Supporting copy: A little world to uncover.
+Use a small waving cat near a quiet greeting, not a large illustration that fills the map.
+Primary button: Start walking. Secondary: Help me choose somewhere.
+No mandatory welcome carousel, account, chat, destination selection or pack download.
+No roads, existing reveals or live position before real permission and a valid GPS fix.
+Returning users see their stored explored world rather than a reset blank map.
+
+CONTEXTUAL LOCATION AND FIRST FIX
+Request precise location when Start walking is tapped. Explain recording continues during an active outing and stops at finish.
+Denied permission: explain how to enable it, allow returning to the map, and do not simulate tracking as real.
+Acquiring GPS: show a waiting state. Do not reveal ground from stale or inaccurate fixes.
+Start timer at 0:00 and distance at 0 m; demonstrate actual movement on the real phone.
+
+SCREEN 02: WALK
+Keep most of the screen available to the map.
+Reveal only a calibrated narrow corridor around accepted travel. Maintain blank unexplored areas.
+Draw the recorded trail and current position within that explored corridor.
+Bottom controls: measured elapsed time, measured distance, Pause, Finish, Keep a photo memory.
+Pause stops adding to the path; Resume continues without drawing a straight connector across pauses or GPS jumps.
+Finish stops recording and saves the outing. Verify behavior with the screen locked.
+The pictured 18 min / 1.2 km are illustrative, not defaults.
+
+SCREEN 03: KEEP
+Show an outing recap with a small explored-map preview and any saved memories anchored to their location.
+Header: A little more life. Supporting copy: Your outing is saved.
+Use computed time and distance, never hardcoded pictured values.
+A small celebrating cat is optional. Avoid guilt, streak pressure and excessive decoration.
+Primary button: Back to my world. Preserve the revealed areas on return and after restart.
+The reference coffee photo is illustrative. Implement genuine photo input, and cutout extraction only if it works on the test device.
+
+OPTIONAL CHAT / PLACE SEARCH
+Help me choose somewhere opens the planning branch; Start walking bypasses it.
+If a data pack is missing, offer a size-labeled download and a way to return to walking.
+Example request: I have 30 minutes and want somewhere nearby for coffee.
+Local-model task: extract a small structured preference object. Treat its output as untrusted and validate fields.
+Code searches/ranks bundled records and computes distances. Unknown price, quietness and hours remain unknown.
+An LLM must not invent a venue or road. Without a routing engine, show a destination and explicitly labeled straight-line distance; never label this a walking route.
+For the hackathon, make actual local inference visible in the demonstration and report its device/model/runtime/latency.
+
+VISUAL TOKENS
+Background: #F8F6EF. Main text: #283A31. Primary accent: #46785B. Secondary text: #69776D.
+Prefer native iOS system typography in the implementation and readable Dynamic Type behavior.
+Rounded surfaces approximately 18-24 points, generous spacing, controls at least 44 points tall.
+The 428 x 926 device-frame proportions are a design reference; use safe areas and adaptive layout, not fixed screenshot coordinates.
+iPhone 12 Pro Max uses a wide notch, not Dynamic Island. Keep controls clear of system areas.
+Map detail should retain geographic accuracy; the generated board is not a georeferenced map.
+
+ASSET INDEX
+design/life-off-desk-ui-reference.png: primary layout reference, static AI-generated board.
+assets/mascot/life-off-desk-cat-concept.png: earlier personal-cat portrait, secondary style reference.
+assets/mascot/life-off-desk-cat-stickers-male.png: canonical male cat, twelve poses, transparent PNG sheet.
+The sheet is a compilation, not twelve separately exported image files or an animated sprite sheet.
+Read the sheet left-to-right, top-to-bottom:
+Row 1: Welcome / Walking / Thinking.
+Row 2: Planning / Discovering / Fog peek.
+Row 3: Taking photos / Saving memories / Cafe break.
+Row 4: Resting / Celebrating / Encouragement.
+Use welcome for first launch, thinking/discovering for optional suggestions, fog peek for empty exploration, and celebration for recap.
+When preparing individual assets, export each sticker with its white outline, clean alpha and sufficient margins; visually inspect crops rather than assuming uniform bounding boxes.
+Do not place the full sheet in the production app as a visible screen.
+Cat identity: male; cream/brown bicolor coat, white face blaze and paws, dark ears/tail, green jacket and olive backpack. Name undecided.
+Mascot stickers are bundled illustrations; user photo-memory stickers are created locally from user photos. They are not interchangeable.
+
+BUILD ORDER AND VERIFICATION
+1. Confirm Xcode/signing, build a minimal app and install it on the physical iPhone.
+2. Prove map/trail rendering, manual tracking, accepted-fix filtering and saved reveal state.
+3. Spike actual local inference early because the event theme is local AI; choose a runtime/model only after measured success.
+4. Add one small bundled map area and a curated place dataset, then grounded suggestions.
+5. Add photo memory, recap and cat artwork; use normal photos if extraction remains unproven.
+6. Real walk, lock-screen/background behavior, airplane mode, restart persistence, weak GPS and denied permission.
+7. Measure memory, storage, battery and inference latency. Expand routing, backups and regional downloads after the core loop works.
+Never report a static picture, Figma transition, prerecorded model response, or seeded demo distance as implemented functionality.
+
+IMPLEMENTATION HANDOFF PROMPT
+Read Life-Off-Desk-ICP-and-MVP.txt and this guide first. Build a native iPhone app on the Mac, targeting my iPhone 12 Pro Max. Use design/life-off-desk-ui-reference.png for appearance and the male cat sticker sheet for companion artwork. Start with a blank map and direct walking; chat is optional to open but required to implement; additional packs are optional. Preserve real exploration, privacy and offline behavior. Prove local model inference for the hackathon, keeping search and numerical calculations deterministic. Scope the first build to one small prepared region, a complete walking/recap loop and genuine iPhone-local grounded AI suggestions; photos and cutouts follow if time permits. Verify current APIs against official sources. Report real device results and any simulated or incomplete features.
+
+LATEST SCOPE CLARIFICATION
+Both walk/reveal and genuine iPhone-local AI suggestions are required. Chat is optional to use, not optional to build. Photo memories/cutouts are P1 after both P0 loops pass. Develop on confirmed Apple silicon Mac with Xcode. Follow docs/MVP-FEATURES.md and docs/IMPLEMENTATION-PLAN.md for latest timeboxed scope.

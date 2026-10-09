@@ -1,0 +1,5 @@
+interface:
+  display_name: "Life Off Desk Ios"
+  short_description: "Help with Life Off Desk Ios tasks"
+  brand_color: "#46785B"
+  default_prompt: "Use $life-off-desk-ios to build the relevant Life Off Desk MVP feature."

@@ -1,0 +1,315 @@
+LIFE OFF DESK: ICP AND MVP BRIEF
+Version: 1.3
+Updated: 2026-10-09, Asia/Manila
+Build environment: Mac; target app: iPhone, first test device iPhone 12 Pro Max
+Date: 2026-10-09
+Purpose: Product context for later ingestion by Codex or another implementation agent.
+
+1. PRODUCT SUMMARY
+
+Life Off Desk is a private, offline-first iPhone app that helps people spend more time exploring their surroundings and collecting personal memories.
+
+Its central experience is a fog-of-war map. The world begins covered. Actual movement reveals the places and paths the user explores. Photos from outings can become cutout stickers attached to the map, turning it into a personal visual journal.
+
+A chatbox helps the user decide what to do: describe a mood, available time, budget, and travel preference, then receive grounded suggestions for a nearby place or outing route.
+
+Primary core loop: open a blank personal map -> tap Start walking -> grant location permission if needed -> actual movement reveals a narrow traveled corridor -> optionally save a photo memory -> finish -> see a recap -> return to the growing map.
+
+Planning loop (optional to open, required in the MVP): tap Help me choose somewhere -> obtain required place data if missing -> describe an outing -> review grounded suggestions -> optionally preview a route -> start walking. Chat and downloads must not block an unplanned walk.
+
+Product promise: Your personal world, stored on your phone.
+Positioning direction: There is more to life than your screen.
+
+2. CONFIRMED USER REQUIREMENTS
+
+- Product name: Life Off Desk.
+- Initial geographic coverage: Luzon, Philippines.
+- Initial platform: a local iPhone app that can function offline.
+- First real test device: iPhone 12 Pro Max.
+- Development and installation environment: Apple silicon Mac with Xcode installed. Real-device signing and iOS version still need verification.
+- Open directly on the blank map, with Start walking as the primary action.
+- Mascot: the founder's personal male cream-and-chocolate-brown cat, illustrated with a green jacket and backpack.
+- Hackathon theme context: local AI. Demonstrate genuine local inference; do not describe rule-based parsing as AI.
+- Main interface: a simple canvas with fog of war.
+- Exploration reveals the map; progress persists across outings.
+- Include a chatbox for requests such as "I want to explore somewhere quiet."
+- Suggest a place or route based on the request.
+- Let users turn captured photos into cute stickers using subject cutouts.
+- Keep the experience visually simple with a restrained, consistent palette.
+- The core experience must not require an account or cloud server.
+
+3. IDEAL CUSTOMER PROFILE
+
+The following ICP is a working hypothesis, not a validated market finding.
+
+PRIMARY ICP
+Desk-bound adults in Luzon who want to explore more but struggle to turn that intention into a small, convenient outing.
+
+Initial recruitment focus:
+- Remote workers, developers, freelancers, designers, and other people whose work involves long periods at a computer.
+- Often repeat the same home-work-errand routine.
+- Have access to an iPhone and can spend approximately 15-60 minutes on a small outing.
+- Prefer low-cost, nearby exploration over planning a major trip.
+- Enjoy collecting memories and seeing visible personal progress.
+- Value privacy and may prefer keeping location history off social platforms.
+
+Suggested initial age range for interviews: 25-40. This is a recruitment assumption, not a product restriction.
+Initial testing area: Metro Manila, starting in Makati, while retaining Luzon as the coverage boundary.
+
+MAIN PROBLEMS
+- "I want to leave my desk, but I don't know where to go."
+- Familiar places and routes make daily life feel repetitive.
+- Planning even a small outing can feel like unnecessary effort.
+- Ordinary photo galleries lose the connection between a memory and where it happened.
+- Users want encouragement without pressure to compete, post publicly, or maintain a streak.
+
+JOB TO BE DONE
+When I have a little free time and feel stuck in my routine, help me choose a manageable outing and preserve something from it, so I can see that I am experiencing more of the world around me.
+
+ACTIVATION TRIGGER
+A break after work, a free weekend hour, a desire to visit somewhere new, or seeing the map still covered in fog.
+
+FIRST VALUE MOMENT
+Finish a short outing and see a real path revealed on the map, ideally with a first photo sticker saved at its location.
+
+SECONDARY AUDIENCES TO TEST LATER
+- Gamers interested in real-world exploration and collection.
+- Couples or friends who enjoy small local outings.
+- People who recently moved to a neighborhood.
+- Casual travelers building a private journal of places visited.
+
+MVP AUDIENCE BOUNDARY
+Prioritize personal nearby exploration. Fitness coaching, competitive gaming, professional navigation, travel booking, and social networking are outside the first release.
+
+4. MVP SCOPE
+
+The MVP is successful when the full core loop works on a real iPhone 12 Pro Max in airplane mode after downloading the needed regional data.
+
+A. MAP-FIRST ENTRY AND CONTEXTUAL ONBOARDING
+- Open directly to a warm ivory, mostly full-screen blank canvas.
+- No pre-drawn roads, discovered places, route lines, or uncovered terrain at first launch.
+- Make Start walking the primary action and Help me choose somewhere secondary.
+- Keep any introduction optional and brief.
+- Request location when the user taps Start walking. Before permission/GPS, do not imply a real current position is known.
+- Explain local storage and manual tracking in context, rather than requiring a long setup wizard.
+- Basic trail recording can start without a regional download; use bundled starter data for detailed offline reveal where available. If basemap data is absent, show the recorded trail on the blank canvas and offer an optional pack for detail.
+- Show the exact measured download size before downloading a pack.
+- Support a usable browsing experience if location permission is denied; require permission before recording an outing.
+
+B. LUZON COVERAGE WITH REGIONAL PACKS
+- Support a Luzon-wide exploration canvas.
+- Provide a Luzon overview and place-search data where practical.
+- Start with one small prepared area near Makati; expand detailed map and walking-route coverage after the core loop works.
+- A small bundled starter area avoids a required download before the first walk.
+- Allow additional regional packs to be downloaded later.
+- Clearly show which regions support offline search and routing.
+- Preserve exploration progress and memories when a map pack is removed.
+- Full detailed offline navigation across all of Luzon is not required for the first working release.
+
+C. FOG-OF-WAR CANVAS
+- Unexplored areas remain covered.
+- The user's current position remains visible when location is available.
+- Reveal a modest corridor around accepted location samples during an outing.
+- Store exploration coverage separately from the basemap and raw location history.
+- Reject poor-accuracy samples and implausible jumps before revealing areas.
+- Persist reveals across restarts and outings.
+- Route previews and destination searches must not count as exploration.
+- Reveal width and filtering thresholds are implementation decisions to calibrate on real walks.
+
+D. OUTING CHATBOX
+- Accept short natural-language requests.
+- Extract preferences such as time available, walking, free/paid, quiet, coffee, and somewhere new.
+- Ask a focused follow-up when necessary.
+- Search downloaded place records and rank candidates using distance, preferences, and exploration history.
+- Show a small number of relevant suggestions with names, travel estimates, and known limitations.
+- A focused parser and prepared templates remain a fallback when a model is unavailable.
+- For the local-AI hackathon demo, include measured iPhone-local preference extraction and grounded local place suggestions as required MVP features. Fog reveal and deterministic parsing alone do not establish local AI.
+- Walking remains usable independently of inference or a model download.
+
+E. PLACE AND ROUTE SUGGESTIONS
+- Offer a nearby destination or a walk through unexplored areas.
+- Use downloaded place records for destinations and a routing engine for paths.
+- Calculate route distances and time estimates in code, not with a language model.
+- Preview the proposed route and destination over the fog.
+- Offer Start outing, and handle missing routing coverage with a clear fallback.
+- Treat walking duration as an estimate, not a guarantee.
+- Do not claim that a path is safe, public, or currently accessible solely because it is mapped.
+
+F. MANUAL OUTING TRACKING
+- Start recording only when the user starts an outing.
+- Support Pause/Resume and Finish.
+- Validate tracking when the screen is locked and the app is backgrounded on the target phone.
+- Calculate elapsed time, walked distance, and newly explored coverage.
+- Stop location recording when the outing finishes.
+- Handle denied permission, weak GPS, and interrupted sessions without losing saved progress.
+
+G. PHOTO STICKERS
+- Take a photo or select one from Photos.
+- Detect/extract a foreground subject, let the user select an available subject, and remove its background.
+- Add a white border, gentle shadow, and optional restrained accent outline.
+- Save the cutout, a title, and its relationship to the outing and location.
+- Keep stickers as local assets, with adjustable compression.
+- Provide a regular photo memory fallback if extraction fails.
+- For this MVP, a sticker preserves the photographed subject. Generative cartoon redrawing is outside scope.
+
+H. RECAP, MEMORIES, AND BACKUP
+- Show the completed outing's calculated facts and updated explored map.
+- Let users reopen a saved memory and its sticker.
+- Support local export/import of progress, outings, and sticker assets.
+- Do not assume local-only storage protects data against device loss or app deletion; provide an explicit backup action.
+
+5. USER JOURNEY
+
+PRIMARY WALK WITHOUT PLANNING
+1. Open directly to Your world: blank ivory canvas, a small cat greeting, Start walking.
+2. Tap Start walking; request precise location in context if not already granted.
+3. Show a recording state starting at 0:00 and 0 m. Show position only after a valid fix.
+4. Actual accepted movement reveals a narrow corridor. Untraveled areas stay blank.
+5. Pause/resume, finish, or optionally capture/select a photo memory.
+6. Finish recording, review calculated time/distance and saved memories.
+7. Return to the map with persistent reveals. Future launches retain this world.
+
+OPTIONAL HELP CHOOSING SOMEWHERE
+1. From the map, tap Help me choose somewhere.
+2. If the required place pack is missing, explain the size and offer download; allow returning to walking.
+3. Enter a short request. A local model extracts preferences when available.
+4. Search/rank real downloaded place records in code; show a few grounded suggestions.
+5. Preview a route only where a real offline routing engine has coverage. Otherwise show destination and straight-line distance, explicitly labeled.
+6. Start the outing. Preview/search never changes explored coverage.
+
+REFERENCE STATUS AND PRECEDENCE
+Latest visual reference: design/life-off-desk-ui-reference.png, a static board showing Open -> Walk -> Keep.
+This text brief and the accompanying build reference guide define behavior; images illustrate layout only.
+Figma: https://www.figma.com/design/sYIV8mmh67jYeN9ufAueAK
+The existing file contains the older 14-screen prototype. The proposed map-first revision was NOT applied: the connector reached its Starter-plan limit and the browser could not access the editor.
+design/figma-map-first-update.js is prepared but only syntax checked, not runtime or visually validated.
+Prototype maps, venues, distances, downloads, GPS and image processing are illustrative. Do not ingest pictured map geometry or demo distances as factual data.
+
+6. TECHNICAL DIRECTION AND DATA
+
+Proposed implementation direction, subject to a short feasibility spike:
+- Native iOS app using Swift/SwiftUI.
+- Local database, such as SQLite, for places, outings, memories, and exploration state.
+- Local map rendering with downloaded vector map packs.
+- Separate prepared routing data and an offline-capable routing engine.
+- iOS location services for recording actual outings.
+- Evaluate Apple Vision subject extraction on the iPhone 12 Pro Max before committing to it.
+- Meta Segment Anything is a candidate for extraction, but full models must not be assumed to run efficiently on this phone.
+
+Data candidates:
+- Overture Maps Places for downloadable place names, categories, coordinates, and available business metadata.
+  https://docs.overturemaps.org/guides/places/
+- OpenStreetMap extracts through Geofabrik for mapped places, roads, and footpaths.
+  https://download.geofabrik.de/asia/philippines.html
+- Process datasets on a development machine into compact regional packs; do not require the phone to ingest raw national datasets.
+- Retain required attribution and source/license metadata in the packs and app.
+- Compare local coverage before deciding whether to merge both place sources.
+
+Offline limitations:
+- Offline operation begins after app installation and required data/model downloads.
+- Live opening hours, closures, weather, and new businesses require refreshed data.
+- Missing fields must remain unknown. A cafe category does not prove a venue is quiet or affordable.
+- Record pack version/update dates and allow updates when connected.
+
+7. LOCAL AI POLICY
+
+- iPhone 12 Pro Max does not support Apple Intelligence/Foundation Models as the planned built-in language-model option.
+- Candidate models previously discussed include quantized Qwen3-0.6B or Qwen3-1.7B. These are candidates, not a selected or benchmarked dependency. Evaluate a supported runtime and real device performance before choosing.
+- For the hackathon build, prioritize a short local inference spike alongside tracking. Show actual input -> model output -> grounded local results in airplane mode.
+- AI must run entirely on the iPhone for the MVP. A Mac inference server is not accepted as the primary implementation. Disclose failure if phone inference cannot be proven.
+- Model suitability, runtime integration, license terms, memory use, latency, and battery impact must be verified before shipping.
+- Walking must remain usable without a model; required AI suggestions need a provisioned local model before the offline demo.
+- Do not invent places, routes, venue attributes, opening hours, or outing statistics.
+- Language output can describe results computed from local data; it must not replace search, routing, or numerical calculations.
+- Run required planner inference on demand, rather than continuously while tracking.
+
+8. DESIGN DIRECTION
+
+- A calm, personal, playful journal with a map as the dominant canvas.
+- A restrained palette: warm neutral surfaces and one muted green accent.
+- Soft-edged reveals over a warm ivory blank canvas, legible labels, and clear primary actions.
+- Palette: warm ivory #F8F6EF; dark forest #283A31; muted green #46785B; secondary sage #69776D.
+- Keep the map dominant and controls anchored near the bottom. Chat is optional.
+- The cat is a small companion at welcome/empty states and recap, not a blocking full-screen mascot. Preserve his cream/brown markings, white paws, and green explorer outfit.
+- The male sticker sheet is the canonical mascot reference. Mascot name is undecided.
+- Mascot illustration stickers and user photo memories are distinct asset types.
+- Cute photo stickers that preserve actual memories.
+- Avoid crowded dashboards, guilt-based streak mechanics, and excessive colors.
+- Make privacy and offline availability understandable in ordinary language.
+
+9. EXCLUDED FROM THE MVP
+
+- Accounts, mandatory cloud sync, public profiles, feeds, leaderboards, and social messaging.
+- Payments, subscriptions, travel booking, and monetization infrastructure.
+- Automatic all-day location surveillance.
+- Generative image-to-cartoon conversion.
+- Large always-running AI models.
+- Full detailed offline routing for every part of Luzon on day one.
+- Android and desktop clients.
+- Medical, mental-health, or exercise-benefit claims.
+
+10. ACCEPTANCE CHECKS
+
+- Open on the map and begin an unplanned walk without mandatory chat or pack download.
+- Complete a real outing on the iPhone 12 Pro Max without network access, using bundled or previously downloaded data where detailed map reveal is shown.
+- For the local-AI demo, record which device performs inference, the actual model/runtime, model file size and response time. Confirm no remote inference request is required.
+- Query a supported outing request and receive a destination grounded in downloaded records.
+- Preview a route without revealing new map areas.
+- Record movement with the screen locked and reveal only accepted traveled locations.
+- Finish tracking and reopen the app with exploration and memories intact.
+- Create a sticker from a supported photo, or use the documented extraction fallback.
+- Export and restore progress and memories successfully.
+- Show clear states for denied permissions, missing packs, no matching places, and extraction failures.
+- Measure package size, app size, memory, tracking battery use, and any model latency on the actual device.
+
+Storage planning only: earlier discussion estimated approximately 1-3 GB for offline app/data before a large photo collection, with model storage accounted for separately; the planner model is required in this build. This is not a measured requirement or promise. Aim for a starter installation under 2 GB if feasible; report actual sizes before finalizing pack scope.
+
+11. VALIDATION AND RETENTION HYPOTHESES
+
+Track activation: first completed outing with a visible reveal.
+Track behavior: completed outings per week, return to the map, memories saved, and repeated use of suggestions.
+Measure week-one and week-four retention with early testers before selecting retention or churn targets.
+The retention hypothesis is that a growing personal canvas and meaningful keepsakes encourage another outing.
+No demand, willingness-to-pay, churn rate, market share, or health benefit has been established by this brief.
+
+12. IMPLEMENTATION ORDER
+
+1. On the Mac, verify Xcode/device signing and install a minimal app on the iPhone 12 Pro Max.
+2. Build the map-first entry, manual tracking, fog/trail persistence and start/pause/resume/finish loop.
+3. Run a short local-model feasibility spike early; measure actual device/runtime behavior and choose one genuine local-AI demonstration.
+4. Bundle one small map area and curated local place dataset; connect structured preferences to deterministic search/ranking.
+5. Add photo memories, recap and the cat assets. Add subject extraction only after a real device proof; retain regular-photo fallback.
+6. Test a real walk, locked-screen recording, restart persistence and airplane-mode operation.
+7. Add routing, backup/restore and broader regional packs after the first working build unless already proven.
+
+13. EIGHT-HOUR BUILD TARGET VS FULL MVP
+
+Eight hours is a planning budget, not a guarantee or measured implementation time.
+Target a small working demo: blank canvas -> walk -> reveal -> photo memory -> recap, plus one genuine local inference use case.
+Limit geography to one prepared starter area. Keep destinations grounded in curated local records.
+Postpone full Luzon downloads, computed walking routes, generative cartoon stickers, monetization, social features and backup UI if time is insufficient.
+The full MVP above remains the roadmap; demo exclusions must not be presented as completed features.
+If local inference does not work on the iPhone, disclose that limitation instead of showing a simulated AI response as real.
+
+14. BUILD PACKAGE ASSETS
+
+Life-Off-Desk-ICP-and-MVP.txt: updated canonical product brief for ingestion.
+Life-Off-Desk-Build-Reference-Guide.txt: screen behavior, asset index and implementation handoff.
+design/life-off-desk-ui-reference.png: latest static Open / Walk / Keep layout board.
+assets/mascot/life-off-desk-cat-concept.png: earlier personal-cat portrait, general illustration reference.
+assets/mascot/life-off-desk-cat-stickers-male.png: canonical 12-pose male cat sticker sheet, 3 columns by 4 rows, with alpha transparency and white contours.
+design/figma-map-first-update.js: unapplied update script; optional reference only.
+README.txt: how to use the bundle on the Mac.
+User-uploaded personal pet photos are not included in this build package.
+
+Instruction to the implementing agent: preserve map-first entry, offline walking, fog-of-war behavior and iPhone 12 Pro Max support. Verify changing APIs and dependencies against official documentation. Distinguish actual GPS/model/image-processing behavior from simulations. Do not silently expand scope or treat the Figma revision as applied.
+
+
+LATEST BUILD DECISIONS — 2026-10-09
+
+Both real walking/fog reveal and grounded on-device AI suggestions are P0 must-have MVP features. Chat remains optional for the user to open; implementing it is required because the theme is Local AI. Apple silicon Mac with Xcode is confirmed. AI must execute entirely on the iPhone 12 Pro Max. Starter detailed coverage is one small chosen neighborhood; Luzon remains the product's initial geographic market. Photo attachment and cutout stickers follow the required loops if time permits.
+
+The latest explicit feature scope and build order are in docs/MVP-FEATURES.md and docs/IMPLEMENTATION-PLAN.md; these refine the broader feature descriptions above for the timeboxed build. Architecture, brand, acceptance, ideation questions and reusable-skill handoff are included alongside them. Organizer rules, exact cutoff, exact demonstration walking segment still needs confirmation; Makati and Taglish are confirmed.
+
+CONFIRMED HANDOFF UPDATE — 2026-10-09
+Makati is the first starter city. Taglish planner input and concise Taglish responses are required. Both walking/fog and genuine iPhone-local AI suggestions remain P0. Organizer source: https://cerebralvalley.ai/e/appbuildersph-hackathon-2026 . Exact submission cutoff and Local AI track rules are not specified there; see docs/HACKATHON.md. Repository README and docs/MAC-SETUP.md now provide download/setup steps.

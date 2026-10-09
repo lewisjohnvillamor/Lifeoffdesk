@@ -1,0 +1,118 @@
+# Portable build contract
+
+Updated 2026-10-09. Repository docs are canonical. Makati and Taglish are confirmed.
+
+# Life Off Desk — brand and interface guide
+
+## Direction
+
+Product promise: **Your personal world, stored on your phone.**
+
+Positioning: **There is more to life than your screen.**
+
+Calm, curious and inviting. Encourage a small outing without guilt or competition. The map is the primary visual. The cat is a companion, with sparse appearances in empty states and recaps.
+
+## Color tokens
+
+| Token | Hex | Use |
+| --- | --- | --- |
+| canvas | #F8F6EF | Warm ivory canvas and unexplored fog |
+| ink | #283A31 | Main text, strong icons |
+| primary | #46785B | Primary buttons and selected controls |
+| secondaryInk | #69776D | Secondary text on ivory |
+| surface | #FFFFFF | Cards/sheets where separation is necessary |
+| border | #D9DED4 | Subtle separators; proposed extension |
+| danger | #A13D36 | Destructive labels with explicit text; proposed extension |
+
+The first four colors reflect the approved direction. Border/danger are proposed functional additions. Validate actual composited contrast, including disabled controls, photos and map labels. Do not communicate status through color alone. Ivory labels on primary green and both text colors on ivory should be checked in the implementation.
+
+## Native iPhone presentation
+
+- System typography / SF family; use semantic Dynamic Type styles rather than rasterized text.
+- Suggested base: 17-point body, 15-point secondary, 22-point section title; scale with accessibility settings.
+- Spacing tokens: 4, 8, 12, 16, 24, 32 points. Use a 16-point content inset as a starting value.
+- Rounded cards/buttons: 18–24 points. Minimum interactive target: 44 × 44 points.
+- Respect safe areas, keyboard, classic iPhone 12 notch and home indicator. The reference board is visual guidance rather than exact pixel coordinates.
+- Keep bottom controls reachable. Avoid decorative onboarding before the map. Use sheets for planner/results; use a recap view after Finish.
+- Respect Reduce Motion and VoiceOver; accessible labels describe the action and state. Provide text equivalents for meaningful map status.
+- Start with one polished light theme; postpone a complete dark theme. Use SF Symbols for interface actions and keep icon sizing consistent.
+
+## Core copy
+
+| Moment | Proposed copy |
+| --- | --- |
+| Initial map | “A little walk can open up your world.” |
+| Main action | “Start walking” |
+| Secondary action | “Help me choose somewhere” |
+| First GPS fix pending | “Finding your location…” |
+| Paused | “Walk paused” / “Resume walking” |
+| Planner placeholder | “A quiet place for a 30-minute break” |
+| No local matches | “No matching places in this area. Try a wider area or another activity.” |
+| Model failure | “I couldn't understand that request. Try again or choose filters.” |
+| Recap | “You made room for a little adventure.” |
+
+Do not promise venues are open, paths are safe, or exact travel time without supporting data. Keep technical runtime details in build evidence rather than the ordinary user flow.
+
+## Canonical mascot
+
+Male cream-and-chocolate bicolor cat based on the founder's personal cat: white nose blaze/muzzle/paws, dark ears and tail, green jacket and olive backpack. Name undecided. Preserve markings and the established drawn style.
+
+Use `assets/mascot/life-off-desk-cat-stickers-male.png` as the canonical sheet. Its 12 poses are arranged in 3 columns × 4 rows: welcome/walking/thinking; planning/discovering/fog peek; taking photos/saving memories/café break; resting/celebrating/encouragement. It has transparency and a sticker outline but is not yet split into 12 standalone assets. The concept portrait is secondary. Do not regenerate a different cat when implementing.
+
+Prefer small welcome/fog-peek/celebration accents. Avoid a permanent large mascot over the map, gender stereotypes, invented accessories or excessive animation. Personal photo memories and pre-drawn mascot stickers are separate asset types.
+
+## Reference status
+
+`design/life-off-desk-ui-reference.png` is the latest static Open/Walk/Keep board. Its geometry, text and statistics are illustrative. The existing Figma journey has not received the map-first revision; `design/figma-map-first-update.js` is unapplied and runtime-untested. Feature behavior in MVP-FEATURES.md takes precedence over decorative reference details.
+
+## Taglish update
+
+Planner accepts natural Taglish and returns short Taglish guidance grounded in the catalog. Use familiar English action labels where clearer. Suggested prompt: “May 30 minutes ako, gusto ko ng quiet na park.” Suggested empty state: “Walang matching place sa area na ito. Try natin ibang activity?” Test clarity with the founder; Taglish model quality is not assumed.
+
+
+# Life Off Desk — MVP feature list
+
+Decision version: 2026-10-09, Asia/Manila. This is a build specification, not a claim that features have been implemented.
+
+## Product and first user
+
+Help a desk-bound person in Luzon take a short outing, find somewhere worthwhile, and grow a private map through actual movement. The initial customer hypothesis is workers, developers and freelancers who want low-effort 15–60 minute breaks. Demand is unvalidated. The first test user is the founder on an iPhone 12 Pro Max.
+
+The opening screen is a warm ivory map with **Start walking** as its main action and **Help me choose somewhere** as a secondary action. Chat is optional for the user but **required in the MVP**. Both walking and genuine on-device AI suggestions are P0 because the event theme is Local AI.
+
+## P0 — required for a complete demo
+
+| ID | Feature | Minimum behavior | Acceptance evidence |
+| --- | --- | --- | --- |
+| P0-01 | Map-first entry | Open the personal map immediately; no account or download gate | Fresh install opens the map; clear Start walking and suggestion actions |
+| P0-02 | Explicit walk session | Start, pause, resume, finish; ask for location when needed | Real phone session changes state correctly; paused movement adds no trail |
+| P0-03 | Real GPS tracking | Accept reasonable fixes, reject stale/inaccurate jumps, break gaps | Short outdoor walk follows actual movement; denied permission shows a useful next step |
+| P0-04 | Fog of war | Reveal only a narrow traveled corridor; keep unexplored detail covered | New movement reveals local geometry; stationary GPS drift does not reveal a large area |
+| P0-05 | Local persistence | Save trail, cumulative exploration and completed recaps | Relaunch preserves exploration; interrupted session offers recovery without silently resuming tracking |
+| P0-06 | On-device AI chat | Turn a short Taglish request into validated outing preferences; return concise Taglish guidance | iPhone model inference succeeds with airplane mode on and Wi-Fi off; Mac disconnected |
+| P0-07 | Grounded local suggestions | Filter/rank a bundled catalog; show up to three actual places | Every result maps to a source record; unsupported price/hours/quietness are not invented |
+| P0-08 | Choose a destination | Selected suggestion appears as a destination marker and Start walking action | Label straight-line distance explicitly; no fabricated walking route or ETA |
+| P0-09 | Honest recap | Show tracked distance, active duration and a small route preview | Values come from accepted samples; save/reopen completed walk |
+| P0-10 | Offline starter area | Bundle a small verified place catalog and simple vector context for one walkable area | AI, catalog, reveal and recap work without a network; show coverage limits outside the area |
+| P0-11 | Essential errors/privacy | Handle permissions, no GPS, no matches, model missing/loading/failure; local erase control | Input survives AI failure; walking remains usable; erase clears personal walks and exploration |
+
+The confirmed starter city is Makati. Begin with a proposed Makati CBD subset; its exact walking boundary still needs outdoor validation. Luzon is the initial product market, not a promise to ship detailed coverage of all Luzon in eight hours.
+
+## P1 — add after both required loops pass
+
+- Attach one ordinary photo to a walk and show it in the recap. Use a photo picker first; camera capture is a later convenience.
+- Produce a subject cutout with a restrained sticker border if real-device image processing works. Preserve ordinary photo fallback.
+- Place one approved cat pose on the empty map or recap after the canonical sheet is prepared for individual assets.
+- Show storage usage by app/model/map/photos and offer local export/backup.
+- Additional languages and broader conversational support beyond the required Taglish outing prompts.
+
+## Deferred
+
+Full Luzon downloads, offline road routing, social feeds, accounts, payments, streaks, badges, animated mascot, Android, cloud sync, continuous all-day tracking and generative photo redrawing. These are roadmap candidates, not obligations of this demo.
+
+## Two required user paths
+
+1. Open → Start walking → permission if needed → accepted movement reveals corridor → pause/resume → finish → persisted recap.
+2. Open → Help me choose somewhere → type request → real local inference → sourced suggestions → select destination → Start walking → persisted recap.
+
+Success means the founder can complete both paths offline on the real phone. If phone inference fails, the Local AI MVP is incomplete; do not silently remove AI from the acceptance criteria.

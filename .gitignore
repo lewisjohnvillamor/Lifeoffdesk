@@ -1,0 +1,18 @@
+# Downloaded model/runtime and generated third-party data
+downloads/
+vendor/
+local-data/
+*.gguf
+*.partial
+# Xcode and machine state
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+.env
+.env.*
+__pycache__/
+*.py[cod]
+# Personal photos, tracks and private evidence
+private/

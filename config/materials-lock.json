@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-09",
+  "status": "candidate artifacts; phone performance untested",
+  "artifacts": [
+    {
+      "name": "Qwen3-0.6B-Q4_0.gguf",
+      "group": "model",
+      "relativePath": "model/Qwen3-0.6B-Q4_0.gguf",
+      "url": "https://huggingface.co/ggml-org/Qwen3-0.6B-GGUF/resolve/a41486f827d17edd055fe6b3b0ba3f8d427c0519/Qwen3-0.6B-Q4_0.gguf",
+      "sha256": "da2572f16c06133561ce56accaa822216f2391ef4d37fba427801cd6736417d4",
+      "approxBytes": 429000000
+    },
+    {
+      "name": "llama-b11429-bin-macos-arm64.tar.gz",
+      "size": 11971406,
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-macos-arm64.tar.gz",
+      "sha256": "740288ec6887be94280a5dfa25b5e23a78285cab104519e6c7e218904ee82459",
+      "group": "mac-tools",
+      "relativePath": "runtime/llama-b11429-bin-macos-arm64.tar.gz"
+    },
+    {
+      "name": "llama-b11429-xcframework.zip",
+      "size": 61992495,
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-xcframework.zip",
+      "sha256": "e26a6a0a813f5760fe45834ce239d5b525e4e2442d4fd017221d9f0438383174",
+      "group": "runtime",
+      "relativePath": "runtime/llama-b11429-xcframework.zip"
+    }
+  ]
+}
