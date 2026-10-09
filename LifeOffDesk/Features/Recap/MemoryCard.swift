@@ -304,11 +304,13 @@ struct BrandBadge: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            Image(systemName: "figure.walk")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(onPaper ? Theme.canvas : Theme.primary)
+            Image(Mascot.welcome.imageName)
+                .resizable().scaledToFit()
+                .padding(3)
                 .frame(width: 46, height: 46)
-                .background(onPaper ? Theme.primary : Theme.canvas, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(onPaper ? Theme.primary.opacity(0.12) : Theme.canvas,
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .accessibilityHidden(true)
             Text("Life Off Desk").font(.system(size: 10, weight: .semibold))
         }
     }

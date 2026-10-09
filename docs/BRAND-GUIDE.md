@@ -53,7 +53,7 @@ Do not promise venues are open, paths are safe, or exact travel time without sup
 
 Male cream-and-chocolate bicolor cat based on the founder's personal cat: white nose blaze/muzzle/paws, dark ears and tail, green jacket and olive backpack. Name undecided. Preserve markings and the established drawn style.
 
-Use `assets/mascot/life-off-desk-cat-stickers-male.png` as the canonical sheet. Its 12 poses are arranged in 3 columns × 4 rows: welcome/walking/thinking; planning/discovering/fog peek; taking photos/saving memories/café break; resting/celebrating/encouragement. It has transparency and a sticker outline but is not yet split into 12 standalone assets. The concept portrait is secondary. Do not regenerate a different cat when implementing.
+Use `assets/mascot/life-off-desk-cat-stickers-male.png` as the canonical sheet. Its 12 poses are arranged in 3 columns × 4 rows: welcome/walking/thinking; planning/discovering/fog peek; taking photos/saving memories/café break; resting/celebrating/encouragement. It has transparency and a sticker outline. On 2026-10-09 it was cut mechanically (by its own alpha outlines, no redrawing) into 12 imagesets in `LifeOffDesk/Resources/Assets.xcassets` (`mascot-welcome`, `-walking`, `-thinking`, `-planning`, `-discovering`, `-fog-peek`, `-taking-photos`, `-saving-memories`, `-cafe-break`, `-resting`, `-celebrating`, `-encouragement`). The concept portrait is secondary; the app icon is a square crop of it (no redraw). Do not regenerate a different cat when implementing.
 
 Prefer small welcome/fog-peek/celebration accents. Avoid a permanent large mascot over the map, gender stereotypes, invented accessories or excessive animation. Personal photo memories and pre-drawn mascot stickers are separate asset types.
 
@@ -64,3 +64,9 @@ Prefer small welcome/fog-peek/celebration accents. Avoid a permanent large masco
 ## Taglish update
 
 Planner accepts natural Taglish and returns short Taglish guidance grounded in the catalog. Use familiar English action labels where clearer. Suggested prompt: “May 30 minutes ako, gusto ko ng quiet na park.” Suggested empty state: “Walang matching place sa area na ito. Try natin ibang activity?” Test clarity with the founder; Taglish model quality is not assumed.
+
+## In-app branding (implemented 2026-10-09)
+
+- **App icon:** square crop of the concept portrait (waving cat with map), opaque 1024 px, iOS derives other sizes. **Launch screen:** BrandCanvas ivory with the welcome pose. **Accent colour:** primary #46785B.
+- **Mascot placements (small, decorative, VoiceOver-hidden; text carries meaning):** one pose per intro page (welcome, fog peek, thinking, encouragement, taking photos) and the wordmark on page 1; recap header (celebrating); planner idle (thinking); empty Adventures (walking); no search matches (discovering); empty photo spots (taking photos); Me avatar and Settings About (welcome); shareable card badge (welcome).
+- Intro copy updated to adventures on foot or riding, offline Taglish AI and on-device privacy.

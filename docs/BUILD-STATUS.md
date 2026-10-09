@@ -1,5 +1,43 @@
 # Life Off Desk — build status
 
+## CI trimmed for the submission crunch (2026-10-09, founder decision)
+
+- The `simulator-screenshots` job is paused: it runs only via Actions → iOS build check → Run workflow. It was the slowest job (~10 min of macOS runner per push), and every branch push ran twice (push + pull_request).
+- Branch pushes now build through their PR only (main still builds on push), and a newer push cancels the older run.
+- Still on every PR: core Swift tests, Python tests, and the unsigned iOS device build.
+- **Re-enable after submission**: remove the `if:` on `simulator-screenshots` in `.github/workflows/ios-build.yml`.
+
+## "Your world" AI coach on the map (2026-10-09, founder request)
+
+- Problem: the AI only answered when asked (planner, history search, recap). Now it also speaks first.
+- **Trigger** (computed, `WorldFacts`): when the street graph and next-adventure ideas are ready (app open, planner open), the app compares your saved adventures over the last 14 days with the 14 before. It measures how far you got from home (first adventure's start), new-street length, and days since the last adventure. Signals: `quiet` (4+ days without an adventure), `shrinking` (reach or new streets down 40%+), `growing`, `steady`, `start` (none yet).
+- **AI** (`CoachPrompt` v1, Qwen3-1.7B on the phone): receives the signal, the computed facts and up to two real quests (the nearest unexplored-street frontier, an undiscovered catalogue place matching your taste). It returns grammar-constrained JSON choosing 1–2 facts, a tone and the quest. The validator rejects invented facts or quests (one repair attempt). The Taglish line is rendered from the computed values, e.g. "Uy, lumiliit ang mundo mo! 600 m lang ang pinakamalayo mo nitong 2 linggo, at 2.40 km ang pinakamalayo mo noong nakaraang 2 linggo. Game? May 450 m ng bagong kalye pa-north."
+- **Map card:** mascot plus the line plus "Tara!" (sets the destination and draws the street route) or "Mamaya na" (hidden until tomorrow). Captions: "On-device AI picked this · numbers computed from your adventures", or "Computed suggestion · <why no AI>" when the model is unavailable (Simulator), and "SAMPLE DATA" on the demo map. At most one AI run per distinct set of facts per day; never during an adventure.
+- Not built: a background push reminder (iOS cannot run the model in the background; would need a template notification).
+- Tested here: 5 core tests (shrinking by reach and by new streets, quiet/growing/steady/start, exact rendered Taglish from an AI choice, invented fact/quest rejected then repaired, grammar offers only available quests, computed fallback). 135 Swift tests pass. **No model eval of the coach prompt and not yet run on the phone.**
+
+## Get help: 911, your location, nearest police / hospitals / fire stations (2026-10-09, founder request)
+
+- Map → **Help** (shield) opens a safety sheet, fully offline:
+  - **Call 911** (Philippine national emergency hotline; a call needs cell signal, not mobile data).
+  - **Your location** as coordinates ± GPS accuracy plus the nearest named place within 200 m, with Copy and "Text it" (SMS works without data).
+  - The nearest 3 **police stations, hospitals and fire stations** within 10 km, ranked by distance along mapped streets (straight-line when the street graph cannot reach one, labelled). **Route** sets it as the destination and draws the suggested street route.
+- Deterministic (`HelpPlaces` in the core), no AI. Honest copy: OSM records are unreviewed; a station may have moved or closed; call first in an emergency. Empty state says when none are mapped in the loaded data.
+- Data: `prepare_makati.py` now also fetches `amenity=police|hospital|fire_station` **even when unnamed** (labelled "Police station" etc.), and `build_starter_catalog.py` keeps them even if OSM tags them non-public. Taglish search words: pulis, presinto, bumbero (ospital already existed).
+- **Needs a data refresh on the Mac**: the bundled packs were built before this, so they contain no police/hospital/fire records yet. Run `scripts/refresh_places.sh` then `python3 scripts/build_starter_catalog.py` (the network here blocks Overpass). Until then the sheet shows "none mapped" for every group, but 911 and the location card already work.
+- Tested here: 3 core tests (grouping, street ranking with the bridge detour, 10 km cut-off, straight-line fallback labelled, location wording, Taglish words) and 1 Python test (unnamed/private help places kept, query includes them). CI screenshots `13-route-to-place` and `14-help-sheet` added. **Not yet seen on the phone.**
+
+## Suggested street route to the destination (2026-10-09, founder report)
+
+- Founder report: choosing a place showed "2.14 km by streets" but no path. The shortest-path search already ran; it now keeps predecessors and returns the path (`WalkingGraph.route`), the same search and the same metres as the distance.
+- Map: a dashed green line (white casing) from your position, onto the nearest mapped street, along the streets and off to the place; the camera frames the whole route once when a place is chosen (not while walking). Caption and VoiceOver label: "suggested route on mapped streets · check gates and crossings", or "passes a private or gated way" when it does. Recomputed when you move 40 m.
+- Not navigation: no turn-by-turn, no ETA, no traffic or one-way data; OSM ways are unreviewed. Motorways excluded, private/no-access ways penalised ×2.
+- Tested here: 3 new core tests (route follows the bridge detour, drawn line length equals the quoted distance, endpoints exact; same-street route is direct; no route off the streets). 127 Swift tests pass on Linux. App drawing compiles in CI only; **not yet seen on the phone**.
+
+## Branding pass (2026-10-09)
+
+The app had no icon or asset catalog and the mascot appeared nowhere. Added `Assets.xcassets` with an app icon (crop of the canonical concept portrait), BrandCanvas/AccentColor, a branded launch screen, and the 12 canonical poses cut from the sticker sheet by their own transparency (verified visually: none clipped). Intro pages show a pose each, the wordmark and updated copy (adventures on foot or riding; offline Taglish AI; stays on your phone). Small mascot accents per the brand guide in recap, planner idle, empty states, Me, Settings About and the card badge. Verified only via CI Simulator screenshots; not yet seen on the phone home screen.
+
 ## City streaming (game-style chunks) and all of Metro Manila configured (2026-10-09, founder decision)
 
 **Streaming.** The app no longer decodes every city at launch. `RegionLibrary` keeps only the small manifests in memory, plus the always-on Metro Manila main-roads context and the primary city. `RegionChunks` (pure, tested) decides which cities should be in memory:

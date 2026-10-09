@@ -156,6 +156,7 @@ public enum PlaceKindWords {
         "supermarket": ["supermarket", "grocery", "groseri"], "convenience": ["convenience store", "sari-sari"],
         "marketplace": ["market", "palengke"], "pharmacy": ["pharmacy", "botika", "drugstore"],
         "chemist": ["pharmacy", "botika"], "hospital": ["hospital", "ospital"], "clinic": ["clinic", "klinika"],
+        "police": ["police", "pulis", "presinto"], "fire_station": ["fire station", "bumbero"],
         "bank": ["bank", "bangko"], "school": ["school", "paaralan", "eskwela"], "university": ["university", "school"],
         "bakery": ["bakery", "panaderya", "tinapay"], "bar": ["bar", "inuman", "beer"], "pub": ["pub", "bar", "beer"],
         "ice_cream": ["ice cream", "sorbetes"], "cinema": ["cinema", "sine", "movie"], "theatre": ["theater", "teatro"],

@@ -19,6 +19,9 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 RESTRICTED_ACCESS = {'private', 'no', 'customers', 'permit', 'residents'}
 MAX_RADIUS_M = 2500
+# Police, hospitals and fire stations stay even if OSM marks them non-public: the app lists them
+# under "Get help", where knowing where they are matters more than browsing access.
+HELP_KINDS = {'police', 'hospital', 'fire_station'}
 
 EMPTY_FACTS_NOTE = ('No reviewed access facts yet. Missing evidence means unknown; it never satisfies a hard '
                     'access requirement.')
@@ -42,7 +45,8 @@ def select_places(places, anchor, max_radius_m=MAX_RADIUS_M):
     The app filters by the user's own distance, so a city-wide cap would hide nearby places."""
     chosen = []
     for place in sorted(places, key=lambda p: p['id']):
-        if not place.get('name') or place.get('sourceTags', {}).get('access') in RESTRICTED_ACCESS:
+        is_help = (place.get('kind') or legacy_kind(place)) in HELP_KINDS
+        if not place.get('name') or (place.get('sourceTags', {}).get('access') in RESTRICTED_ACCESS and not is_help):
             continue
         if max_radius_m is not None and haversine_m(anchor, (place['latitude'], place['longitude'])) > max_radius_m:
             continue
@@ -106,8 +110,10 @@ def build_region(region, source_dir, output_dir):
         places = json.loads((source_dir/'places-source.json').read_text())
         bbox = region['bbox']
         # Area features crossing the edge can have a midpoint outside the box; keep the pack self-consistent.
-        places = [p for p in places if bbox['south'] <= p['latitude'] <= bbox['north']
-                  and bbox['west'] <= p['longitude'] <= bbox['east']]
+        # Check the rounded coordinates the pack will store: a place within ~5 cm of the edge can
+        # otherwise round to just outside the box.
+        places = [p for p in places if bbox['south'] <= round(p['latitude'], 6) <= bbox['north']
+                  and bbox['west'] <= round(p['longitude'], 6) <= bbox['east']]
         anchor = anchor or median_anchor(places)
         # Full-city regions select from the whole administrative box; the CBD keeps its walking radius.
         radius = MAX_RADIUS_M if region.get('anchor') else None
@@ -116,8 +122,8 @@ def build_region(region, source_dir, output_dir):
             raise ValueError(f"No places selected for {region['id']}")
         rule_radius = f'within {MAX_RADIUS_M} m of {anchor}' if radius else 'inside the region box'
         write_json(output_dir/'places.json', {**common,
-            'selectionRule': f'All named OSM parks, cafés, food places, museums, libraries and viewpoints {rule_radius}; '
-                             f'source access tags {sorted(RESTRICTED_ACCESS)} excluded. Not a human review.',
+            'selectionRule': f'All named OSM places (plus unnamed sports facilities, police stations, hospitals and fire stations) {rule_radius}; '
+                             f'source access tags {sorted(RESTRICTED_ACCESS)} excluded except for help places. Not a human review.',
             'places': selected})
         names.insert(0, 'places.json')
         # Reviewed access evidence (docs/ACCESSIBILITY-AND-SAFETY.md) is curated by hand and kept across

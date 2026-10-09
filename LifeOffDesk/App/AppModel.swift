@@ -257,22 +257,24 @@ final class AppModel: ObservableObject {
     private(set) var walkingGraph: WalkingGraph?
 
     /// Street distance from here to the chosen destination, recomputed when either moves 40 m.
-    @Published private(set) var destinationStreet: StreetDistance?
+    var destinationStreet: StreetDistance? { destinationRoute?.distance }
+    /// Shortest path along bundled streets to the destination, drawn on the map as a suggestion.
+    @Published private(set) var destinationRoute: StreetRoute?
     private var destinationStreetKey: (id: String, from: Coordinate)?
 
     private func refreshDestinationStreet() {
         guard let graph = walkingGraph, let place = destination, let from = currentPosition else {
-            if destination == nil { destinationStreet = nil; destinationStreetKey = nil }
+            if destination == nil { destinationRoute = nil; destinationStreetKey = nil }
             return
         }
         if let key = destinationStreetKey, key.id == place.id, Geo.distanceMeters(key.from, from) < 40 { return }
-        if destinationStreetKey?.id != place.id { destinationStreet = nil }
+        if destinationStreetKey?.id != place.id { destinationRoute = nil }
         destinationStreetKey = (place.id, from)
         let target = place.coordinate
         Task { [weak self] in
-            let result = await Task.detached(priority: .utility) { graph.distance(from: from, to: target) }.value
+            let result = await Task.detached(priority: .utility) { graph.route(from: from, to: target) }.value
             guard self?.destination?.id == place.id else { return }
-            self?.destinationStreet = result
+            self?.destinationRoute = result
         }
     }
     /// Matched-street reveal of the shown history (from `stats`), used for the paper island.
@@ -561,6 +563,9 @@ final class AppModel: ObservableObject {
     // MARK: Next adventure
 
     @Published private(set) var adventureIdeas: [AdventureIdea] = []
+    /// "Your world" coach card on the map (see AppModel+Coach).
+    @Published var coach: CoachCard?
+    var coachKey: String?
 
     /// Real targets only: undiscovered catalogue places matching the user's taste, and computed
     /// street frontiers (unexplored street length near them). Distances follow streets once the graph is ready.
@@ -602,6 +607,7 @@ final class AppModel: ObservableObject {
                 return ideas
             }.value
             self?.adventureIdeas = ideas
+            self?.refreshCoach()
         }
     }
 

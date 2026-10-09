@@ -14,8 +14,11 @@ struct RecapView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    Text("You made room for a little adventure.")
-                        .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
+                    HStack(spacing: 10) {
+                        MascotView(pose: .celebrating, size: 64)
+                        Text("You made room for a little adventure.")
+                            .font(.title3.weight(.semibold)).foregroundStyle(Theme.ink)
+                    }
                     if model.isDemo(session) {
                         Label("Sample adventure · not real GPS", systemImage: "sparkles")
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)

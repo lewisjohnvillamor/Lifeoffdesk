@@ -108,27 +108,28 @@ public final class WalkingGraph: @unchecked Sendable {
         return best
     }
 
-    /// Shortest street distance from `origin` to each target (nil when either end is off the
-    /// mapped streets or no connected path exists within `maxMeters`). One search serves all targets.
-    public func distances(from origin: Coordinate, to targets: [Coordinate],
-                          maxMeters: Double = 15_000) -> [StreetDistance?] {
-        guard let start = snap(origin) else { return targets.map { _ in nil } }
-        let goals = targets.map { snap($0) }
-        var remaining = Set(goals.flatMap { goal in goal.map { [$0.segment.u, $0.segment.v] } ?? [] })
-        guard !remaining.isEmpty else { return targets.map { _ in nil } }
-
-        func weight(_ meters: Double, _ restricted: Bool) -> Double { meters * (restricted ? Self.restrictedPenalty : 1) }
+    /// Result of one shortest-path search from a snapped start.
+    private struct Search {
         var cost = [Int32: Double]()      // penalised cost used for ordering
         var length = [Int32: Double]()    // real street metres along the chosen path
         var restricted = [Int32: Bool]()
+        var previous = [Int32: Int32]()   // missing for the two seeded ends of the start segment
         var settled = Set<Int32>()
+    }
+
+    private static func weight(_ meters: Double, _ restricted: Bool) -> Double { meters * (restricted ? restrictedPenalty : 1) }
+
+    private func search(from start: Snap, until goalNodes: Set<Int32>, maxMeters: Double) -> Search {
+        var state = Search()
+        var remaining = goalNodes
         var heap = MinHeap()
         // The start sits part-way along a segment: seed both of its ends.
         let startLength = Double(start.segment.meters)
         for (node, along) in [(start.segment.u, start.t * startLength), (start.segment.v, (1 - start.t) * startLength)] {
-            let c = weight(along, start.segment.restricted)
-            if c < cost[node] ?? .infinity {
-                cost[node] = c; length[node] = along; restricted[node] = start.segment.restricted && along > 0.5
+            let c = Self.weight(along, start.segment.restricted)
+            if c < state.cost[node] ?? .infinity {
+                state.cost[node] = c; state.length[node] = along
+                state.restricted[node] = start.segment.restricted && along > 0.5
                 heap.push(c, node)
             }
         }
@@ -136,40 +137,59 @@ public final class WalkingGraph: @unchecked Sendable {
         while let top = heap.pop() {
             let (c, u) = top
             if c > costLimit { break }
-            if settled.contains(u) { continue }
-            settled.insert(u)
+            if state.settled.contains(u) { continue }
+            state.settled.insert(u)
             remaining.remove(u)
             if remaining.isEmpty { break }
-            let baseLength = length[u] ?? 0, baseRestricted = restricted[u] ?? false
-            for edge in adjacency[Int(u)] where !settled.contains(edge.to) {
-                let next = c + weight(Double(edge.meters), edge.restricted)
-                if next < cost[edge.to] ?? .infinity {
-                    cost[edge.to] = next
-                    length[edge.to] = baseLength + Double(edge.meters)
-                    restricted[edge.to] = baseRestricted || edge.restricted
+            let baseLength = state.length[u] ?? 0, baseRestricted = state.restricted[u] ?? false
+            for edge in adjacency[Int(u)] where !state.settled.contains(edge.to) {
+                let next = c + Self.weight(Double(edge.meters), edge.restricted)
+                if next < state.cost[edge.to] ?? .infinity {
+                    state.cost[edge.to] = next
+                    state.length[edge.to] = baseLength + Double(edge.meters)
+                    state.restricted[edge.to] = baseRestricted || edge.restricted
+                    state.previous[edge.to] = u
                     heap.push(next, edge.to)
                 }
             }
         }
+        return state
+    }
+
+    /// Cheapest way to finish at `goal`: via one of its segment's ends (`end`), or directly along
+    /// the start segment when both points share it (`end == nil`).
+    private func finish(_ goal: Snap, start: Snap, state: Search, maxMeters: Double)
+        -> (meters: Double, restricted: Bool, end: Int32?)? {
+        let goalLength = Double(goal.segment.meters)
+        var best: (cost: Double, meters: Double, restricted: Bool, end: Int32?)?
+        func consider(_ c: Double, _ meters: Double, _ r: Bool, _ end: Int32?) {
+            if c < (best?.cost ?? .infinity) { best = (c, meters, r, end) }
+        }
+        for (node, along) in [(goal.segment.u, goal.t * goalLength), (goal.segment.v, (1 - goal.t) * goalLength)]
+        where state.settled.contains(node) {
+            consider((state.cost[node] ?? 0) + Self.weight(along, goal.segment.restricted), (state.length[node] ?? 0) + along,
+                     (state.restricted[node] ?? false) || (goal.segment.restricted && along > 0.5), node)
+        }
+        // Both ends on the same piece of street.
+        if goal.segment.u == start.segment.u && goal.segment.v == start.segment.v {
+            let along = abs(goal.t - start.t) * goalLength
+            consider(Self.weight(along, goal.segment.restricted), along, goal.segment.restricted && along > 0.5, nil)
+        }
+        guard let best, best.meters <= maxMeters else { return nil }
+        return (best.meters, best.restricted, best.end)
+    }
+
+    /// Shortest street distance from `origin` to each target (nil when either end is off the
+    /// mapped streets or no connected path exists within `maxMeters`). One search serves all targets.
+    public func distances(from origin: Coordinate, to targets: [Coordinate],
+                          maxMeters: Double = 15_000) -> [StreetDistance?] {
+        guard let start = snap(origin) else { return targets.map { _ in nil } }
+        let goals = targets.map { snap($0) }
+        let goalNodes = Set(goals.flatMap { goal in goal.map { [$0.segment.u, $0.segment.v] } ?? [] })
+        guard !goalNodes.isEmpty else { return targets.map { _ in nil } }
+        let state = search(from: start, until: goalNodes, maxMeters: maxMeters)
         return goals.map { goal -> StreetDistance? in
-            guard let goal else { return nil }
-            let goalLength = Double(goal.segment.meters)
-            var best: (cost: Double, meters: Double, restricted: Bool)?
-            func consider(_ c: Double, _ meters: Double, _ r: Bool) {
-                if c < (best?.cost ?? .infinity) { best = (c, meters, r) }
-            }
-            for (node, along) in [(goal.segment.u, goal.t * goalLength), (goal.segment.v, (1 - goal.t) * goalLength)]
-            where settled.contains(node) {
-                consider((cost[node] ?? 0) + weight(along, goal.segment.restricted), (length[node] ?? 0) + along,
-                         (restricted[node] ?? false) || (goal.segment.restricted && along > 0.5))
-            }
-            // Both ends on the same piece of street.
-            let sameSegment = (goal.segment.u == start.segment.u && goal.segment.v == start.segment.v)
-            if sameSegment {
-                let along = abs(goal.t - start.t) * goalLength
-                consider(weight(along, goal.segment.restricted), along, goal.segment.restricted && along > 0.5)
-            }
-            guard let best, best.meters <= maxMeters else { return nil }
+            guard let goal, let best = finish(goal, start: start, state: state, maxMeters: maxMeters) else { return nil }
             return StreetDistance(meters: best.meters + start.offset + goal.offset, throughRestricted: best.restricted)
         }
     }
@@ -177,6 +197,46 @@ public final class WalkingGraph: @unchecked Sendable {
     public func distance(from origin: Coordinate, to target: Coordinate) -> StreetDistance? {
         distances(from: origin, to: [target])[0]
     }
+
+    /// The shortest path itself, as a line to draw: origin, onto the nearest street, along mapped
+    /// streets, off the street to the target. Same search and numbers as `distance(from:to:)`.
+    public func route(from origin: Coordinate, to target: Coordinate, maxMeters: Double = 15_000) -> StreetRoute? {
+        guard let start = snap(origin), let goal = snap(target) else { return nil }
+        let state = search(from: start, until: [goal.segment.u, goal.segment.v], maxMeters: maxMeters)
+        guard let best = finish(goal, start: start, state: state, maxMeters: maxMeters) else { return nil }
+        var chain: [Int32] = []
+        if var node = best.end {
+            chain.append(node)
+            while let previous = state.previous[node] {
+                chain.append(previous)
+                node = previous
+            }
+            chain.reverse()
+        }
+        let points = [origin, point(on: start)] + chain.map { coordinates[Int($0)] } + [point(on: goal), target]
+        // Drop repeats (a point already on a street node) so the line has no zero-length pieces.
+        var line: [Coordinate] = []
+        for p in points where line.last.map({ Geo.distanceMeters($0, p) > 0.5 }) ?? true { line.append(p) }
+        return StreetRoute(meters: best.meters + start.offset + goal.offset, throughRestricted: best.restricted,
+                           points: line)
+    }
+
+    private func point(on snap: Snap) -> Coordinate {
+        let a = coordinates[Int(snap.segment.u)], b = coordinates[Int(snap.segment.v)]
+        return Coordinate(latitude: a.latitude + (b.latitude - a.latitude) * snap.t,
+                          longitude: a.longitude + (b.longitude - a.longitude) * snap.t)
+    }
+}
+
+/// A suggested path along bundled OSM streets. Not navigation: ways may be gated, missing or
+/// unsafe to cross, so the app labels it as a suggestion.
+public struct StreetRoute: Hashable, Sendable {
+    public var meters: Double
+    public var throughRestricted: Bool
+    /// Line from the origin to the target, following street geometry in between.
+    public var points: [Coordinate]
+
+    public var distance: StreetDistance { StreetDistance(meters: meters, throughRestricted: throughRestricted) }
 }
 
 /// Binary min-heap of (cost, node).

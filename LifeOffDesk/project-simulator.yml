@@ -11,6 +11,8 @@ targets:
       - path: Resources/StarterData
         type: folder
         buildPhase: resources
+      # App icon, brand colours, mascot poses (cut from assets/mascot/life-off-desk-cat-stickers-male.png).
+      - path: Resources/Assets.xcassets
       - path: ../eval/taglish-cases.json
         buildPhase: resources
       - path: ../eval/taglish-heldout.json
@@ -24,7 +26,10 @@ targets:
       path: Info-Simulator.plist
       properties:
         CFBundleDisplayName: Life Off Desk Sim
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: BrandCanvas
+          UIImageName: LaunchMascot
+          UIImageRespectsSafeAreaInsets: true
         NSLocationWhenInUseUsageDescription: Life Off Desk uses your location only during a walk you start.
         UIBackgroundModes: [location]
         NSCameraUsageDescription: Take photos of moments on your walk. Photos stay on this iPhone.

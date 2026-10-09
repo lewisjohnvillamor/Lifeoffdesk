@@ -10,9 +10,12 @@ struct MapScreen: View {
     /// Simulator screenshot helper: the style travels with the item so the sheet never reads a stale value.
     @State private var simCard: SimCard?
     @State private var showCamera = false
+    @State private var showHelp = false
     @State private var followUser = true
     @State private var tilted = true
     @State private var launchScale: CGFloat?
+    /// Destination whose route should be framed once it arrives (set when a place is chosen).
+    @State private var routeToFrame: String?
 
     var body: some View {
         ZStack {
@@ -24,6 +27,7 @@ struct MapScreen: View {
                                m.coordinate.map { (coordinate: $0, image: model.thumbnail(for: m)) }
                            },
                            position: model.mapPosition, destination: model.destination,
+                           route: model.destinationRoute?.points,
                            camera: $camera, tilted: tilted)
                     .ignoresSafeArea()
                     .simultaneousGesture(DragGesture(minimumDistance: 2).onChanged { _ in followUser = false })
@@ -34,6 +38,7 @@ struct MapScreen: View {
             VStack(spacing: 8) {
                 header
                 statusBanners
+                if model.phase == .idle, let coach = model.coach { coachCard(coach) }
                 Spacer()
                 HStack(alignment: .bottom) {
                     statsStack
@@ -79,12 +84,21 @@ struct MapScreen: View {
             if phase == .acquiringFix || phase == .walking { followUser = true }
         }
         .onChange(of: model.contentVersion) { _, _ in rebuildGeometry() }
+        .onChange(of: model.destination?.id) { _, id in routeToFrame = id }
+        .onChange(of: model.destinationRoute) { _, route in
+            // Show the whole suggested route once when a place is chosen (not while walking).
+            guard let route, let id = routeToFrame, id == model.destination?.id, model.phase == .idle,
+                  let geometry else { return }
+            routeToFrame = nil
+            frame(route.points, using: geometry, padding: 120)
+        }
         .onChange(of: camera) { _, camera in reportViewport(camera) }
         .onChange(of: model.mapPosition) { _, position in
             guard followUser, let position, let geometry else { return }
             camera.center = geometry.point(position)
         }
         .sheet(isPresented: $showPlanner) { PlannerSheet().environmentObject(model) }
+        .sheet(isPresented: $showHelp) { HelpSheet().environmentObject(model) }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { model.captureMoment($0) }.ignoresSafeArea()
         }
@@ -120,6 +134,10 @@ struct MapScreen: View {
         }
         if arguments.contains("--flat") { tilted = false }
         if arguments.contains("--start-walk") { model.startWalking() } // simulator GPS route is supplied by simctl
+        if arguments.contains("--open-help") { showHelp = true }
+        // Draws the street route to a bundled place (simulated GPS position from simctl).
+        if let i = arguments.firstIndex(of: "--route-to"), i + 1 < arguments.count,
+           let place = model.content?.catalog.place(id: arguments[i + 1]) { model.choose(place) }
         if arguments.contains("--open-planner") {
             showPlanner = true
             if let i = arguments.firstIndex(of: "--planner-filter"), i + 1 < arguments.count,
@@ -156,11 +174,15 @@ struct MapScreen: View {
     /// Open on the user's explored world: frame their most recent walk instead of the Makati origin.
     private func frameRecentExploration(using geometry: MapGeometry) {
         guard let recent = model.historyWalks.max(by: { $0.startedAt < $1.startedAt }) else { return }
-        let points = recent.segments.flatMap { $0 }.map { geometry.point($0.coordinate) }
+        frame(recent.segments.flatMap { $0 }.map(\.coordinate), using: geometry, padding: 250)
+    }
+
+    private func frame(_ coordinates: [Coordinate], using geometry: MapGeometry, padding: CGFloat) {
+        let points = coordinates.map { geometry.point($0) }
         guard let first = points.first else { return }
         var box = CGRect(origin: first, size: .zero)
         for p in points { box = box.union(CGRect(origin: p, size: .zero)) }
-        box = box.insetBy(dx: -250, dy: -250)
+        box = box.insetBy(dx: -padding, dy: -padding)
         let screen = UIScreen.main.bounds.size
         camera = MapCamera(center: CGPoint(x: box.midX, y: box.midY),
                            pointsPerMeter: min(1.2, max(0.05, min(screen.width / box.width, screen.height * 0.6 / box.height))))
@@ -187,7 +209,18 @@ struct MapScreen: View {
     }
 
     @ViewBuilder private var statusBanners: some View {
-        if let destination = model.destination { destinationPill(destination) }
+        if let destination = model.destination {
+            destinationPill(destination)
+            if let route = model.destinationRoute {
+                Text(route.throughRestricted
+                     ? "Dashed line: suggested route on mapped streets · passes a private or gated way"
+                     : "Dashed line: suggested route on mapped streets · check gates and crossings")
+                    .font(.caption2).foregroundStyle(Theme.secondaryInk)
+                    .padding(.horizontal, 10).padding(.vertical, 3)
+                    .background(Theme.surface.opacity(0.9), in: Capsule())
+                    .accessibilityHidden(true) // the pill's label already says this
+            }
+        }
         if let problem = model.demoProblem { banner(icon: "exclamationmark.triangle", text: problem) }
         #if targetEnvironment(simulator)
         banner(icon: "desktopcomputer", text: "Simulator · no AI · simulated GPS")
@@ -220,6 +253,46 @@ struct MapScreen: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// "Your world" coach: the on-device AI picks what to say about your computed exploring trend
+    /// and which real next step to offer; values and places come from app code.
+    private func coachCard(_ card: CoachCard) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                MascotView(pose: card.signal == .growing ? .celebrating : .encouragement, size: 52)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(card.text).font(.subheadline).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(coachCaption(card)).font(.caption2).foregroundStyle(Theme.secondaryInk)
+                }
+            }
+            HStack(spacing: 10) {
+                Button("Tara!") { model.acceptCoach() }
+                    .buttonStyle(.borderedProminent).tint(Theme.primary)
+                    .frame(minHeight: Theme.minTarget)
+                    .accessibilityLabel("Let's go: show the route")
+                Button("Mamaya na") { model.dismissCoach() }
+                    .buttonStyle(.bordered).tint(Theme.ink)
+                    .frame(minHeight: Theme.minTarget)
+                    .accessibilityLabel("Not today")
+            }
+        }
+        .padding(14)
+        .background(Theme.surface.opacity(0.97), in: RoundedRectangle(cornerRadius: Theme.corner))
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func coachCaption(_ card: CoachCard) -> String {
+        var parts: [String] = []
+        switch card.status {
+        case .working: parts.append("On-device AI is thinking… · computed for now")
+        case .ai: parts.append("On-device AI picked this · numbers computed from your adventures")
+        case let .computed(reason): parts.append("Computed suggestion" + (reason.isEmpty ? "" : " · \(reason)"))
+        }
+        if card.sample { parts.append("SAMPLE DATA") }
+        return parts.joined(separator: " · ")
+    }
+
     private func destinationPill(_ place: Place) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "flag.fill").font(.caption).accessibilityHidden(true)
@@ -239,7 +312,9 @@ struct MapScreen: View {
         .background(Theme.surface, in: Capsule())
         .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Destination \(place.name). Straight-line distance only, no route.")
+        .accessibilityLabel(model.destinationRoute == nil
+            ? "Destination \(place.name). Straight-line distance only, no street route."
+            : "Destination \(place.name). Suggested route along mapped streets drawn on the map; check gates and crossings.")
     }
 
     // MARK: Stats and side buttons
@@ -276,6 +351,10 @@ struct MapScreen: View {
         VStack(spacing: 14) {
             if model.phase == .walking || model.phase == .acquiringFix || model.phase == .paused {
                 labeledIcon("camera", "Spot", label: "Take a photo") { showCamera = true }
+            }
+            labeledIcon("shield.lefthalf.filled", "Help",
+                        label: "Get help: emergency call, your location and the nearest police, hospitals and fire stations") {
+                showHelp = true
             }
             labeledIcon("scope", "Locate", label: "Center on my location") {
                 followUser = true

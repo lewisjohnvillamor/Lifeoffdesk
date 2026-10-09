@@ -38,6 +38,8 @@ FOOD_AMENITIES = {'restaurant', 'fast_food', 'food_court', 'bar', 'pub', 'bierga
 FOOD_SHOPS = {'bakery', 'pastry', 'confectionery', 'deli'}
 LANDMARK_AMENITIES = {'place_of_worship', 'townhall', 'fountain', 'monastery'}
 LANDMARK_TOURISM = {'attraction', 'artwork', 'monument', 'memorial'}
+# Where to get help: kept even when unnamed in OSM (labelled from the tag) and regardless of access tags.
+HELP_AMENITIES = {'police': 'Police station', 'hospital': 'Hospital', 'fire_station': 'Fire station'}
 SPORT_LABELS = {'tennis': 'Tennis court', 'pickleball': 'Pickleball court', 'basketball': 'Basketball court',
                 'badminton': 'Badminton court', 'volleyball': 'Volleyball court', 'soccer': 'Football field',
                 'golf': 'Golf course', 'swimming': 'Swimming pool', 'running': 'Running track',
@@ -53,6 +55,7 @@ nwr["leisure"]["name"]({b});
 nwr["tourism"]["name"]({b});
 nwr["historic"]["name"]({b});
 nwr["leisure"~"^({'|'.join(sorted(SPORTS_LEISURE))})$"]({b});
+nwr["amenity"~"^({'|'.join(sorted(HELP_AMENITIES))})$"]({b});
 ''' if include_places else ''
     out = 'out tags center geom;' if roads else 'out tags center;'  # geometry only needed for roads
     return f'''[out:json][timeout:600];(
@@ -68,6 +71,8 @@ def classify(tags):
     name = tags.get('name')
     if amenity in EXCLUDED_AMENITIES or shop in EXCLUDED_SHOPS:
         return None
+    if amenity in HELP_AMENITIES:
+        return 'other', amenity, name or HELP_AMENITIES[amenity]
     if leisure in SPORTS_LEISURE or (sport and not amenity and not shop):
         kind = sport or leisure
         label = name or SPORT_LABELS.get(sport) or (leisure or 'sports').replace('_', ' ').capitalize()

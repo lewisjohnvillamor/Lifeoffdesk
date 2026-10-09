@@ -136,6 +136,19 @@ class RegionTests(unittest.TestCase):
         self.assertIsNone(c({'amenity':'parking','name':'Lot A'}), 'parking is not an outing')
         self.assertIsNone(c({'amenity':'pharmacy'}), 'unnamed non-sports places are skipped')
 
+    def test_help_places_are_kept_even_unnamed_or_restricted(self):
+        c = makati.classify
+        self.assertEqual(c({'amenity':'police'}), ('other', 'police', 'Police station'))
+        self.assertEqual(c({'amenity':'hospital','name':'Ospital ng Makati'}), ('other', 'hospital', 'Ospital ng Makati'))
+        self.assertEqual(c({'amenity':'fire_station'})[1], 'fire_station')
+        self.assertIn('nwr["amenity"~"^(fire_station|hospital|police)$"]',
+                      makati.query_for({'south':14.5,'west':121.0,'north':14.6,'east':121.1}), 'fetched even when unnamed')
+        station = {'id':'osm:node:1','name':'Police station','latitude':14.4,'longitude':121.0,'category':'other',
+                   'kind':'police','sourceTags':{'amenity':'police','access':'private'}}
+        private_cafe = {**station, 'id':'osm:node:2', 'kind':'cafe', 'sourceTags':{'access':'private'}}
+        self.assertEqual([p['id'] for p in catalog.select_places([station, private_cafe], (14.4, 121.0), None)],
+                         ['osm:node:1'])
+
     def test_bbox_comes_from_the_city_level_boundary(self):
         raw = {'elements': [
             {'type':'relation','id':2,'tags':{'name':'Pasay','admin_level':'10'},
@@ -147,6 +160,26 @@ class RegionTests(unittest.TestCase):
         self.assertTrue(source.endswith('/relation/1'))
         with self.assertRaises(ValueError):
             makati.bbox_from_boundary(raw, 'Atlantis')
+
+    def test_places_on_the_box_edge_stay_inside_after_rounding(self):
+        import json, tempfile
+        region = {'id':'edge','name':'Edge','coverageStatus':'fixture','source':'fixture','localDir':'edge',
+                  'bbox':{'south':14.5,'west':121.0,'north':14.6,'east':121.1}}
+        place = lambda i, lat: {'id':f'osm:node:{i}','name':f'P{i}','latitude':lat,'longitude':121.05,
+                                'category':'cafe','sourceURL':'https://www.openstreetmap.org/node/1',
+                                'retrievedAt':'t','verificationStatus':'source-only-unreviewed','sourceTags':{}}
+        with tempfile.TemporaryDirectory() as d:
+            src, out = Path(d)/'src', Path(d)/'out'
+            src.mkdir()
+            (src/'manifest.json').write_text(json.dumps({'attribution':'a','licenseURL':'l','retrievedAt':'t'}))
+            (src/'roads.geojson').write_text(json.dumps({'type':'FeatureCollection','features':[]}))
+            # 14.6000004 rounds to 14.6 (inside); 14.6000006 rounds to 14.600001 (outside, dropped).
+            (src/'places-source.json').write_text(json.dumps([place(1, 14.55), place(2, 14.6000004), place(3, 14.6000006)]))
+            catalog.build_region(region, src, out)
+            kept = json.loads((out/'places.json').read_text())['places']
+            self.assertEqual(sorted(p['id'] for p in kept), ['osm:node:1', 'osm:node:2'])
+            for p in kept:
+                self.assertTrue(region['bbox']['south'] <= p['latitude'] <= region['bbox']['north'])
 
 class DemoWalkTests(unittest.TestCase):
     def test_generator_is_deterministic_and_labelled(self):

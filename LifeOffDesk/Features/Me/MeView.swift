@@ -45,8 +45,8 @@ struct MeView: View {
         let stats = model.stats
         return VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 12) {
-                Image(systemName: "figure.walk").font(.system(size: 22, weight: .semibold)).foregroundStyle(Theme.canvas)
-                    .frame(width: 52, height: 52).background(Theme.primary, in: Circle())
+                MascotView(pose: .welcome, size: 52)
+                    .background(Theme.revealedGround, in: Circle())
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Life Off Desk").font(.headline)
                     Text(stats.firstWalkAt.map { "Since \($0.formatted(.dateTime.month(.abbreviated).year()))" } ?? "Your first adventure is waiting")
@@ -89,7 +89,10 @@ struct MeView: View {
     @ViewBuilder private var spots: some View {
         let shown = model.mapMoments.sorted { $0.takenAt > $1.takenAt }
         if shown.isEmpty {
-            Label("Photos you take on an adventure are pinned to the map and kept here.", systemImage: "camera")
+            HStack(spacing: 12) {
+                MascotView(pose: .takingPhotos, size: 60)
+                Text("Photos you take on an adventure are pinned to the map and kept here.")
+            }
                 .font(.subheadline).foregroundStyle(Theme.secondaryInk)
                 .padding(18)
                 .frame(maxWidth: .infinity, alignment: .leading)
