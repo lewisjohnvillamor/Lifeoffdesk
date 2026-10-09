@@ -19,6 +19,11 @@ targets:
       path: Info-Simulator.plist
       properties:
         CFBundleDisplayName: Life Off Desk Sim
+        UILaunchScreen: {}
+        NSLocationWhenInUseUsageDescription: Life Off Desk uses your location only during a walk you start.
+        UIBackgroundModes: [location]
+        NSCameraUsageDescription: Take photos of moments on your walk. Photos stay on this iPhone.
+        NSPhotoLibraryAddUsageDescription: Save your walk card to Photos.
     settings:
       base:
         SUPPORTED_PLATFORMS: iphonesimulator

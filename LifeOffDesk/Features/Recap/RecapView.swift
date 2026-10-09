@@ -20,7 +20,8 @@ struct RecapView: View {
                             .font(.footnote.weight(.semibold)).foregroundStyle(Theme.danger)
                     }
                     Button { showCard = true } label: {
-                        MemoryCardView(session: session, recap: recap, photo: model.memoryPhoto(for: session),
+                        MemoryCardView(session: session, recap: recap,
+                                       photos: model.moments(for: session).compactMap { model.photo(for: $0) },
                                        isSample: model.isDemo(session))
                             .scaleEffect(0.78)
                             .frame(width: MemoryCardView.size.width * 0.78, height: MemoryCardView.size.height * 0.78)
@@ -33,7 +34,7 @@ struct RecapView: View {
                         stat("Time", Format.duration(recap.activeDuration))
                         stat("New streets", Format.distance(recap.newDistanceMeters))
                     }
-                    Button { showCard = true } label: { Label("Add photo & share", systemImage: "camera") }
+                    Button { showCard = true } label: { Label("Make a card", systemImage: "camera") }
                         .buttonStyle(PrimaryButtonStyle())
                     if recap.wasRecovered {
                         Label("App closed mid-walk; that time isn't counted.", systemImage: "info.circle")

@@ -81,6 +81,16 @@ jobs:
           shoot 06-planner-results --open-planner --planner-filter park
           shoot 07-recap-card --demo-map --open-recap
           shoot 08-memory-card --demo-map --open-card
+          # Simulated GPS walk through the real tracking pipeline (simulator location, labelled in-app).
+          xcrun simctl privacy "$UDID" grant location-always com.lifeoffdesk.simulator || xcrun simctl privacy "$UDID" grant location com.lifeoffdesk.simulator || true
+          xcrun simctl location "$UDID" set 14.55420,121.02170 || true
+          xcrun simctl terminate "$UDID" com.lifeoffdesk.simulator 2>/dev/null || true
+          xcrun simctl launch "$UDID" com.lifeoffdesk.simulator --skip-intro --start-walk --map-scale 0.9 --flat
+          sleep 4
+          xcrun simctl location "$UDID" start --speed=2.5 --interval=1 14.55420,121.02170 14.55480,121.02260 14.55540,121.02350 14.55600,121.02300 14.55660,121.02250 || true
+          sleep 35
+          xcrun simctl io "$UDID" screenshot screenshots/09-walking.png
+          xcrun simctl location "$UDID" clear || true
           ls -la screenshots
       - uses: actions/upload-artifact@v4
         with:

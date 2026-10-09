@@ -111,7 +111,10 @@ struct MapCamera: Equatable {
 struct FogMapView: View {
     let geometry: MapGeometry
     let exploration: Exploration
-    let activeSegments: [[TrackSample]]
+    /// Current walk (or replay): new ground dotted, revisited ground solid.
+    let trailRuns: [TrailRun]
+    /// Captured moments with a location, drawn as photo pins.
+    var pins: [(coordinate: Coordinate, image: UIImage?)] = []
     let position: Coordinate?
     let destination: Place?
     @Binding var camera: MapCamera
@@ -203,14 +206,43 @@ struct FogMapView: View {
                 }
             }
 
-            // 6. Current walk trail, segment by segment (never joined across gaps).
-            var trail = Path()
-            for segment in activeSegments {
-                guard let first = segment.first else { continue }
-                trail.move(to: geometry.point(first.coordinate).applying(transform))
-                for sample in segment.dropFirst() { trail.addLine(to: geometry.point(sample.coordinate).applying(transform)) }
+            // 6. Current walk trail: dots over new ground, a quiet solid line over streets walked before.
+            for run in trailRuns {
+                guard let first = run.points.first else { continue }
+                var line = Path()
+                line.move(to: geometry.point(first).applying(transform))
+                for c in run.points.dropFirst() { line.addLine(to: geometry.point(c).applying(transform)) }
+                if run.isNew {
+                    context.stroke(line, with: .color(PaperStyle.ink),
+                                   style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round, dash: [0.1, 10]))
+                } else {
+                    context.stroke(line, with: .color(Theme.secondaryInk.opacity(0.55)),
+                                   style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                }
             }
-            context.stroke(trail, with: .color(Theme.primary), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+
+            // Photo pins for captured moments.
+            for pin in pins {
+                let p = geometry.point(pin.coordinate).applying(transform)
+                let frame = CGRect(x: p.x - 19, y: p.y - 46, width: 38, height: 38)
+                var stem = Path()
+                stem.move(to: CGPoint(x: p.x - 6, y: p.y - 10)); stem.addLine(to: CGPoint(x: p.x, y: p.y))
+                stem.addLine(to: CGPoint(x: p.x + 6, y: p.y - 10)); stem.closeSubpath()
+                context.fill(stem, with: .color(.white))
+                let badge = Path(roundedRect: frame.insetBy(dx: -3, dy: -3), cornerRadius: 12)
+                context.drawLayer { pinLayer in
+                    pinLayer.addFilter(.shadow(color: .black.opacity(0.25), radius: 4, y: 2))
+                    pinLayer.fill(badge, with: .color(.white))
+                }
+                if let image = pin.image {
+                    context.drawLayer { photoLayer in
+                        photoLayer.clip(to: Path(roundedRect: frame, cornerRadius: 9))
+                        photoLayer.draw(Image(uiImage: image), in: frame)
+                    }
+                } else {
+                    context.fill(Path(roundedRect: frame, cornerRadius: 9), with: .color(Theme.revealedGround))
+                }
+            }
 
             if let destination {
                 let p = geometry.point(destination.coordinate).applying(transform)

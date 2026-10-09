@@ -39,6 +39,29 @@ public final class LocalStore: @unchecked Sendable {
         try data.write(to: memoriesDirectory.appendingPathComponent("\(sessionID.uuidString).jpg"), options: .atomic)
     }
 
+    // MARK: Captured moments (P1)
+
+    private var momentsIndexURL: URL { memoriesDirectory.appendingPathComponent("moments.json") }
+
+    public func loadMoments() -> [WalkMemory] {
+        guard let data = try? Data(contentsOf: momentsIndexURL) else { return [] }
+        return (try? decoder.decode([WalkMemory].self, from: data)) ?? []
+    }
+
+    /// Saves the photo first, then the index, so an index entry never points at a missing file.
+    public func addMoment(_ memory: WalkMemory, jpeg: Data) throws {
+        try fileManager.createDirectory(at: memoriesDirectory, withIntermediateDirectories: true)
+        try jpeg.write(to: memoriesDirectory.appendingPathComponent(memory.fileName), options: .atomic)
+        var all = loadMoments()
+        all.removeAll { $0.id == memory.id }
+        all.append(memory)
+        try encoder.encode(all).write(to: momentsIndexURL, options: .atomic)
+    }
+
+    public func momentPhoto(_ memory: WalkMemory) -> Data? {
+        try? Data(contentsOf: memoriesDirectory.appendingPathComponent(memory.fileName))
+    }
+
     public func loadMemoryPhoto(for sessionID: UUID) -> Data? {
         try? Data(contentsOf: memoriesDirectory.appendingPathComponent("\(sessionID.uuidString).jpg"))
     }

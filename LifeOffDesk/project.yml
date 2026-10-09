@@ -44,6 +44,8 @@ targets:
           Life Off Desk uses your location only during a walk you start, to reveal the path you
           actually walked. It stays on this iPhone.
         UIBackgroundModes: [location]
+        NSCameraUsageDescription: Take photos of moments on your walk. Photos stay on this iPhone.
+        NSPhotoLibraryAddUsageDescription: Save your walk card to Photos.
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
     settings:

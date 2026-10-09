@@ -42,6 +42,18 @@ final class ExplorationTests: XCTestCase {
         XCTAssertLessThan(grid.areaSquareMeters(cells), 2 * .pi * 12.5 * 12.5 + 300)
     }
 
+    func testTrailRunsSplitNewAndRevisitedGround() {
+        let grid = ExplorationGrid(origin: Fixture.origin)
+        var exploration = Exploration(revealWidthMeters: 25)
+        exploration.merge(session([[0, 50, 100]]))
+        let prior = grid.cells(for: exploration)
+        let walk = session([[60, 80, 100, 120, 160, 200], [400, 420]])
+        let runs = grid.trailRuns(for: walk.segments, prior: prior)
+        XCTAssertEqual(runs.map(\.isNew), [false, true, true], "Revisit, then new ground; segments never joined")
+        XCTAssertEqual(runs[0].points.count, 4)
+        XCTAssertEqual(runs[1].points.count, 3)
+    }
+
     func testCorridorIsNarrow() {
         let grid = ExplorationGrid(origin: Fixture.origin)
         var exploration = Exploration(revealWidthMeters: 25)
@@ -112,9 +124,15 @@ final class LocalStoreTests: XCTestCase {
         try store.commitFinished(session)
         try store.saveExploration(Exploration())
         try store.saveMemoryPhoto(Data("jpeg".utf8), for: session.id)
+        let moment = WalkMemory(sessionID: session.id, takenAt: Fixture.time(5), coordinate: nil)
+        try store.addMoment(moment, jpeg: Data("moment".utf8))
+        XCTAssertEqual(store.loadMoments(), [moment])
+        XCTAssertNil(moment.coordinate, "No fix means no invented location")
+        XCTAssertEqual(store.momentPhoto(moment), Data("moment".utf8))
         XCTAssertEqual(store.loadMemoryPhoto(for: session.id), Data("jpeg".utf8))
         try store.erasePersonalData()
         XCTAssertNil(store.loadMemoryPhoto(for: session.id), "Erase removes memory photos")
+        XCTAssertTrue(store.loadMoments().isEmpty, "Erase removes captured moments")
         XCTAssertNil(store.loadActiveSession())
         XCTAssertNil(store.loadExploration())
         XCTAssertTrue(store.loadFinishedWalks().isEmpty)
