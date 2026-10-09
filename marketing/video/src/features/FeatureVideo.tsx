@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Series, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { Audio } from "@remotion/media";
-import { C, Mascot, Phone, Words, clamp, ease, fontFamily, useIn } from "../kit";
+import { C, Mascot, Phone, Words, clamp, ease, fontFamily, useIn, useSquare } from "../kit";
 import { Card, Line, Screen, Thinking, Typed, typedDone } from "./ChatKit";
 import run from "../chat-run.json";
 
@@ -10,16 +10,18 @@ type Answer = { q: string; title?: string; steps?: string[]; highlights?: string
 const R = run as unknown as Answer[];
 const overheat = R[0], cpr = R[1], nlex = R[4], lost = R[6];
 
-/** Phone on the left, caption on the right (square 1080). */
+/** Phone on the left, caption on the right (square 1080 or landscape 1920). */
 const Stage: React.FC<{ kicker: string; title: string; note: string; children: React.ReactNode }> = ({ kicker, title, note, children }) => {
   const a = useIn(0, 16);
+  const sq = useSquare();
   return (
     <AbsoluteFill style={{ background: C.white }}>
-      <div style={{ position: "absolute", left: 40, top: 70, scale: "0.98" }}>{children}</div>
-      <div style={{ position: "absolute", left: 540, top: 140, width: 480, opacity: a, translate: `${(1 - a) * 40}px 0` }}>
+      <div style={{ position: "absolute", left: sq ? 40 : 360, top: 70, scale: "0.98" }}>{children}</div>
+      <div style={{ position: "absolute", left: sq ? 540 : 900, top: 140, width: sq ? 480 : 700, opacity: a, translate: `${(1 - a) * 40}px 0` }}>
         <div style={{ fontSize: 26, fontWeight: 700, color: C.primary, letterSpacing: 1 }}>{kicker}</div>
         <div style={{ fontSize: 58, fontWeight: 800, color: C.ink, lineHeight: 1.08, marginTop: 14, letterSpacing: -1 }}>{title}</div>
         <div style={{ fontSize: 26, color: C.secondary, marginTop: 22, lineHeight: 1.35 }}>{note}</div>
+        <div style={{ fontSize: 18, color: C.secondary, marginTop: 28, opacity: 0.8 }}>Real output of the app's offline code (keyword layer).</div>
       </div>
     </AbsoluteFill>
   );
@@ -48,7 +50,7 @@ const Intro: React.FC = () => {
   );
 };
 
-const Overheat: React.FC = () => {
+export const Overheat: React.FC = () => {
   const done = typedDone(10, overheat.q);
   return (
     <Stage kicker="ASK IN TAGLISH" title="Points you to the exact step" note="It finds the lines in the reviewed card that answer your question. No made-up advice.">
@@ -73,7 +75,7 @@ const Overheat: React.FC = () => {
   );
 };
 
-const Emergency: React.FC = () => {
+export const Emergency: React.FC = () => {
   const done = typedDone(10, cpr.q);
   return (
     <Stage kicker="EMERGENCIES FIRST" title="911, your city's rescue line, then the steps" note="Emergency words always raise the Call 911 button. The AI can add an alert, never remove one.">
@@ -96,7 +98,7 @@ const Emergency: React.FC = () => {
   );
 };
 
-const Hotlines: React.FC = () => {
+export const Hotlines: React.FC = () => {
   const done = typedDone(10, nlex.q);
   const h = nlex.hotlines![0];
   return (
@@ -113,7 +115,7 @@ const Hotlines: React.FC = () => {
   );
 };
 
-const Lost: React.FC = () => {
+export const Lost: React.FC = () => {
   const q1 = "naligaw ako";
   const d1 = typedDone(8, q1);
   const q2 = "Greenbelt";

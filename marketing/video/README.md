@@ -1,6 +1,6 @@
 # Life Off Desk launch video (Remotion)
 
-A ~56 s product launch video (square and 16:9) in the "chat bubbles + kinetic type" style, built only from Life Off Desk's own material:
+A 59 s product launch video (square and 16:9) that includes the help chat running for real in the "chat bubbles + kinetic type" style, built only from Life Off Desk's own material:
 
 - **Screens:** unedited captures of the app's labelled demo world (`ci-screenshots` branch, `--marketing` flag).
 - **Copy:** real app strings (the coach line, arrival card, help-chat questions and card titles).
@@ -28,7 +28,7 @@ npx remotion render LaunchVideo out/life-off-desk-launch.mp4
 - `LaunchSquare` (1080×1080): the cut for X and LinkedIn feeds.
 - `LaunchVideo` (1920×1080): the cut for the website and YouTube.
 
-Both run about 56 s.
+Both run 59 s: the story (coach, route, arrival, fog map), the help chat running real offline outputs (overheat, emergency, NLEX hotline, lost-and-route), on-device AI, memories, the outdoor outro and the end card.
 
 **Licensed media** (not committed; run `./fetch-media.sh` first). Both items are under the Mixkit Free License (checked 2026-10-09): commercial use and social media posts and ads are allowed, attribution is not required, and standalone redistribution is not allowed.
 - **Music:** "Just Keep Walking" by Michael Ramir C., https://mixkit.co/free-stock-music/discover/just-keep-walking-963/
