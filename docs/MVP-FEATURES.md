@@ -23,6 +23,13 @@ The opening screen is a warm ivory map with **Start walking** as its main action
 | P0-09 | Honest recap | Show tracked distance, active duration and a small route preview | Values come from accepted samples; save/reopen completed walk |
 | P0-10 | Offline starter area | Bundle a small verified place catalog and simple vector context for one walkable area | AI, catalog, reveal and recap work without a network; show coverage limits outside the area |
 | P0-11 | Essential errors/privacy | Handle permissions, no GPS, no matches, model missing/loading/failure; local erase control | Input survives AI failure; walking remains usable; erase clears personal walks and exploration |
+| P0-12 | Local AI history search | Parse Taglish questions into validated filters over saved adventures | Correct dates/results offline; no invented adventures or visits |
+| P0-13 | Grounded recap narration | Local model selects computed facts and approved narrative templates | Exact source values, stable historical recap; save never waits for inference |
+| P0-14 | Editable preference memory | Explicitly save, edit and reset local preferences | Relaunch, precedence, failed-write recovery and erase verified |
+| P0-15 | Adaptive suggestions | Combine explicit intent, saved preferences and computed exploration with deterministic eligibility/ranking | Valid candidates only; no silent relaxation of hard requirements |
+| P0-16 | Accessibility evidence and honest uncertainty | Scoped source-backed facts, review/validity policy and unknown states | Unknown/stale/conflicting facts cannot satisfy hard access requirements; no route-safety claims |
+
+Founder-approved expansion (2026-10-09): implement history search and narration first, then editable preferences and adaptive suggestions. The selected phone model is Qwen3-1.7B Q4_K_M. These additions are **planned, not completed**. [Local AI MVP handoff](LOCAL-AI-MVP.md) defines task contracts, ordering and evaluation; [accessibility and safety](ACCESSIBILITY-AND-SAFETY.md) defines the evidence prerequisite. Other AI use cases remain follow-up work. The original P0 loops remain required; expanded-MVP completion also requires P0-12–16 acceptance.
 
 Update 2026-10-09: Metro Manila is the initial map people can record walks on (main-road context across NCR; trails record anywhere). Makati CBD (primary) and Muntinlupa have street/footpath detail and place catalogs. The original note follows. The confirmed starter city is Makati. Begin with a proposed Makati CBD subset; its exact walking boundary still needs outdoor validation. Luzon is the initial product market, not a promise to ship detailed coverage of all Luzon in eight hours.
 

@@ -26,9 +26,11 @@ These are elapsed work allocations from the actual start, not measured implement
 | 5:15–6:25 | Recap, errors and visual integration | Both complete paths pass; no placeholders masquerade as features |
 | 6:25–8:00 | Freeze, outdoor/offline checks, demo and submission buffer | Repeatable phone demo and recorded backup; unresolved limitations documented |
 
-At 80% of the time budget, stop adding features. P1 photos/cutouts only fit if both P0 paths are already proven. Before switching artifacts, check file path and checksum, model/runtime compatibility, correct chat template, available memory, signed-device logs and context allocation. Record the actual error without exposing private data. If the model gate exceeds its cap, try one smaller compatible artifact or shorter context and retest. Report the blocker if genuine phone inference is still unavailable. A Mac server or hardcoded answer does not satisfy the user's phone-only requirement.
+At 80% of the time budget, stop adding features. P1 photos/cutouts only fit if both P0 paths are already proven. Before switching artifacts, check file path and checksum, model/runtime compatibility, correct chat template, available memory, signed-device logs and context allocation. Record the actual error without exposing private data. If the model gate exceeds its cap, try shorter context and retest. A smaller artifact requires an explicit change to the selected 1.7B decision and fresh evidence. Report the blocker if genuine phone inference is still unavailable. A Mac server or hardcoded answer does not satisfy the user's phone-only requirement.
 
 ## Dependency order
+
+For the founder-approved 1.7B expansion, follow [LOCAL-AI-MVP.md](LOCAL-AI-MVP.md): align provisioning and serialize inference → versioned evidence/contracts → history search and grounded narration → editable preferences → adaptive suggestions → actual phone acceptance. Apply [ACCESSIBILITY-AND-SAFETY.md](ACCESSIBILITY-AND-SAFETY.md) before interpreting access requirements as matches. This is additional MVP scope, not a claim that it fits the historical eight-hour allocation. Coordinate road metadata contracts with Claude's GPS work and use one integration owner for shared app state.
 
 Runtime/model proof → typed AI output → validated preference schema → catalog filtering → suggestion UI.
 

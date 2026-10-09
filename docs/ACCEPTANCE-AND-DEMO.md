@@ -2,6 +2,8 @@
 
 ## Required verification
 
+The expanded MVP also requires the [local AI acceptance matrix](LOCAL-AI-MVP.md#acceptance-and-evaluation) and [accessibility evidence fixtures](ACCESSIBILITY-AND-SAFETY.md#verification-fixtures). On the actual offline phone, search saved adventures in Taglish, request a grounded recap, explicitly save/edit/reset preferences, and obtain adaptive suggestions without relaxing hard constraints. Show an unknown-access/no-match example. Labeled fixtures can prove logic, but cannot verify a real entrance, outdoor GPS or phone inference. Original walk/planner demo acceptance alone does not establish completion of P0-12–16.
+
 | Check | Evidence to collect |
 | --- | --- |
 | Real device | Installed build on iPhone 12 Pro Max; exact iOS/build recorded |

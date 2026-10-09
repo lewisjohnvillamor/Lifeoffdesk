@@ -2,6 +2,8 @@
 
 Updated 2026-10-09. Repository docs are canonical. Makati and Taglish are confirmed.
 
+Current expansion (2026-10-09, supersedes older model/scope text below): Qwen3-1.7B Q4_K_M is selected. History search, grounded recap narration, editable preferences and adaptive suggestions are MVP requirements, with fact-level accessibility evidence and deterministic eligibility. Implementation/device acceptance is pending. Read docs/LOCAL-AI-MVP.md and docs/ACCESSIBILITY-AND-SAFETY.md in the repository; the older snapshot below does not fully describe expanded P0-12–16. No silent model fallback or unsupported access/safety claims.
+
 # Life Off Desk — MVP feature list
 
 Decision version: 2026-10-09, Asia/Manila. This is a build specification, not a claim that features have been implemented.

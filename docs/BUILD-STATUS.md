@@ -1,5 +1,13 @@
 # Life Off Desk — build status
 
+## Approved local AI expansion — documentation handoff, 2026-10-09
+
+Pulled `main` at `55d67ba` before this handoff. Claude's street-snapping branch remains separate. The founder selected Qwen3-1.7B Q4_K_M and approved history search, grounded recap narration, editable preferences and adaptive suggestions as MVP additions. This supersedes the historical “0.6B stays” decision below, not its recorded evaluation results.
+
+P0-12–16 are **specified, implementation/device acceptance pending**. See [LOCAL-AI-MVP.md](LOCAL-AI-MVP.md) and [ACCESSIBILITY-AND-SAFETY.md](ACCESSIBILITY-AND-SAFETY.md). The latter defines reviewed, scoped facts and strict unknown handling; no new accessible venues or safe routes have been verified.
+
+Existing local changes in `AIService.swift` and `project.yml` select 1.7B; they are preserved and excluded from this documentation commit. Default setup/download selection still needs alignment. This handoff changes Markdown only: no new app builds, model evaluations, outdoor tests, offline phone runs or performance measurements were performed. Documentation verification covers local links, cross-references, locked artifact identity and whitespace. Earlier device gates remain unresolved unless separately documented with new evidence.
+
 Updated 2026-10-09, Asia/Manila. Implementation started at the hackathon kickoff.
 
 ## Demo update and visible fog — local Mac verification, 2026-10-09

@@ -20,12 +20,13 @@ If you already cloned the repo, enter it and use `git pull --ff-only`; do not ov
 ## 2. Start required downloads
 
 ```bash
-python3 scripts/download_materials.py
+python3 scripts/download_materials.py --group model-large
+python3 scripts/download_materials.py --group runtime
 ```
 
-This downloads one candidate model and the pinned llama.cpp iOS XCFramework. Each file is checked against a recorded SHA256 before acceptance. Approximate transfer: model 429 MB + framework 62 MB, about 491 MB total. Free space must also cover extracted runtime files and Xcode build products. Disk size is not peak inference RAM.
+This downloads the selected 1.7B model and the pinned llama.cpp iOS XCFramework. Each file is checked against a recorded SHA256 before acceptance. Approximate transfer: model 1.28 GB + framework 62 MB, about 1.34 GB total. Free space must also cover extracted runtime files and Xcode build products. Disk size is not peak inference RAM.
 
-The model is ggml-org's Qwen3-0.6B Q4_0 artifact, pinned to a Hugging Face commit. The runtime is llama.cpp b11429, pinned to release assets. Neither Taglish quality nor iPhone performance has been measured here. Inspect config/materials-lock.json for exact sources/checksums.
+The selected model is ggml-org's Qwen3-1.7B Q4_K_M artifact, pinned to a Hugging Face commit. The runtime is llama.cpp b11429, pinned to release assets. Historical development evaluations do not establish target-phone quality/performance. Inspect config/materials-lock.json for exact sources/checksums. At the documentation handoff, the default downloader and `setup_ios.sh` still request the legacy 0.6B group: use the explicit commands above and expect setup to provision the legacy artifact too until Claude aligns the defaults. Runtime/resource selection is present in local edits and must also be included in the eventual implementation commit; docs alone do not switch a clean checkout.
 
 Optional Mac command-line binaries for diagnostics:
 
@@ -53,7 +54,7 @@ scripts/setup_ios.sh
 open LifeOffDesk/LifeOffDesk.xcodeproj
 ```
 
-In Xcode set Signing & Capabilities → Team and a unique bundle identifier, select the connected iPhone and Run. The pinned xcframework has no simulator slice. The model is bundled into the app; to keep builds smaller you can remove it from the target and copy `Qwen3-0.6B-Q4_0.gguf` into the app's Documents folder via Finder (the app checks Documents first).
+In Xcode set Signing & Capabilities → Team and a unique bundle identifier, select the connected iPhone and Run. The pinned xcframework has no simulator slice. Verify that runtime lookup and the bundled resource both select `Qwen3-1.7B-Q4_K_M.gguf` before building. The app checks Documents first; if provisioning there through an available development container workflow, use the exact selected filename and verify its checksum. Do not assume Finder file sharing is enabled.
 
 `scripts/prepare_makati.py` is only needed to refresh starter data; then run `python3 scripts/build_starter_catalog.py`.
 
